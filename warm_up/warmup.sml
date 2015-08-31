@@ -1,3 +1,5 @@
+(* First part is a collection of helper functions *)
+
 (* maxAux keeps track of the current encoutered max value while traversing the list.
 max peels of the head of a list, sets as current max value, then let maxAux traverse the list*)
 fun maxAux [] curMax = curMax
@@ -11,6 +13,8 @@ fun len [] = 0
 
 fun listFunctor f [] = []
   | listFunctor f (x::xs) = [f x] @ listFunctor f xs
+
+(* Define the grammar of the Straight Line Program *)
 
 structure SLgrammar =
 struct
