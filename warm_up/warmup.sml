@@ -1,3 +1,16 @@
+structure SLgrammar =
+struct
+type id = string
+datatype binop = Plus | Minus | Times | Div
+datatype stm = CompoundStm of stm * stm
+	     | AssignStm of id * exp
+	     | PrintStm of exp list
+     and exp = IdExp of id
+	     | NumExp of int
+	     | OpExp of exp * binop * exp
+	     | EseqExp of stm * exp
+end
+
 structure G = SLgrammar
 
 (* ... *)
@@ -41,14 +54,9 @@ val prog =
 
 
 
-fun MaxExp (_: G.NumExp) = 0
-  | MaxExp (_: G.IdExp) = 0
+fun MaxExp G.NumExp(_,_) = 0
+  | MaxExp G.IdExp(_,_) = 0
   | MaxExp OpExp(el,_,er) =  max[MaxExp el, MaxExp er]
-  | MaxExp EseqExp(st, exp) = max[MaxStm st, MaxExp exp]
-
-and MaxStm CompoundStm (lstm, rstm) = max[MaxStm lstm, MaxStm rstm]
-      | MaxStm AssignStm (id,exp) = maxExp exp
-      | MaxStm ExpList(h::tl)= max[len h::tl, MaxExp h, MaxStm tl]
 
 (* maxAux keeps track of the current encoutered max value while traversing the list.
 max peels of the head of a list, sets as current max value, then let maxAux traverse the list*)
