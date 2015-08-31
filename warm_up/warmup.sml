@@ -6,6 +6,11 @@ fun maxAux [] curMax = curMax
 fun max [] = 0
   | max(x::xs) = maxAux xs x
 
+fun len [] = 0
+  | len (x::xs) = 1 + len xs
+
+fun listFunctor f [] = []
+  | listFunctor f (x::xs) = [f x] @ listFunctor f xs
 
 structure SLgrammar =
 struct
@@ -67,6 +72,10 @@ val prog =
 
 
 
-fun MaxExp ( G.NumExp(number) ) = 0
-  | MaxExp ( G.IdExp(id) ) = 0
-  | MaxExp ( OpExp((expl),_,(expr)) )=  max[MaxExp (expl), MaxExp (expr)]
+fun maxExp ( G.NumExp(number) ) = 0
+  | maxExp ( G.IdExp(id) ) = 0
+  | maxExp ( G.OpExp(lExp,_,rExp) ) = max[maxExp lExp, maxExp rExp]
+  | maxExp ( G.EseqExp (stm, exp) ) = max[maxStm stm, maxExp exp]
+and maxStm ( G.CompoundStm(lStm, rStm) ) = max[maxStm lStm, maxStm rStm]
+  | maxStm ( G.AssignStm( _, exp) ) = maxExp(exp)
+  | maxStm ( G.PrintStm( list ) ) = max(len list::listFunctor maxExp list)
