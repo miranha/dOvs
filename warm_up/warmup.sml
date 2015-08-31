@@ -48,7 +48,11 @@ fun MaxExp (_: G.NumExp) = 0
 
 and MaxStm CompoundStm (lstm, rstm) = max[MaxStm lstm, MaxStm rstm]
       | MaxStm AssignStm (id,exp) = maxExp exp
-      | MaxStm ExpList(h::tl)= Max[len h::tl, MaxExp h, MaxStm tl]
+      | MaxStm ExpList(h::tl)= max[len h::tl, MaxExp h, MaxStm tl]
 
-fun max [x] = x
-  | max(x::xs) = if x > max xs then x else max xs
+(* maxAux keeps track of the current encoutered max value while traversing the list.
+max peels of the head of a list, sets as current max value, then let maxAux traverse the list*)
+fun max [] = 0
+  | max(x::xs) = maxAux xs x
+and maxAux [] curMax = curMax
+  | maxAux (x::xs) curMax = maxAux xs (if curMax > x then curMax else x)
