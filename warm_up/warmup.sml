@@ -8,13 +8,10 @@ fun maxAux [] curMax = curMax
 fun max [] = 0
   | max(x::xs) = maxAux xs x
 
-fun len [] = 0
-  | len (x::xs) = 1 + len xs
+fun applyFunToList f [] = []
+  | applyFunToList f (x::xs) = f x :: applyFunToList f xs
 
-fun listFunctor f [] = []
-  | listFunctor f (x::xs) = [f x] @ listFunctor f xs
-
-(* Define the grammar of the Straight Line Program *)
+(* Define the grammar of the Straight Line Language *)
 
 structure SLgrammar =
 struct
@@ -74,12 +71,10 @@ val prog =
 
 (* val _ = interp prog *)
 
-
-
 fun maxExp ( G.NumExp(number) ) = 0
   | maxExp ( G.IdExp(id) ) = 0
   | maxExp ( G.OpExp(lExp,_,rExp) ) = max[maxExp lExp, maxExp rExp]
   | maxExp ( G.EseqExp (stm, exp) ) = max[maxStm stm, maxExp exp]
 and maxStm ( G.CompoundStm(lStm, rStm) ) = max[maxStm lStm, maxStm rStm]
   | maxStm ( G.AssignStm( _, exp) ) = maxExp(exp)
-  | maxStm ( G.PrintStm( list ) ) = max(len list::listFunctor maxExp list)
+  | maxStm ( G.PrintStm( list ) ) = max(length list::applyFunToList maxExp list)
