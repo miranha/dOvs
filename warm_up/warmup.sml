@@ -64,6 +64,22 @@ val prog =
         G.OpExp (G.NumExp 10, G.Times, G.IdExp "a"))),
       G.PrintStm [G.IdExp "b"]))
 
+val prog2 = 
+    G.CompoundStm(
+	G.PrintStm[]
+	G.CompoundStm(
+		G.PrintStm[G.OpExp (G.IdExp "A", G.Plus, G.NumExp 15), G.OpExp (G.IdExp "B", G.Plus, G.NumExp 16)]
+		G.AsignStm("Teacher", G.IdExp "Alan")
+	)
+    )
+
+(* Prog 3 should raise an error once complete *)
+val prog3 = 
+    G.CompoundStm(
+	G.PrintStm[G.IdExp "A)]
+	G.PrintStm[G.PrintStm[]]
+    )
+
 (* ... *)
 
 (* Calling the interpreter on the example program. Uncomment to proceed
