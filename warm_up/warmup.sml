@@ -140,7 +140,21 @@ fun interpStm (G.CompoundStm(stm0, stm1), env : table) : table =
   (*| interpStm (_) = emptyTable *)
 and interpExp (G.NumExp(number), env : table) = (SOME number, env)
   | interpExp (G.IdExp(id), env) = (lookUpTable(env, id), env)
-  | interpExp (_,_) = (NONE, emptyTable)
+  | interpExp (G.OpExp(exp0, opr, exp1), env) = 
+    let val res0 = interpExp(exp0, env) in 
+	let val res1 
+		= interpExp(exp1, (#2 res0))
+	in (if (#1 res0 = NONE) orelse (#1 res1 = NONE) then
+		NONE
+	    else SOME (if (opr = G.Plus) then valOf (#1 res0) + valOf (#1 res1)
+		       else if (opr = G.Minus) then valOf (#1 res0) - valOf (#1 res1)
+		       else if (opr = G.Times) then valOf (#1 res0) * valOf (#1 res1)
+		       else valOf (#1 res0) div valOf (#1 res1))
+	   , (#2 res1))
+	end
+    end
+  | interpExp (G.EseqExp(stm, exp), env) = interpExp(exp, interpStm(stm, env))
+  (* | interpExp (_,_) = (NONE, emptyTable) *)
 and interpPrint ([] : G.exp list, env : table) = (print ("\n"); env)
   | interpPrint (x::xs, env) = let val res = interpExp(x, env)
 			       in (print (if #1 res = NONE 
@@ -149,3 +163,5 @@ and interpPrint ([] : G.exp list, env : table) = (print ("\n"); env)
 						  valOf( #1 res)) ^ " ");
 				  interpPrint (xs, #2 res))
 			       end
+
+fun interp stm = interpStm (stm, emptyTable)
