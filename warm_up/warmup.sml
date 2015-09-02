@@ -71,10 +71,14 @@ val prog =
 
 (* val _ = interp prog *)
 
+exception SyntaxError
+
 fun maxExp ( G.NumExp(number) ) = 0
   | maxExp ( G.IdExp(id) ) = 0
   | maxExp ( G.OpExp(lExp,_,rExp) ) = max[maxExp lExp, maxExp rExp]
   | maxExp ( G.EseqExp (stm, exp) ) = max[maxStm stm, maxExp exp]
+  | maxExp ( _ ) = raise SyntaxError
 and maxStm ( G.CompoundStm(lStm, rStm) ) = max[maxStm lStm, maxStm rStm]
   | maxStm ( G.AssignStm( _, exp) ) = maxExp(exp)
   | maxStm ( G.PrintStm( list ) ) = max(length list::applyFunToList maxExp list)
+  | maxStm ( _ ) = raise SyntaxError
