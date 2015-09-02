@@ -86,8 +86,7 @@ and maxStm ( G.CompoundStm(lStm, rStm) ) = max[maxStm lStm, maxStm rStm]
 structure T = TableDemo
 val startEnv = T.emptyTable (*Before program starts, are there even an enviorment? *)
 
-
-	
+(*
 fun interpStm (G.CompoundStm(stm0,stm1), env) = interpStm (stm1, (interpStm( stm0, env)))
   | interpStm  (G.AssignStm(id, exp), env) 
     = let val res = interpExp (exp, env)
@@ -125,3 +124,28 @@ and interpOp (G.OpExp(exp0, G.Plus, exp1)) env =
        in (#1 res0 / #1 res1, #2 res1) 
        end
     end
+*)
+type table = string -> int option
+val emptyTable : table = fn x => NONE
+fun updateTable (tab : table, key : string, value : int option) 
+  = fn x => if x = key then value else NONE
+fun lookUpTable (t : table, key: string) = t key
+
+fun interpStm (G.CompoundStm(stm0, stm1), env : table) : table = 
+  interpStm(stm1, interpStm(stm0, env))
+  | interpStm (G.AssignStm(id, exp), env) =
+    let val res = interpExp(exp, env) in
+	updateTable(#2 res, id, #1 res) end
+  | interpStm (G.PrintStm (expList), env) = interpPrint(expList, env)
+  (*| interpStm (_) = emptyTable *)
+and interpExp (G.NumExp(number), env : table) = (SOME number, env)
+  | interpExp (G.IdExp(id), env) = (lookUpTable(env, id), env)
+  | interpExp (_,_) = (NONE, emptyTable)
+and interpPrint ([] : G.exp list, env : table) = (print ("\n"); env)
+  | interpPrint (x::xs, env) = let val res = interpExp(x, env)
+			       in (print (if #1 res = NONE 
+					 then "error" 
+					  else Int.toString( 
+						  valOf( #1 res)) ^ " ");
+				  interpPrint (xs, #2 res))
+			       end
