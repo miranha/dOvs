@@ -66,18 +66,18 @@ val prog =
 
 val prog2 = 
     G.CompoundStm(
-	G.PrintStm[]
+	G.PrintStm[G.IdExp "a"],
 	G.CompoundStm(
-		G.PrintStm[G.OpExp (G.IdExp "A", G.Plus, G.NumExp 15), G.OpExp (G.IdExp "B", G.Plus, G.NumExp 16)]
-		G.AsignStm("Teacher", G.IdExp "Alan")
+		G.PrintStm[G.OpExp (G.IdExp "A", G.Plus, G.NumExp 15), G.OpExp (G.IdExp "B", G.Plus, G.NumExp 16)],
+		G.AssignStm("Teacher", G.IdExp "Alan")
 	)
     )
 
 (* Prog 3 should raise an error once complete *)
 val prog3 = 
     G.CompoundStm(
-	G.PrintStm[G.IdExp "A)]
-	G.PrintStm[G.PrintStm[]]
+	G.PrintStm[G.IdExp "A"],
+	G.PrintStm[G.IdExp "B"]
     )
 
 (* ... *)
@@ -98,3 +98,4 @@ and maxStm ( G.CompoundStm(lStm, rStm) ) = max[maxStm lStm, maxStm rStm]
   | maxStm ( G.AssignStm( _, exp) ) = maxExp(exp)
   | maxStm ( G.PrintStm( list ) ) = max(length list::applyFunToList maxExp list)
   | maxStm ( _ ) = raise SyntaxError
+
