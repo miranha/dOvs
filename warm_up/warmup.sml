@@ -83,48 +83,6 @@ and maxStm ( G.CompoundStm(lStm, rStm) ) = max[maxStm lStm, maxStm rStm]
 
 (* Here begins the quest to write the interpreter *)
 
-structure T = TableDemo
-val startEnv = T.emptyTable (*Before program starts, are there even an enviorment? *)
-
-(*
-fun interpStm (G.CompoundStm(stm0,stm1), env) = interpStm (stm1, (interpStm( stm0, env)))
-  | interpStm  (G.AssignStm(id, exp), env) 
-    = let val res = interpExp (exp, env)
-      in T.updateTable ((#2 res), id, (#1 res)) end
-  | interpStm (G.PrintStm(list), env) = interpPrint
-and interpExp ((G.NumExp(number)), env) = (number,env)
-  | interpExp ((G.IdExp(id)), env) = (env id, env)
-  | interpExp ((G.OpExp(exp0, opr , exp1)), env) = interpOp(exp0, opr, exp1) env
-  | interpExp (G.EseqExp(stm, exp), env) = interpExp exp (interpStm (stm, env))
-and interpPrint ([], env) = (print ("\n"); env)
-   |interpPrint (x::xs, env) = let val res = interpExp (x,env) in
-				(print (Int.toString(#1 res) ^ " "); 
-				 interpPrint (xs, (#2 res))) end
-and interpOp (G.OpExp(exp0, G.Plus, exp1)) env =
-  let val res0 = interpExp exp0 env 
-  in  let val res1 = interpExp exp1 (#1 res0) 
-      in (#1 res0 + #1 res1, #2 res1) 
-      end
-  end
-  | interpOp (G.OpExp(exp0, G.Minus, exp1)) env =
-    let val res0 = interpExp exp0 env 
-    in let val res1 = interpExp exp1 (#1 res0) 
-       in (#1 res0 - #1 res1, #2 res1) 
-       end
-    end
-  | interpOp (G.OpExp(exp0, G.Times, exp1)) env =
-    let val res0 = interpExp exp0 env 
-    in let val res1 = interpExp exp1 (#1 res0) 
-       in (#1 res0 * #1 res1, #2 res1) 
-       end
-    end
-  | interpOp (G.OpExp(exp0, G.Div, exp1)) env =
-    let val res0 = interpExp exp0 env 
-    in let val res1 = interpExp exp1 (#1 res0) 
-       in (#1 res0 / #1 res1, #2 res1) 
-       end
-    end
-*)
 type table = string -> int option
 val emptyTable : table = fn x => NONE
 fun updateTable (tab : table, key : string, value : int option) 
