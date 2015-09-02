@@ -95,7 +95,7 @@ fun interpStm (G.CompoundStm(stm0, stm1), env : table) : table =
     let val res = interpExp(exp, env) in
 	updateTable(#2 res, id, #1 res) end
   | interpStm (G.PrintStm (expList), env) = interpPrint(expList, env)
-  (*| interpStm (_) = emptyTable *)
+
 and interpExp (G.NumExp(number), env : table) = (SOME number, env)
   | interpExp (G.IdExp(id), env) = (lookUpTable(env, id), env)
   | interpExp (G.OpExp(exp0, opr, exp1), env) = 
@@ -112,7 +112,7 @@ and interpExp (G.NumExp(number), env : table) = (SOME number, env)
 	end
     end
   | interpExp (G.EseqExp(stm, exp), env) = interpExp(exp, interpStm(stm, env))
-  (* | interpExp (_,_) = (NONE, emptyTable) *)
+
 and interpPrint ([] : G.exp list, env : table) = (print ("\n"); env)
   | interpPrint (x::xs, env) = let val res = interpExp(x, env)
 			       in (print (if #1 res = NONE 
