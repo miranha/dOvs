@@ -117,3 +117,47 @@ and maxStm ( G.CompoundStm(lStm, rStm) ) = max[maxStm lStm, maxStm rStm]
   | maxStm ( G.AssignStm( _, exp) ) = maxExp(exp)
   | maxStm ( G.PrintStm( list ) ) = max(length list::applyFunToList maxExp list)
 
+
+(* Here begins the quest to write the interpreter *)
+
+type table = string -> int option
+val emptyTable : table = fn x => NONE
+fun updateTable (tab : table, key : string, value : int option) 
+  = fn x => if x = key then value else NONE
+fun lookUpTable (t : table, key: string) = t key
+
+fun interpStm (G.CompoundStm(stm0, stm1), env : table) : table = 
+  interpStm(stm1, interpStm(stm0, env))
+  | interpStm (G.AssignStm(id, exp), env) =
+    let val res = interpExp(exp, env) in
+	updateTable(#2 res, id, #1 res) end
+  | interpStm (G.PrintStm (expList), env) = interpPrint(expList, env)
+
+and interpExp (G.NumExp(number), env : table) = (SOME number, env)
+  | interpExp (G.IdExp(id), env) = (lookUpTable(env, id), env)
+  | interpExp (G.OpExp(exp0, opr, exp1), env) = 
+    let val res0 = interpExp(exp0, env) in 
+	let val res1 
+		= interpExp(exp1, (#2 res0))
+	in (if (#1 res0 = NONE) orelse (#1 res1 = NONE) then
+		NONE
+	    else SOME (if (opr = G.Plus) then valOf (#1 res0) + valOf (#1 res1)
+		       else if (opr = G.Minus) then valOf (#1 res0) - valOf (#1 res1)
+		       else if (opr = G.Times) then valOf (#1 res0) * valOf (#1 res1)
+		       else valOf (#1 res0) div valOf (#1 res1))
+	   , (#2 res1))
+	end
+    end
+  | interpExp (G.EseqExp(stm, exp), env) = interpExp(exp, interpStm(stm, env))
+
+and interpPrint ([] : G.exp list, env : table) = (print ("\n"); env)
+  | interpPrint (x::xs, env) = let val res = interpExp(x, env)
+			       in (print (if #1 res = NONE 
+					 then "error" 
+					  else Int.toString( 
+						  valOf( #1 res)) ^ " ");
+				  interpPrint (xs, #2 res))
+			       end
+
+fun interp stm = interpStm (stm, emptyTable)
+
