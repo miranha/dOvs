@@ -86,17 +86,18 @@ val prog3 =
 val prog4 =
     G.PrintStm[
 	G.EseqExp(
-		PrintStm[G.IdExp "A", G.IdExp "B", G.IdExp "C"]
+		G.PrintStm[G.IdExp "A", G.IdExp "B", G.IdExp "C"],
+		G.IdExp "a"
 	)
     ]
 
 (* Prog 5: Test to make sure it doesn't just return the last seen PrintStm *)
 val prog5 =
     G.CompoundStm(
-	G.PrintStm[G.IdExp "A"]
+	G.PrintStm[G.IdExp "A"],
 	G.CompoundStm(
-		G.PrintStm[G.IdExp "B", G.IdExp "C"]
-		G.AssignStm("A" G.EseqExp(PrintStm[G.IdExp "D"]))
+		G.PrintStm[G.NumExp 3, G.IdExp "C"],
+		G.AssignStm("A", G.EseqExp(G.PrintStm[G.IdExp "D"],G.NumExp 3))
 	)
     )
 
