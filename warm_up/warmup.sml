@@ -160,5 +160,6 @@ and interpPrint ([] : G.exp list, env : table) = (print ("\n"); env)
 				  interpPrint (xs, #2 res))
 			       end
 
-fun interp stm = interpStm (stm, emptyTable)
+fun interp stm = 
+  let val res = interpStm (stm, emptyTable) in () end
 
