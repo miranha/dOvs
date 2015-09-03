@@ -73,11 +73,31 @@ val prog2 =
 	)
     )
 
-(* Prog 3 should raise an error once complete *)
+(* Prog 3 *)
 val prog3 = 
     G.CompoundStm(
 	G.PrintStm[G.IdExp "A"],
 	G.PrintStm[G.IdExp "B"]
+    )
+
+(* Note: Because the language is so strict, the compilers doesn't agree if you do something unexpected, in Prog 3 we tried to put a PrintStm inside a PrintStm, and the compiler wouldn't let us *)
+
+(* Prog 4 : Test to make sure it can find the correct longest PrintStm if already inside a PrintStm via EseqExp *)
+val prog4 =
+    G.PrintStm[
+	G.EseqExp(
+		PrintStm[G.IdExp "A", G.IdExp "B", G.IdExp "C"]
+	)
+    ]
+
+(* Prog 5: Test to make sure it doesn't just return the last seen PrintStm *)
+val prog5 =
+    G.CompoundStm(
+	G.PrintStm[G.IdExp "A"]
+	G.CompoundStm(
+		G.PrintStm[G.IdExp "B", G.IdExp "C"]
+		G.AssignStm("A" G.EseqExp(PrintStm[G.IdExp "D"]))
+	)
     )
 
 (* ... *)
