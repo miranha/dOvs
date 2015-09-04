@@ -57,12 +57,51 @@ fun interp (s: G.stm): unit =
 val prog =
   (* a := 5+3; b := (print(a,a-1), 10*a); print(b) *)
   G.CompoundStm (
-    G.AssignStm ("a", G.OpExp (G.NumExp 5, G.Plus, G.NumExp 3)),
+    G.AssignStm ("a", G.OpExp (G.NumExp 5, G.Div, G.NumExp 0)),
     G.CompoundStm (
       G.AssignStm ("b", G.EseqExp (
         G.PrintStm [G.IdExp "a", G.OpExp (G.IdExp "a", G.Minus, G.NumExp 1)],
         G.OpExp (G.NumExp 10, G.Times, G.IdExp "a"))),
       G.PrintStm [G.IdExp "b"]))
+
+
+val prog2 = 
+    G.CompoundStm(
+	G.PrintStm[G.IdExp "a"],
+	G.CompoundStm(
+		G.PrintStm[G.OpExp (G.IdExp "A", G.Plus, G.NumExp 15), G.OpExp (G.IdExp "B", G.Plus, G.NumExp 16)],
+		G.AssignStm("Teacher", G.IdExp "Alan")
+	)
+    )
+
+(* Prog 3 *)
+val prog3 = 
+    G.CompoundStm(
+	G.PrintStm[G.IdExp "A"],
+	G.PrintStm[G.IdExp "B"]
+    )
+
+(* Note: Because the language is so strict, the compilers doesn't agree if you do something unexpected, in Prog 3 we tried to put a PrintStm inside a PrintStm, and the compiler wouldn't let us *)
+
+(* Prog 4 : Test to make sure it can find the correct longest PrintStm if already inside a PrintStm via EseqExp *)
+val prog4 =
+    G.PrintStm[
+	G.EseqExp(
+		G.PrintStm[G.IdExp "A", G.IdExp "B", G.IdExp "C"],
+		G.IdExp "a"
+	)
+    ]
+
+(* Prog 5: Test to make sure it doesn't just return the last seen PrintStm *)
+val prog5 =
+    G.CompoundStm(
+	G.PrintStm[G.IdExp "A"],
+	G.CompoundStm(
+		G.PrintStm[G.NumExp 3, G.IdExp "C"],
+		G.AssignStm("A", G.EseqExp(G.PrintStm[G.IdExp "D"],G.NumExp 3))
+	)
+    )
+
 
 (* ... *)
 
@@ -81,7 +120,10 @@ and maxStm ( G.CompoundStm(lStm, rStm) ) = max[maxStm lStm, maxStm rStm]
   | maxStm ( G.AssignStm( _, exp) ) = maxExp(exp)
   | maxStm ( G.PrintStm( list ) ) = max(length list::applyFunToList maxExp list)
 
+
 (* Here begins the quest to write the interpreter *)
+
+exception DivisionByZero
 
 type table = string -> int option
 val emptyTable : table = fn x => NONE
@@ -104,11 +146,11 @@ and interpExp (G.NumExp(number), env : table) = (SOME number, env)
 		= interpExp(exp1, (#2 res0))
 	in (if (#1 res0 = NONE) orelse (#1 res1 = NONE) then
 		NONE
-	    else SOME (if (opr = G.Plus) then valOf (#1 res0) + valOf (#1 res1)
-		       else if (opr = G.Minus) then valOf (#1 res0) - valOf (#1 res1)
-		       else if (opr = G.Times) then valOf (#1 res0) * valOf (#1 res1)
-		       else valOf (#1 res0) div valOf (#1 res1))
-	   , (#2 res1))
+	    else SOME (case opr of 
+			  G.Plus => valOf (#1 res0) + valOf (#1 res1)
+			| G.Minus => valOf (#1 res0) - valOf (#1 res1)
+			| G.Times => valOf (#1 res0) * valOf (#1 res1)
+			| G.Div => if(valOf (#1 res1)=0) then raise DivisionByZero else valOf (#1 res0) div valOf (#1 res1)),(#2 res1))
 	end
     end
   | interpExp (G.EseqExp(stm, exp), env) = interpExp(exp, interpStm(stm, env))
@@ -122,4 +164,8 @@ and interpPrint ([] : G.exp list, env : table) = (print ("\n"); env)
 				  interpPrint (xs, #2 res))
 			       end
 
-fun interp stm = interpStm (stm, emptyTable)
+
+fun interp stm = 
+  let val res = interpStm (stm, emptyTable) in () end 
+  handle DivisionByZero => print("Not allowed to divide by 0)\n")
+
