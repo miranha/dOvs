@@ -57,7 +57,7 @@ fun interp (s: G.stm): unit =
 val prog =
   (* a := 5+3; b := (print(a,a-1), 10*a); print(b) *)
   G.CompoundStm (
-    G.AssignStm ("a", G.OpExp (G.NumExp 5, G.Plus, G.NumExp 3)),
+    G.AssignStm ("a", G.OpExp (G.NumExp 5, G.Div, G.NumExp 0)),
     G.CompoundStm (
       G.AssignStm ("b", G.EseqExp (
         G.PrintStm [G.IdExp "a", G.OpExp (G.IdExp "a", G.Minus, G.NumExp 1)],
@@ -121,6 +121,8 @@ and maxStm ( G.CompoundStm(lStm, rStm) ) = max[maxStm lStm, maxStm rStm]
 
 (* Here begins the quest to write the interpreter *)
 
+exception DivisionByZero
+
 type table = string -> int option
 val emptyTable : table = fn x => NONE
 fun updateTable (tab : table, key : string, value : int option) 
@@ -142,11 +144,11 @@ and interpExp (G.NumExp(number), env : table) = (SOME number, env)
 		= interpExp(exp1, (#2 res0))
 	in (if (#1 res0 = NONE) orelse (#1 res1 = NONE) then
 		NONE
-	    else SOME (if (opr = G.Plus) then valOf (#1 res0) + valOf (#1 res1)
-		       else if (opr = G.Minus) then valOf (#1 res0) - valOf (#1 res1)
-		       else if (opr = G.Times) then valOf (#1 res0) * valOf (#1 res1)
-		       else valOf (#1 res0) div valOf (#1 res1))
-	   , (#2 res1))
+	    else SOME (case opr of 
+			  G.Plus => valOf (#1 res0) + valOf (#1 res1)
+			| G.Minus => valOf (#1 res0) - valOf (#1 res1)
+			| G.Times => valOf (#1 res0) * valOf (#1 res1)
+			| G.Div => if(valOf (#1 res1)=0) then raise DivisionByZero else valOf (#1 res0) div valOf (#1 res1)),(#2 res1))
 	end
     end
   | interpExp (G.EseqExp(stm, exp), env) = interpExp(exp, interpStm(stm, env))
@@ -161,5 +163,5 @@ and interpPrint ([] : G.exp list, env : table) = (print ("\n"); env)
 			       end
 
 fun interp stm = 
-  let val res = interpStm (stm, emptyTable) in () end
-
+  let val res = interpStm (stm, emptyTable) in () end 
+  handle DivisionByZero => print("Not allowed to divide by 0)\n")
