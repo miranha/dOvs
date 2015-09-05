@@ -57,7 +57,7 @@ fun interp (s: G.stm): unit =
 val prog =
   (* a := 5+3; b := (print(a,a-1), 10*a); print(b) *)
   G.CompoundStm (
-    G.AssignStm ("a", G.OpExp (G.NumExp 5, G.Div, G.NumExp 0)),
+    G.AssignStm ("a", G.OpExp (G.NumExp 5, G.Plus, G.NumExp 3)),
     G.CompoundStm (
       G.AssignStm ("b", G.EseqExp (
         G.PrintStm [G.IdExp "a", G.OpExp (G.IdExp "a", G.Minus, G.NumExp 1)],
@@ -101,8 +101,18 @@ val prog5 =
 		G.AssignStm("A", G.EseqExp(G.PrintStm[G.IdExp "D"],G.NumExp 3))
 	)
     )
+(*Test nested prints
+Source: a:=3; print(a+1,(print(a+3), a*4)); print(4/2); 
+Expected output: 4 6 /n 12 /n 2*)
 
-
+val prog6 = 
+    G.CompoundStm(
+	G.AssignStm("a", G.NumExp 3), (*1st stm*)
+	G.CompoundStm(
+	    G.PrintStm[G.OpExp(G.IdExp "a", G.Plus, G.NumExp 1), 
+		      G.EseqExp(G.PrintStm[G.OpExp(G.IdExp "a",G.Plus, G.NumExp 3)],
+			       G.OpExp(G.IdExp "a", G.Times, G.NumExp 4))], (* 2nd stm *)
+	    G.PrintStm[G.OpExp(G.NumExp 4, G.Div, G.NumExp 2)]))
 (* ... *)
 
 (* Calling the interpreter on the example program. Uncomment to proceed
@@ -112,6 +122,7 @@ val prog5 =
 
 exception SyntaxError
 
+(* The max arguments function *)
 fun maxExp ( G.NumExp(number) ) = 0
   | maxExp ( G.IdExp(id) ) = 0
   | maxExp ( G.OpExp(lExp,_,rExp) ) = max[maxExp lExp, maxExp rExp]
@@ -120,6 +131,7 @@ and maxStm ( G.CompoundStm(lStm, rStm) ) = max[maxStm lStm, maxStm rStm]
   | maxStm ( G.AssignStm( _, exp) ) = maxExp(exp)
   | maxStm ( G.PrintStm( list ) ) = max(length list::applyFunToList maxExp list)
 
+val maxArgs = maxStm
 
 (* Here begins the quest to write the interpreter *)
 
@@ -167,5 +179,5 @@ and interpPrint ([] : G.exp list, env : table) = (print ("\n"); env)
 
 fun interp stm = 
   let val res = interpStm (stm, emptyTable) in () end 
-  handle DivisionByZero => print("Not allowed to divide by 0)\n")
+  handle DivisionByZero => print("Not allowed to divide by 0\n")
 
