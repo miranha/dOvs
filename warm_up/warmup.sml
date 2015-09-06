@@ -163,7 +163,7 @@ and interpExp (G.NumExp(number), env : table) = (SOME number, env)
     in
 	case res0 of
 	NONE => raise unAssignedIdentifier id
-       |SOME id => (#1 res0)
+       |SOME _ => (res0, env)
     end
 
   | interpExp (G.OpExp(exp0, opr, exp1), env) = 
