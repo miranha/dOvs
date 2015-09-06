@@ -139,8 +139,13 @@ exception DivisionByZero
 
 type table = string -> int option
 val emptyTable : table = fn x => NONE
-fun updateTable (tab : table, key : string, value : int option) 
-  = fn x => if x = key then value else tab key
+(*fun updateTable (tab : table, key : string, value : int option) 
+  = fn x => if x = key then value else tab key*)
+
+    fun updateTable ( t: table, y:string, v:int option) x =
+         if x = y then v
+                  else t x
+
 fun lookUpTable (t : table, key: string) = t key
 
 fun interpStm (G.CompoundStm(stm0, stm1), env : table) : table = 
