@@ -121,7 +121,7 @@ val prog6 =
 (* val _ = interp prog *)
 
 exception SyntaxError
-exception unAssignedIdentifier
+exception unAssignedIdentifier of string
 
 (* The max arguments function *)
 fun maxExp ( G.NumExp(number) ) = 0
@@ -137,7 +137,7 @@ val maxArgs = maxStm
 (* Here begins the quest to write the interpreter *)
 
 exception DivisionByZero
-exception unAssignedIdentifier
+exception unAssignedIdentifier of string
 
 type table = string -> int option
 val emptyTable : table = fn x => NONE
@@ -163,7 +163,7 @@ and interpExp (G.NumExp(number), env : table) = (SOME number, env)
     in
 	case res0 of
 	NONE => raise unAssignedIdentifier id
-       |SOME => res0
+       |SOME id => (#1 res0)
     end
 
   | interpExp (G.OpExp(exp0, opr, exp1), env) = 
@@ -193,6 +193,6 @@ and interpPrint ([] : G.exp list, env : table) = (print ("\n"); env)
 
 fun interp stm = 
   let val res = interpStm (stm, emptyTable) in () end 
-  handle DivisionByZero => print("Not allowed to divide by 0" ^ \n)
-  handle unAssignedIdentifier => print ("Identifier not assigned yet " ^ id ^ \n )
+  handle DivisionByZero => print("Not allowed to divide by 0" ^ "\n")
+  handle unAssignedIdentifier id => print ("Identifier not assigned yet " ^ id ^ "\n" )
 
