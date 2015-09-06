@@ -194,5 +194,5 @@ and interpPrint ([] : G.exp list, env : table) = (print ("\n"); env)
 fun interp stm = 
   let val res = interpStm (stm, emptyTable) in () end 
   handle DivisionByZero => print("Not allowed to divide by 0" ^ "\n")
-  handle unAssignedIdentifier id => print ("Identifier not assigned yet " ^ id ^ "\n" )
+      | unAssignedIdentifier id =>  print ("Identifier not assigned yet " ^ id ^ "\n" )
 
