@@ -30,6 +30,16 @@ Generally the suggestions in the book were followed. Since a \texttt{stm} can be
 
 This is already mentioned challenges in the previous section, maybe we should move it to here?? What do you guys think??
 
+Other notes:
+
+The first major problem we encountered were to ambitious when writing the mutual recursive functions interpStm, interpExp and all of their auxiliary functions.
+
+We simply wrote all of code at once, never checking if what we already had written was sound. Naturally, the SML interpreter complained and threw error messages that filled several terminal screens. Defeated, after about an hour or two of trying to make sense of the errors along with rewriting the code, we decided to throw away the code and start from scratch.
+
+We then build the functions one line at a time, each time checking if the functions as currently written had the correct type. We learned a very useful technique, namely having a catch all base case, something like funct (\_) = NONE, until we had covered all possible cases we were interested in.
+
+This approach, which essentially is Test Driven Development, allowed us to write all the desired functionality in about 2 hours.
+
 \section{Additional statements tested}
 \fbox{5 statements as source code, and as values of type 'stm' plus a description of test including the outcome.}
 
