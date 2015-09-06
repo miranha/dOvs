@@ -62,7 +62,7 @@ val prog =
       G.AssignStm ("b", G.EseqExp (
         G.PrintStm [G.IdExp "a", G.OpExp (G.IdExp "a", G.Minus, G.NumExp 1)],
         G.OpExp (G.NumExp 10, G.Times, G.IdExp "a"))),
-      G.PrintStm [G.IdExp "b"]))
+      G.PrintStm [G.IdExp "a"]))
 
 
 val prog2 = 
@@ -140,7 +140,7 @@ exception DivisionByZero
 type table = string -> int option
 val emptyTable : table = fn x => NONE
 fun updateTable (tab : table, key : string, value : int option) 
-  = fn x => if x = key then value else NONE
+  = fn x => if x = key then value else tab key
 fun lookUpTable (t : table, key: string) = t key
 
 fun interpStm (G.CompoundStm(stm0, stm1), env : table) : table = 
