@@ -121,6 +121,7 @@ val prog6 =
 (* val _ = interp prog *)
 
 exception SyntaxError
+exception unAssignedIdentifier
 
 (* The max arguments function *)
 fun maxExp ( G.NumExp(number) ) = 0
@@ -156,7 +157,14 @@ fun interpStm (G.CompoundStm(stm0, stm1), env : table) : table =
   | interpStm (G.PrintStm (expList), env) = interpPrint(expList, env)
 
 and interpExp (G.NumExp(number), env : table) = (SOME number, env)
-  | interpExp (G.IdExp(id), env) = (lookUpTable(env, id), env)
+  | interpExp (G.IdExp(id), env) = 
+    let val res0 = lookUpTable(env, id)
+    in
+	case res0 of
+	NONE => raise unAssignedIdentifier id
+       |SOME => res0
+    end
+
   | interpExp (G.OpExp(exp0, opr, exp1), env) = 
     let val res0 = interpExp(exp0, env) in 
 	let val res1 
@@ -184,5 +192,6 @@ and interpPrint ([] : G.exp list, env : table) = (print ("\n"); env)
 
 fun interp stm = 
   let val res = interpStm (stm, emptyTable) in () end 
-  handle DivisionByZero => print("Not allowed to divide by 0\n")
+  handle DivisionByZero => print("Not allowed to divide by 0" ^ \n)
+  handle unAssignedIdentifier => print ("Identifier not assigned yet " ^ id ^ \n )
 
