@@ -137,6 +137,7 @@ val maxArgs = maxStm
 (* Here begins the quest to write the interpreter *)
 
 exception DivisionByZero
+exception unAssignedIdentifier
 
 type table = string -> int option
 val emptyTable : table = fn x => NONE
