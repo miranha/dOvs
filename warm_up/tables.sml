@@ -103,3 +103,31 @@ struct
 
     (* Exercise 2 - uncurry all the arguments to updateTable - what goes wrong? *)
 end
+
+structure Table = struct
+(*
+type a = ''a
+type b = 'b
+Table = a * b list
+*)
+fun lookup (x::xs : (''a * 'b) list, key : ''a) : 'b option = 
+  if (#1 x) = key then SOME (#2 x) 
+  else lookup (xs, key)
+  | lookup ([], key) = NONE
+
+(* 
+acc holds all the elements in the list we have seen so far.
+In base case, we have not associated the key to a value, so
+update the table to contain an association between key and value.
+
+otherwise, we replace the previous pair (key, oldValue) with the
+new pair (key, value)
+*)
+fun updateAux ([], key , value) acc = (key, value) :: acc 
+  | updateAux (x::xs, key, value) acc = if (#1 x) = key then
+					acc @ [(key, value)] @ xs
+				    else updateAux (xs, key, value) acc @ [x]
+
+fun update (t, key, value) = updateAux (t, key, value) []
+val emptyTable : (''a * 'b) list = []
+end
