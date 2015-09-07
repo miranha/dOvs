@@ -140,6 +140,33 @@ fun interp (s: G.stm): unit =
     in printEnv env'
     end
 
+(* Here are the test cases from the Report *)
+
+(*
+
+Test cases:
+
+1) Test1: a:=1; b:= a+2; print(a*b)
+We test for the assign statement, assign right values, NumExp, print statement
+
+
+2) Test((3-5)/2); print(a);
+Execution order. Id not found
+
+
+3) Test3 (Prog6): Execution orde, test Eseq, nested print
+
+
+4) Test4: a:=0; print(a); Print(2/a); Print(2+a);
+Execution order, Division by 0
+
+
+5) Test5: a:=2; print(a) ; a:= 4; Print(a);
+Test reassignment of the same value
+
+*)
+
+
 (* ----- Example for testing ----- *)
 
 val prog =
