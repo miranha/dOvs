@@ -196,3 +196,13 @@ fun interp stm =
   handle DivisionByZero => print("Not allowed to divide by 0" ^ "\n")
       | unAssignedIdentifier id =>  print ("Identifier not assigned yet " ^ id ^ "\n" )
 
+val binPrg1 = G.PrintStm([
+	G.OpExp(
+	    G.NumExp(4),G.Minus,
+	    G.OpExp(G.NumExp(3),G.Minus,G.NumExp(5))
+	)])
+val binPrg2 = G.PrintStm([
+	G.OpExp(
+	    G.OpExp(G.NumExp 4,G.Minus,G.NumExp 3),
+	    G.Minus,G.NumExp 5)
+])
