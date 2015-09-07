@@ -132,14 +132,14 @@ fun interpStm _   = raise NotImplemented
 fun printEnv _    = raise NotImplemented
 *)
 (* ... *)
-
+(*
 fun interp (s: G.stm): unit =
     let val _ = print ("Executing: " ^ (stringOfStm s) ^ "\n")
         val env = buildEnv s
         val env' = interpStm (s, env)
     in printEnv env'
     end
-
+*)
 (* Here are the test cases from the Report *)
 
 (*
@@ -148,23 +148,64 @@ Test cases:
 
 1) Test1: a:=1; b:= a+2; print(a*b)
 We test for the assign statement, assign right values, NumExp, print statement
+*)
 
+val test1 = G.CompoundStm(
+	G.AssignStm("a",G.NumExp 1),
+	G.CompoundStm(
+	    G.AssignStm("b", G.OpExp(G.IdExp "a", G.Plus, G.NumExp 2)),
+	    G.PrintStm[G.OpExp(G.IdExp "a", G.Times, G.IdExp "b")]))
 
+(*
 2) Test((3-5)/2); print(a);
 Execution order. Id not found
 
 
 3) Test3 (Prog6): Execution orde, test Eseq, nested print
+*)
+(*Test nested prints
+Source: a:=3; print((print(a+3), a*4)); print(4/2); 
+Expected output: 6 /n 12 /n 2*)
+
+val test3 = 
+    G.CompoundStm(
+	G.AssignStm("a", G.NumExp 3), (*1st stm*)
+	G.CompoundStm(
+	    G.PrintStm[ 
+		      G.EseqExp(G.PrintStm[G.OpExp(G.IdExp "a",G.Plus, G.NumExp 3)],
+			       G.OpExp(G.IdExp "a", G.Times, G.NumExp 4))], (* 2nd stm *)
+	    G.PrintStm[G.OpExp(G.NumExp 4, G.Div, G.NumExp 2)]))
+
+(*
 
 
 4) Test4: a:=0; print(a); Print(2/a); Print(2+a);
 Execution order, Division by 0
 
+*)
+
+val test4 = G.CompoundStm(
+	G.AssignStm("a", G.NumExp 0),
+	G.CompoundStm(
+	    G.PrintStm[G.IdExp "a"],
+	    G.CompoundStm(
+		G.PrintStm[G.OpExp(G.NumExp 2, G.Div, G.IdExp "a")],
+		G.PrintStm[G.OpExp(G.NumExp 2, G.Minus, G.NumExp 1)])))
+
+
+(*
 
 5) Test5: a:=2; print(a) ; a:= 4; Print(a);
 Test reassignment of the same value
-
 *)
+
+val test5 = G.CompoundStm(
+	G.AssignStm("a", G.NumExp 2),
+	G.CompoundStm(
+	    G.PrintStm[G.IdExp "a"],
+	    G.CompoundStm(
+		G.AssignStm("a", G.NumExp 4),
+		G.PrintStm[G.IdExp "a"])))
 
 
 (* ----- Example for testing ----- *)
@@ -216,18 +257,7 @@ val prog5 =
 		G.AssignStm("A", G.EseqExp(G.PrintStm[G.IdExp "D"],G.NumExp 3))
 	)
     )
-(*Test nested prints
-Source: a:=3; print(a+1,(print(a+3), a*4)); print(4/2); 
-Expected output: 4 6 /n 12 /n 2*)
 
-val prog6 = 
-    G.CompoundStm(
-	G.AssignStm("a", G.NumExp 3), (*1st stm*)
-	G.CompoundStm(
-	    G.PrintStm[G.OpExp(G.IdExp "a", G.Plus, G.NumExp 1), 
-		      G.EseqExp(G.PrintStm[G.OpExp(G.IdExp "a",G.Plus, G.NumExp 3)],
-			       G.OpExp(G.IdExp "a", G.Times, G.NumExp 4))], (* 2nd stm *)
-	    G.PrintStm[G.OpExp(G.NumExp 4, G.Div, G.NumExp 2)]))
 (* ... *)
 
 (* Calling the interpreter on the example program. Uncomment to proceed
