@@ -1,16 +1,3 @@
-(* First part is a collection of helper functions *)
-
-(* maxAux keeps track of the current encoutered max value while traversing the list.
-max peels of the head of a list, sets as current max value, then let maxAux traverse the list*)
-fun maxAux [] curMax = curMax
-  | maxAux (x::xs) curMax = maxAux xs (if curMax > x then curMax else x)
-
-fun max [] = 0
-  | max(x::xs) = maxAux xs x
-
-fun applyFunToList f [] = []
-  | applyFunToList f (x::xs) = f x :: applyFunToList f xs
-
 (* Define the grammar of the Straight Line Language *)
 
 structure SLgrammar =
@@ -32,17 +19,118 @@ end
 
 structure G = SLgrammar
 
+
+
+(* First part is a collection of helper functions *)
+
+(* maxAux keeps track of the current encoutered max value while traversing the list.
+max peels of the head of a list, sets as current max value, then let maxAux traverse the list*)
+fun maxAux [] curMax = curMax
+  | maxAux (x::xs) curMax = maxAux xs (if curMax > x then curMax else x)
+
+fun max [] = 0
+  | max(x::xs) = maxAux xs x
+
+fun applyFunToList f [] = []
+  | applyFunToList f (x::xs) = f x :: applyFunToList f xs
+
 (* ... *)
 
-(* placeholder definitions for not implemented functions *)
+(* The max arguments function *)
+fun maxExp ( G.NumExp(number) ) = 0
+  | maxExp ( G.IdExp(id) ) = 0
+  | maxExp ( G.OpExp(lExp,_,rExp) ) = max[maxExp lExp, maxExp rExp]
+  | maxExp ( G.EseqExp (stm, exp) ) = max[maxStm stm, maxExp exp]
+and maxStm ( G.CompoundStm(lStm, rStm) ) = max[maxStm lStm, maxStm rStm]
+  | maxStm ( G.AssignStm( _, exp) ) = maxExp(exp)
+  | maxStm ( G.PrintStm( list ) ) = max(length list::applyFunToList maxExp list)
 
+val maxArgs = maxStm
+
+
+(* --- Interpreter of statements ---*)
+(* Here we have all the code needed to handle the function
+interp 
+*)
+exception DivisionByZero
+exception unAssignedIdentifier of string
+
+type table = string -> int option
+val emptyTable : table = fn x => NONE
+(*fun updateTable (tab : table, key : string, value : int option) 
+  = fn x => if x = key then value else tab key*)
+
+    fun updateTable ( t: table, y:string, v:int option) x =
+         if x = y then v
+                  else t x
+
+fun lookUpTable (t : table, key: string) = t key
+
+fun interpStm (G.CompoundStm(stm0, stm1), env : table) : table = 
+  interpStm(stm1, interpStm(stm0, env))
+
+  | interpStm (G.AssignStm(id, exp), env) =
+    let val res = interpExp(exp, env) in
+	updateTable(#2 res, id, #1 res) end
+
+  | interpStm (G.PrintStm (expList), env) = interpPrint(expList, env)
+
+and interpExp (G.NumExp(number), env : table) = (SOME number, env)
+
+  | interpExp (G.IdExp(id), env) = 
+    let val res0 = lookUpTable(env, id)
+    in
+	case res0 of
+	NONE => raise unAssignedIdentifier id
+       |SOME _ => (res0, env)
+    end
+
+  | interpExp (G.OpExp(exp0, opr, exp1), env) = 
+    let val (iOpt1, env1) = interpExp(exp0, env)
+	val (iOpt2, env2) = interpExp(exp1, env1)
+    in (if (iOpt1 = NONE) orelse (iOpt2 = NONE) then
+	    NONE
+	else 
+	    SOME ( let val lInt = valOf iOpt1
+		       val rInt = valOf iOpt2 in
+		       (* We know that iOpt's are some *)
+		       case opr of 
+			   G.Plus => lInt + rInt
+			 | G.Minus => lInt -rInt
+			 | G.Times => lInt * rInt
+			 | G.Div => if(rInt = 0) 
+				    then raise DivisionByZero 
+				    else lInt div rInt
+		   end
+		 ),env2)
+    end
+
+  | interpExp (G.EseqExp(stm, exp), env) = interpExp(exp, interpStm(stm, env))
+
+and interpPrint ([] : G.exp list, env : table) = (print ("\n"); env)
+  | interpPrint (x::xs, env) = let val res = interpExp(x, env)
+			       in (print (if #1 res = NONE 
+					 then "error" 
+					  else Int.toString( 
+						  valOf( #1 res)) ^ " ");
+				  interpPrint (xs, #2 res))
+			       end
+
+
+fun interp stm = 
+  let val res = interpStm (stm, emptyTable) in () end 
+  handle DivisionByZero => print("Not allowed to divide by 0" ^ "\n")
+      | unAssignedIdentifier id =>  print ("Identifier not assigned yet " ^ id ^ "\n" )
+
+(* placeholder definitions for not implemented functions *)
+(*
 exception NotImplemented
 
 fun stringOfStm _ = raise NotImplemented
 fun buildEnv _    = raise NotImplemented
 fun interpStm _   = raise NotImplemented
 fun printEnv _    = raise NotImplemented
-
+*)
 (* ... *)
 
 fun interp (s: G.stm): unit =
@@ -62,7 +150,7 @@ val prog =
       G.AssignStm ("b", G.EseqExp (
         G.PrintStm [G.IdExp "a", G.OpExp (G.IdExp "a", G.Minus, G.NumExp 1)],
         G.OpExp (G.NumExp 10, G.Times, G.IdExp "a"))),
-      G.PrintStm [G.IdExp "a"]))
+      G.PrintStm [G.IdExp "b"]))
 
 
 val prog2 = 
@@ -123,76 +211,9 @@ val prog6 =
 exception SyntaxError
 exception unAssignedIdentifier of string
 
-(* The max arguments function *)
-fun maxExp ( G.NumExp(number) ) = 0
-  | maxExp ( G.IdExp(id) ) = 0
-  | maxExp ( G.OpExp(lExp,_,rExp) ) = max[maxExp lExp, maxExp rExp]
-  | maxExp ( G.EseqExp (stm, exp) ) = max[maxStm stm, maxExp exp]
-and maxStm ( G.CompoundStm(lStm, rStm) ) = max[maxStm lStm, maxStm rStm]
-  | maxStm ( G.AssignStm( _, exp) ) = maxExp(exp)
-  | maxStm ( G.PrintStm( list ) ) = max(length list::applyFunToList maxExp list)
 
-val maxArgs = maxStm
 
 (* Here begins the quest to write the interpreter *)
 
-exception DivisionByZero
-exception unAssignedIdentifier of string
 
-type table = string -> int option
-val emptyTable : table = fn x => NONE
-(*fun updateTable (tab : table, key : string, value : int option) 
-  = fn x => if x = key then value else tab key*)
-
-    fun updateTable ( t: table, y:string, v:int option) x =
-         if x = y then v
-                  else t x
-
-fun lookUpTable (t : table, key: string) = t key
-
-fun interpStm (G.CompoundStm(stm0, stm1), env : table) : table = 
-  interpStm(stm1, interpStm(stm0, env))
-  | interpStm (G.AssignStm(id, exp), env) =
-    let val res = interpExp(exp, env) in
-	updateTable(#2 res, id, #1 res) end
-  | interpStm (G.PrintStm (expList), env) = interpPrint(expList, env)
-
-and interpExp (G.NumExp(number), env : table) = (SOME number, env)
-  | interpExp (G.IdExp(id), env) = 
-    let val res0 = lookUpTable(env, id)
-    in
-	case res0 of
-	NONE => raise unAssignedIdentifier id
-       |SOME _ => (res0, env)
-    end
-
-  | interpExp (G.OpExp(exp0, opr, exp1), env) = 
-    let val res0 = interpExp(exp0, env) in 
-	let val res1 
-		= interpExp(exp1, (#2 res0))
-	in (if (#1 res0 = NONE) orelse (#1 res1 = NONE) then
-		NONE
-	    else SOME (case opr of 
-			  G.Plus => valOf (#1 res0) + valOf (#1 res1)
-			| G.Minus => valOf (#1 res0) - valOf (#1 res1)
-			| G.Times => valOf (#1 res0) * valOf (#1 res1)
-			| G.Div => if(valOf (#1 res1)=0) then raise DivisionByZero else valOf (#1 res0) div valOf (#1 res1)),(#2 res1))
-	end
-    end
-  | interpExp (G.EseqExp(stm, exp), env) = interpExp(exp, interpStm(stm, env))
-
-and interpPrint ([] : G.exp list, env : table) = (print ("\n"); env)
-  | interpPrint (x::xs, env) = let val res = interpExp(x, env)
-			       in (print (if #1 res = NONE 
-					 then "error" 
-					  else Int.toString( 
-						  valOf( #1 res)) ^ " ");
-				  interpPrint (xs, #2 res))
-			       end
-
-
-fun interp stm = 
-  let val res = interpStm (stm, emptyTable) in () end 
-  handle DivisionByZero => print("Not allowed to divide by 0" ^ "\n")
-      | unAssignedIdentifier id =>  print ("Identifier not assigned yet " ^ id ^ "\n" )
 
