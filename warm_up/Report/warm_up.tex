@@ -15,30 +15,27 @@
 
 This report describes the approach in order to develop a straight line interpreter. Additionally, it provides an overview of problems encountered and intersting experiments during development process. Finally, five test expressions are interpreted and shown.
 
+In order to develop the straight line interpreter the group members met physically in order to both unterstand the problem, and furthermore outline and discuss the solutions.
 
-%\section{How did we make the interpreter}
-\section{Development process and collaboration}
+\section{How did we make the interpreter}
+%\section{Development process and collaboration}
 \fbox{You should not write how you wrote the interpreter, but why you wrote it that way}
-The group members met physically in order to both unterstand the problem and furthermore outline and discuss the solutions.
 
-During the development different parts raised different challenges. \fbox{Describe the challenges here}. After the main functionality of the interpreter was woking correctly, different experiments led to the improvement of different special cases. For example, the two exceptions \texttt{DivisionByZero} and \texttt{IdExpNotFound}. Both can be interpreted with valid syntax, but can not be interpreted to valid values. Hence they had to be handled. The syntax is ensured by the \textbf{datatype}s \texttt{stm} and \texttt{exp}. Hence if a \texttt{stm} uses non valid constructs the SML interpreter will give an error.
+Basically the interpreter is developed as two mutual functions; one in order to interpreter a statement, and one for interpreting an expression. This was a natural choice as a consequence of the two \textbf{datatype}s \texttt{stm} and \texttt{exp} that had to be interpreted. Generally the suggestions in the book were followed. Since a \texttt{stm} can be viewed as having a TREE structure as described in the book, it was naturally to use mutual recursive functions in order to interpret an expression, such as \texttt{prog} from the book. 
 
-Generally the suggestions in the book were followed. Since a \texttt{stm} can be viewed as having a TREE structure as described in the book, it was naturally to use mutual recursive functions in order to interpret an expression, such as \texttt{prog} from the book. In the end different parts of the code were refactored in order to make them more readable and use more fitting SML syntax. As an example \texttt{if} expressions were change to use pattern matching in relevant places. 
++%In the end different parts of the code were refactored in order to make them more readable and use more fitting SML syntax. As an example \texttt{if} expressions were change to use pattern matching in relevant places. 
+
 
 \section{Problems experienced}
 \fbox{If you encountered any problems describe how you solved them}
 
-This is already mentioned challenges in the previous section, maybe we should move it to here?? What do you guys think??
+During the development different parts raised different challenges. In the beginning time was spent in order to learn the needed parts of SML. In the start phase of writing the interpreter some of the errors from the compiler did not make sense, so we used print for debugging. When the first parts of the code where written, the SML interpreter complained and threw error messages that filled several terminal screens. Defeated, after about an hour or two of trying to make sense of the errors along with rewriting the code, we decided to throw away the code and start from scratch.
 
-Other notes:
+We then build the functions one line at a time, each time checking if the functions as currently written had the correct type. We learned a very useful technique, namely having a catch all base case, something like funct (\_) = NONE, until we had covered all possible cases we were interested in. This approach, which essentially is Test Driven Development, it helped us to to write all the desired functionality.
 
-The first major problem we encountered were to ambitious when writing the mutual recursive functions interpStm, interpExp and all of their auxiliary functions.
+After the main functionality of the interpreter was woking correctly, different experiments led to the improvement of different special cases. For example, the two exceptions \texttt{DivisionByZero} and \texttt{IdExpNotFound}. Both can be interpreted with valid syntax, but can not be interpreted to valid values. Hence they had to be handled. The syntax is ensured by the \textbf{datatype}s \texttt{stm} and \texttt{exp}. Hence if a \texttt{stm} uses non valid constructs the SML interpreter will give an error.
 
-We simply wrote all of code at once, never checking if what we already had written was sound. Naturally, the SML interpreter complained and threw error messages that filled several terminal screens. Defeated, after about an hour or two of trying to make sense of the errors along with rewriting the code, we decided to throw away the code and start from scratch.
 
-We then build the functions one line at a time, each time checking if the functions as currently written had the correct type. We learned a very useful technique, namely having a catch all base case, something like funct (\_) = NONE, until we had covered all possible cases we were interested in.
-
-This approach, which essentially is Test Driven Development, allowed us to write all the desired functionality in about 2 hours.
 
 \section{Additional statements tested}
 \fbox{5 statements as source code, and as values of type 'stm' plus a description of test including the outcome.}
