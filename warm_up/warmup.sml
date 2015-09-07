@@ -117,6 +117,9 @@ and buildEnvAux2 (G.NumExp(_), env) = env
     buildEnvAux2 (exp, buildEnvAux(stm,env))
 
 fun buildEnv (stm) : (G.id * int option) list = buildEnvAux(stm,[])
+
+
+(* ------------------------------------------------ *)
 (* Here we write the functions interStm and interpExp, along
 with various helper functions *)
 
