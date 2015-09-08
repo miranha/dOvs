@@ -229,10 +229,11 @@ Execution order. Id not found
 *)
 
 val test2 = G.CompoundStm(
-	G.PrintStm[G.OpExp(G.OpExp(G.NumExp, G.Minus, G.NumExp),G.Div, G.NumExp)],
-	G.PrintStm[IdExp "a"])
+	G.PrintStm[G.OpExp(G.OpExp(G.NumExp 3, G.Minus, G.NumExp 5),G.Div, G.NumExp 2)],
+	G.PrintStm[G.IdExp "a"])
 
-3) Test3 (Prog6): Execution orde, test Eseq, nested print
+
+(*3) Test3 (Prog6): Execution orde, test Eseq, nested print*)
 
 (*Test nested prints
 Source: a:=3; print((print(a+3), a*4)); print(4/2); 
@@ -280,7 +281,7 @@ val test5 = G.CompoundStm(
 
 
 (* ----- Example for testing ----- *)
-*)
+
 val prog =
   (* a := 5+3; b := (print(a,a-1), 10*a); print(b) *)
   G.CompoundStm (
