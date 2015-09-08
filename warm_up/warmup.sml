@@ -52,6 +52,8 @@ val maxArgs = maxStm
 (* Here we have all the code needed to handle the function
 interp 
 *)
+
+(* Some code to give exeptions, other to handle table *)
 exception DivisionByZero
 exception unAssignedIdentifier of string
 
@@ -60,25 +62,84 @@ val emptyTable : table = fn x => NONE
 (*fun updateTable (tab : table, key : string, value : int option) 
   = fn x => if x = key then value else tab key*)
 
-    fun updateTable ( t: table, y:string, v:int option) x =
-         if x = y then v
-                  else t x
+fun updateTable ( t: table, y:string, v:int option) x =
+  if x = y then v
+  else t x
 
-fun lookUpTable (t : table, key: string) = t key
+fun lookupTable (t : table, key: string) = t key
+
+fun lookupTable' ((x,y)::xs , key)  = 
+  if x = key then y
+  else lookupTable' (xs, key)
+  | lookupTable' ([], key) = NONE
+
+
+fun updateAux ([], key , value) acc = (key, value) :: acc 
+  (* found nothing in list, add pair to list *)
+  | updateAux ((x,y)::xs, key, value) acc
+    = if x = key then
+	  acc @ [(key, value)] @ xs
+      else updateAux (xs, key, value) acc @ [(x,y)]
+
+fun updateTable' (t, key, value) = updateAux (t, key, value) []
+val emptyTable' = []
+
+(* Here, we start the build env function 
+---
+Only an assign statement gives rise to a valid new id. Uassigned id's
+are an error handled at runtime
+*)
+
+(* Handle arguments type expression*)
+fun buildEnvAux (G.CompoundStm(stm1,stm2), env) =
+  buildEnvAux (stm2, buildEnvAux(stm1, env))
+
+  (*We do not assign value to things *)
+  | buildEnvAux (G.AssignStm(id,exp), env) = 
+    let val env' = buildEnvAux2(exp, env) 
+    in updateTable'(env',id,NONE)
+    end
+
+  | buildEnvAux (G.PrintStm(x::xs), env) 
+    = buildEnvAux(G.PrintStm(xs), buildEnvAux2 (x, env))
+
+  | buildEnvAux (G.PrintStm([]), env) = env
+
+(* Handle arguments of type expression *)
+and buildEnvAux2 (G.NumExp(_), env) = env 
+
+  | buildEnvAux2 (G.IdExp(_), env) = env
+
+  | buildEnvAux2 (G.OpExp(exp1,_,exp2), env) = 
+    buildEnvAux2 (exp2, buildEnvAux2(exp1,env))
+
+  | buildEnvAux2 (G.EseqExp(stm,exp), env) = 
+    buildEnvAux2 (exp, buildEnvAux(stm,env))
+
+fun buildEnv (stm) : (G.id * int option) list = buildEnvAux(stm,[])
+
+
+(* ------------------------------------------------ *)
+(* Here we write the functions interStm and interpExp, along
+with various helper functions *)
+
+fun printIntOpList ([], string) = print(string ^ "\n")
+  | printIntOpList (x::xs, string) = 
+    printIntOpList (xs, string ^ " " ^ Int.toString (valOf x))
 
 fun interpStm (G.CompoundStm(stm0, stm1), env : table) : table = 
   interpStm(stm1, interpStm(stm0, env))
 
   | interpStm (G.AssignStm(id, exp), env) =
-    let val res = interpExp(exp, env) in
-	updateTable(#2 res, id, #1 res) end
+    let val (value, env') = interpExp(exp, env) in
+	updateTable(env', id, value) end
 
   | interpStm (G.PrintStm (expList), env) = interpPrint(expList, env)
 
-and interpExp (G.NumExp(number), env : table) = (SOME number, env)
+and interpExp (G.NumExp(number), env) = (SOME number, env)
 
   | interpExp (G.IdExp(id), env) = 
-    let val res0 = lookUpTable(env, id)
+    let val res0 = lookupTable(env, id)
     in
 	case res0 of
 	NONE => raise unAssignedIdentifier id
@@ -107,20 +168,23 @@ and interpExp (G.NumExp(number), env : table) = (SOME number, env)
 
   | interpExp (G.EseqExp(stm, exp), env) = interpExp(exp, interpStm(stm, env))
 
-and interpPrint ([] : G.exp list, env : table) = (print ("\n"); env)
-  | interpPrint (x::xs, env) = let val res = interpExp(x, env)
-			       in (print (if #1 res = NONE 
-					 then "error" 
-					  else Int.toString( 
-						  valOf( #1 res)) ^ " ");
-				  interpPrint (xs, #2 res))
-			       end
+and expListToInt ([], acc, env) = (acc,env)
+  |  expListToInt ((x::xs), acc, env) = 
+    let val (i, env') = interpExp(x, env) in
+	expListToInt (xs, acc @ [i], env')
+    end
 
+and interpPrint (list, env) = let val (intList, env') 
+				      = expListToInt(list,[],env)
+				  val res = printIntOpList (intList, "")
+			      in env'
+			      end
+			      
 
 fun interp stm = 
   let val res = interpStm (stm, emptyTable) in () end 
   handle DivisionByZero => print("Not allowed to divide by 0" ^ "\n")
-      | unAssignedIdentifier id =>  print ("Identifier not assigned yet " ^ id ^ "\n" )
+      | unAssignedIdentifier id =>  print ("Identifier " ^ id ^ " not yet assigned \n" )
 
 (* placeholder definitions for not implemented functions *)
 (*
@@ -209,7 +273,7 @@ val test5 = G.CompoundStm(
 
 
 (* ----- Example for testing ----- *)
-
+*)
 val prog =
   (* a := 5+3; b := (print(a,a-1), 10*a); print(b) *)
   G.CompoundStm (
