@@ -215,29 +215,36 @@ We test for the assign statement, assign right values, NumExp, print statement
 *)
 
 val test1 = G.CompoundStm(
-	G.AssignStm("a",G.NumExp 1),
+	G.AssignStm("a",G.NumExp 2),
 	G.CompoundStm(
 	    G.AssignStm("b", G.OpExp(G.IdExp "a", G.Plus, G.NumExp 2)),
-	    G.PrintStm[G.OpExp(G.IdExp "a", G.Times, G.IdExp "b")]))
+	    G.PrintStm[G.OpExp(G.IdExp "b", G.Plus, G.IdExp "a"),
+	    			G.OpExp(G.IdExp "b", G.Minus, G.IdExp "a"),
+	    			G.OpExp(G.IdExp "b", G.Times, G.IdExp "a"),
+	    			G.OpExp(G.IdExp "b", G.Div, G.IdExp "a")]))
 
 (*
 2) Test((3-5)/2); print(a);
 Execution order. Id not found
+*)
 
+val test2 = G.CompoundStm(
+	G.PrintStm[G.OpExp(G.OpExp(G.NumExp, G.Minus, G.NumExp),G.Div, G.NumExp)],
+	G.PrintStm[IdExp "a"])
 
 3) Test3 (Prog6): Execution orde, test Eseq, nested print
-*)
+
 (*Test nested prints
 Source: a:=3; print((print(a+3), a*4)); print(4/2); 
 Expected output: 6 /n 12 /n 2*)
 
 val test3 = 
     G.CompoundStm(
-	G.AssignStm("a", G.NumExp 3), (*1st stm*)
+	G.AssignStm("a", G.NumExp 3),
 	G.CompoundStm(
-	    G.PrintStm[ 
+	    G.PrintStm[G.OpExp(G.IdExp "a", G.Plus, G.NumExp 1), 
 		      G.EseqExp(G.PrintStm[G.OpExp(G.IdExp "a",G.Plus, G.NumExp 3)],
-			       G.OpExp(G.IdExp "a", G.Times, G.NumExp 4))], (* 2nd stm *)
+			       G.OpExp(G.IdExp "a", G.Times, G.NumExp 4))],
 	    G.PrintStm[G.OpExp(G.NumExp 4, G.Div, G.NumExp 2)]))
 
 (*
