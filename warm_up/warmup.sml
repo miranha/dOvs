@@ -53,6 +53,19 @@ val maxArgs = maxStm
 interp 
 *)
 
+fun map_operator(G.Plus) = "+" 
+  | map_operator (G.Minus) = "-"
+  | map_operator (G.Div) = "/"
+  | map_operator (G.Times) = "*"   
+
+fun expToString (G.NumExp(number)) = Int.toString(number)
+  | expToString (G.IdExp(id)) = id
+  | expToString (G.OpExp(lExp,operator,rExp))= "(" ^ expToString(lExp) ^ map_operator operator ^ expToString(rExp) ^ ")" 
+  | expToString (G.EseqExp(stm,exp)) = "(" ^ stmToString(stm) ^ ","  ^ expToString(exp) ^ ")"
+and stmToString (G.CompoundStm(lStm, rStm)) = stmToString(lStm) ^ ";" ^ stmToString(rStm)
+  | stmToString (G.AssignStm(id,exp)) = id ^ ":=" ^ expToString(exp)
+  | stmToString (G.PrintStm(list)) = "print(" ^ String.concatWith "," (map expToString list) ^ ")" 
+
 (* Some code to give exeptions, other to handle table *)
 exception DivisionByZero
 exception unAssignedIdentifier of string
