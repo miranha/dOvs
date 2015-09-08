@@ -1,5 +1,6 @@
 \documentclass[a4paper]{article}
 \usepackage[margin=1in]{geometry}
+\usepackage{listings}
 \title{dOvs - warmup project}
 \author{
   Group 9 \\
@@ -39,6 +40,104 @@ After the main functionality of the interpreter was woking correctly, different 
 
 \section{Additional statements tested}
 \fbox{5 statements as source code, and as values of type 'stm' plus a description of test including the outcome.}
+
+This section presents five test expressions for the interpreter. It shows source code, the actual type 'stm' and the outcome. All test have been successful, so the outcome matches the expected outcome. 
+
+
+
+\subsection{Test 1}
+\begin{lstlisting}
+source code: a:=2; b:= a+2; print(b+a,b-a,b*a,b/a)
+
+val test1 = G.CompoundStm(
+	G.AssignStm("a",G.NumExp 2),
+	G.CompoundStm(
+	    G.AssignStm("b", G.OpExp(G.IdExp "a", G.Plus, G.NumExp 2)),
+	    G.PrintStm[G.OpExp(G.IdExp "b", G.Plus, G.IdExp "a"),
+	    			G.OpExp(G.IdExp "b", G.Minus, G.IdExp "a"),
+	    			G.OpExp(G.IdExp "b", G.Times, G.IdExp "a"),
+	    			G.OpExp(G.IdExp "b", G.Div, G.IdExp "a")]))
+
+Description: Test the assign statment, and that the id's are stored correctly.
+		It also test the 4 different operations, 
+		and the print of the expression list at the same line.
+
+Outcome: 6 2 8 2
+\end{lstlisting}
+
+\subsection{Test 2}
+\begin{lstlisting}
+source code: print((3-5)/2); print(a);
+
+val test2 = G.CompoundStm(
+	G.PrintStm[G.OpExp(G.OpExp(G.NumExp, G.Minus, G.NumExp),G.Div, G.NumExp)],
+	G.PrintStm[IdExp "a"])
+
+Description: Test order of the operations. Test that the ID is not
+		found error. Also execution order is tested, since the first 
+		print should be printed.
+
+Outcome: -1 (--newline--) Error: Using unassigned variable: a
+\end{lstlisting}
+
+\subsection{Test 3}
+\begin{lstlisting}
+source code: a:=3; print((print(a+3), a*4)); print(4/2);
+
+val test3 = 
+    G.CompoundStm(
+	G.AssignStm("a", G.NumExp 3),
+	G.CompoundStm(
+	    G.PrintStm[G.OpExp(G.IdExp "a", G.Plus, G.NumExp 1), 
+		      G.EseqExp(G.PrintStm[G.OpExp(G.IdExp "a",G.Plus, G.NumExp 3)],
+			       G.OpExp(G.IdExp "a", G.Times, G.NumExp 4))],
+	    G.PrintStm[G.OpExp(G.NumExp 4, G.Div, G.NumExp 2)]))
+
+Description: Tests the EseqExp. Furthermore, it tests the nested print.
+	It also tests the execution order of the nested print. The interpreter
+	evaluates all values of a print statement, before we print the values,
+	so print-by-value version. 
+
+Outcome: 6 (--newline--) 4 12 (--newline--) 2
+\end{lstlisting}
+
+\subsection{Test 4}
+\begin{lstlisting}
+source code: Test4: a:=0; print(a); Print(2/a); Print(2+a);
+
+val test4 = G.CompoundStm(
+	G.AssignStm("a", G.NumExp 0),
+	G.CompoundStm(
+	    G.PrintStm[G.IdExp "a"],
+	    G.CompoundStm(
+		G.PrintStm[G.OpExp(G.NumExp 2, G.Div, G.IdExp "a")],
+		G.PrintStm[G.OpExp(G.NumExp 2, G.Minus, G.NumExp 1)])))
+
+Description: Test for division by zero error. Also execution order is
+		tested, since we do not expect to see the last print output.
+
+Outcome: 0 (--newline--) Error: Division by zero not allowed
+\end{lstlisting}
+
+\subsection{Test 5}
+\begin{lstlisting}
+source code: a:=2; print(a) ; a:= 4; Print(a);
+
+val test5 = G.CompoundStm(
+	G.AssignStm("a", G.NumExp 2),
+	G.CompoundStm(
+	    G.PrintStm[G.IdExp "a"],
+	    G.CompoundStm(
+		G.AssignStm("a", G.NumExp 4),
+		G.PrintStm[G.IdExp "a"])))
+
+Description: Tests the reassignment of the same value. Hence it tests
+		the update and lookup of id's functionality.
+
+Outcome: 2 (--newline--) 4
+\end{lstlisting}
+
+
 
 \section{Conclusion}
 This report described the development process of the straight line interpreter. This project was used as a ``warum up'' project for both learning programming in SML and general principles of interpreting a language. Both aspects provide valuable lessons in order to start work on the compiler project. 
