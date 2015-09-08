@@ -186,6 +186,23 @@ fun interp stm =
   handle DivisionByZero => print("Not allowed to divide by 0" ^ "\n")
       | unAssignedIdentifier id =>  print ("Identifier " ^ id ^ " not yet assigned \n" )
 
+(* Begin of stringofStm implementation *)
+
+fun stringOfStm (G.CompoundStm(stm0, stm1)) = print( interpString(stm0) ^ " , " ^ interpString(stm1)
+    |stringOfStm (G.AssignStm(id, exp)) = print( id ^ " := " ^ interpString(exp) )
+    |stringOfStm (G.PrintStm(explist)) = print( "print(" ^ interpStringList(explist) ^ " )")
+and
+   interpString (G.CompoundStm(stm0, stm1)) = (interpString(stm0) ^ " , " ^ interpString(stm1))
+   |interpString (G.AssignStm((id, exp)) = (id ^ " := " ^ interpString(exp))
+   |interpString (G.PrintStm(explist)) = ("print( " ^ interpStringList(explist))
+   |interpString (G.IdExp(id)) = (id ^ "")
+   |interpString (G.NumExp(num)) = (num ^ "")
+   |interpString (G.OpExp(exp0, binop, exp1)) = (interpString(exp0) ^ " " ^ binop ^ " " ^ interpString(exp1)
+   |interpString (G.EseqExp(stm, exp)) = ( interpString(stm) ^ " , " interpString(exp))
+and
+   interpStringList([]) = ("")
+   |interpStringList(x::xs) = (interpString(x) ^ " " ^ interpStringList(xs))
+
 (* placeholder definitions for not implemented functions *)
 (*
 exception NotImplemented
