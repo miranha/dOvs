@@ -14,32 +14,34 @@
 
 \section{Introduction}
 
-This report describes the approach in order to develop a straight line interpreter. Additionally, it provides an overview of problems encountered and intersting experiments during development process. Finally, five test expressions are interpreted and shown.
+This report describes the approach in order to develop a straight line interpreter. Additionally, it provides an overview of problems encountered and intersting experiments during the development process. Finally, five test expressions are interpreted and shown.
 
 In order to develop the straight line interpreter the group members met physically in order to both unterstand the problem, and furthermore outline and discuss the solutions.
 
-\section{How did we make the interpreter}
+\section{The interpreter}
 %\section{Development process and collaboration}
-\fbox{You should not write how you wrote the interpreter, but why you wrote it that way}
+%\fbox{You should not write how you wrote the interpreter, but why you wrote it that way}
 
-Basically the interpreter is developed as two mutual functions; one in order to interpreter a statement, and one for interpreting an expression. This was a natural choice as a consequence of the two \textbf{datatype}s \texttt{stm} and \texttt{exp} that had to be interpreted. Generally the suggestions in the book were followed. Since a \texttt{stm} can be viewed as having a TREE structure as described in the book, it was naturally to use mutual recursive functions in order to interpret an expression, such as \texttt{prog} from the book. 
+Generally the suggestions in the book were followed. Basically the interpreter is developed as two mutual functions; one in order to interpreter a statement, and one for interpreting an expression. This was a natural choice as a consequence of the two \textbf{datatype}s \texttt{stm} and \texttt{exp} that had to be interpreted. Since a \texttt{stm} can be viewed as having a TREE structure as described in the book, it was naturally to use mutual recursive functions in order to interpret an expression, such as \texttt{prog} from the book.
 
-+%In the end different parts of the code were refactored in order to make them more readable and use more fitting SML syntax. As an example \texttt{if} expressions were change to use pattern matching in relevant places. 
+The print functionality was revisited during the development. In the first version the expression where evaluated and printed one at a time. However, in the following version it was made so all the expression are evaluated first, and afterwards all are printed together on the same line. This is illustrated by the test number 4 in this report.
+
+%In the end different parts of the code were refactored in order to make them more readable and use more fitting SML syntax. As an example \texttt{if} expressions were change to use pattern matching in relevant places. 
 
 
 \section{Problems experienced}
-\fbox{If you encountered any problems describe how you solved them}
+%\fbox{If you encountered any problems describe how you solved them}
 
-During the development different parts raised different challenges. In the beginning time was spent in order to learn the needed parts of SML. In the start phase of writing the interpreter some of the errors from the compiler did not make sense, so we used print for debugging. When the first parts of the code where written, the SML interpreter complained and threw error messages that filled several terminal screens. Defeated, after about an hour or two of trying to make sense of the errors along with rewriting the code, we decided to throw away the code and start from scratch.
+During the development different parts raised challenges, that we had to overcome. In the beginning time was spent in order to learn the needed parts of SML. In the start phase of writing the interpreter some of the errors from the compiler did not make sense, so we used print for debugging. When the first parts of the code where written, the SML interpreter complained and threw error messages that filled several terminal screens. Defeated, after about an hour or two of trying to make sense of the errors along with rewriting the code, we decided to throw away the code and start from scratch. 
 
-We then build the functions one line at a time, each time checking if the functions as currently written had the correct type. We learned a very useful technique, namely having a catch all base case, something like funct (\_) = NONE, until we had covered all possible cases we were interested in. This approach, which essentially is Test Driven Development, it helped us to to write all the desired functionality.
+We then build the functions one line at a time, each time checking if the functions as currently written had the correct type. We learned a very useful technique, namely having a catch all base case, something like funct (\_) = NONE, until we had covered all possible cases we were interested in. This approach, which essentially is Test Driven Development, it helped us to to write all the desired functionality. Additionally, it helped to narrow down the possible erros by explicitly declaring the type through the code, instead of letting the SML interpreter automatically decide the type. This helped to isolate the origin of errors.
 
 After the main functionality of the interpreter was woking correctly, different experiments led to the improvement of different special cases. For example, the two exceptions \texttt{DivisionByZero} and \texttt{IdExpNotFound}. Both can be interpreted with valid syntax, but can not be interpreted to valid values. Hence they had to be handled. The syntax is ensured by the \textbf{datatype}s \texttt{stm} and \texttt{exp}. Hence if a \texttt{stm} uses non valid constructs the SML interpreter will give an error.
 
 
 
 \section{Additional statements tested}
-\fbox{5 statements as source code, and as values of type 'stm' plus a description of test including the outcome.}
+%\fbox{5 statements as source code, and as values of type 'stm' plus a description of test including the outcome.}
 
 This section presents five test expressions for the interpreter. It shows source code, the actual type 'stm' and the outcome. All test have been successful, so the outcome matches the expected outcome. 
 
@@ -70,7 +72,8 @@ Outcome: 6 2 8 2
 source code: print((3-5)/2); print(a);
 
 val test2 = G.CompoundStm(
-	G.PrintStm[G.OpExp(G.OpExp(G.NumExp 3, G.Minus, G.NumExp 5),G.Div, G.NumExp 2)],
+	G.PrintStm[G.OpExp(G.OpExp(G.NumExp 3, G.Minus, G.NumExp 5),
+			G.Div, G.NumExp 2)],
 	G.PrintStm[G.IdExp "a"])
 
 Description: Test order of the operations. Test that the ID is not
@@ -140,6 +143,6 @@ Outcome: 2 (--newline--) 4
 
 
 \section{Conclusion}
-This report described the development process of the straight line interpreter. This project was used as a ``warum up'' project for both learning programming in SML and general principles of interpreting a language. Both aspects provide valuable lessons in order to start work on the compiler project. 
+This report described the development process of the straight line interpreter. This project was used as a ``warm up'' project for both learning programming in SML and general principles of interpreting a language. Both aspects provide valuable lessons in order to start work on the compiler project. 
 
 \end{document}
