@@ -80,7 +80,7 @@ Description: Test order of the operations. Test that the ID is not
 		found error. Also execution order is tested, since the first 
 		print should be printed.
 
-Outcome: -1 (--newline--) Error: Using unassigned variable: a
+Outcome: ~1 \n Error: Using unassigned variable: a
 \end{lstlisting}
 
 \subsection{Test 3}
@@ -101,7 +101,7 @@ Description: Tests the EseqExp. Furthermore, it tests the nested print.
 	evaluates all values of a print statement, before we print the values,
 	so print-by-value version. 
 
-Outcome: 6 (--newline--) 4 12 (--newline--) 2
+Outcome: 6 \n 4 12 \n 2
 \end{lstlisting}
 
 \subsection{Test 4}
@@ -119,7 +119,7 @@ val test4 = G.CompoundStm(
 Description: Test for division by zero error. Also execution order is
 		tested, since we do not expect to see the last print output.
 
-Outcome: 0 (--newline--) Error: Division by zero not allowed
+Outcome: 0 \n Error: Division by zero not allowed
 \end{lstlisting}
 
 \subsection{Test 5}
@@ -137,7 +137,7 @@ val test5 = G.CompoundStm(
 Description: Tests the reassignment of the same value. Hence it tests
 		the update and lookup of id's functionality.
 
-Outcome: 2 (--newline--) 4
+Outcome: 2 \n 4
 \end{lstlisting}
 
 
