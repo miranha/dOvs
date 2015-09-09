@@ -188,6 +188,20 @@ fun interp stm =
 
 (* Begin of stringofStm implementation *)
 
+fun map_operator(G.Plus) = "+" 
+  | map_operator (G.Minus) = "-"
+  | map_operator (G.Div) = "/"
+  | map_operator (G.Times) = "*"   
+
+fun stringOfExp (G.NumExp(number)) = Int.toString(number)
+  | stringOfExp (G.IdExp(id)) = id
+  | stringOfExp (G.OpExp(lExp,operator,rExp))= "(" ^ stringOfExp(lExp) ^ map_operator operator ^ stringOfExp(rExp) ^ ")" 
+  | stringOfExp (G.EseqExp(stm,exp)) = "(" ^ stringOfStm(stm) ^ ","  ^ stringOfExp(exp) ^ ")"
+and stringOfStm (G.CompoundStm(lStm, rStm)) = stringOfStm(lStm) ^ ";" ^ stringOfStm(rStm)
+  | stringOfStm (G.AssignStm(id,exp)) = id ^ ":=" ^ stringOfExp(exp)
+  | stringOfStm (G.PrintStm(list)) = "print(" ^ String.concatWith "," (map stringOfExp list) ^ ")" 
+
+(*
 fun stringOfStm (G.CompoundStm(stm0, stm1)) = print( interpString(stm0) ^ " , " ^ interpString(stm1)
     |stringOfStm (G.AssignStm(id, exp)) = print( id ^ " := " ^ interpString(exp) )
     |stringOfStm (G.PrintStm(explist)) = print( "print(" ^ interpStringList(explist) ^ " )")
@@ -202,7 +216,7 @@ and
 and
    interpStringList([]) = ("")
    |interpStringList(x::xs) = (interpString(x) ^ " " ^ interpStringList(xs))
-
+*)
 (* placeholder definitions for not implemented functions *)
 (*
 exception NotImplemented
