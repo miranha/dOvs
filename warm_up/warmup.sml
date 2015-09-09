@@ -45,7 +45,7 @@ and maxStm ( G.CompoundStm(lStm, rStm) ) = max[maxStm lStm, maxStm rStm]
   | maxStm ( G.AssignStm( _, exp) ) = maxExp(exp)
   | maxStm ( G.PrintStm( list ) ) = max(length list::applyFunToList maxExp list)
 
-val maxArgs = maxStm
+val maxargs = maxStm
 
 
 (* --- Interpreter of statements ---*)
@@ -85,7 +85,7 @@ and updateAux ([], key , value) acc = (key, value) :: acc
       else updateAux (xs, key, value) acc @ [(x,y)]
 val emptyTable = []
 
-val updateTable = updateTable'
+
 (* Here, we start the build env function 
 ---
 Only an assign statement gives rise to a valid new id. Uassigned id's
@@ -124,6 +124,8 @@ fun buildEnv (stm) : (G.id * int option) list = buildEnvAux(stm,[])
 (* ------------------------------------------------ *)
 (* Here we write the functions interStm and interpExp, along
 with various helper functions *)
+
+val updateTable = updateTable'
 
 fun printIntOpList ([], string) = print(string ^ "\n")
   | printIntOpList (x::xs, string) = 
@@ -219,12 +221,14 @@ fun printEnv _    = raise NotImplemented
 *)
 (* ... *)
 
-(*fun interp (s: G.stm): unit =
+fun interp' (s: G.stm): unit =
     let val _ = print ("Executing: " ^ (stringOfStm s) ^ "\n")
         val env = buildEnv s
         val env' = interpStm (s, env)
     in ()(*printEnv env'*)
-    end*)
+    end
+    handle DivisionByZero => print("Error: Division by zero not allowed" ^ "\n")
+	 | unAssignedIdentifier id =>  print ("Error: Using unassigned variable: " ^ id ^ "\n" )
 
 (* Here are the test cases from the Report *)
 
