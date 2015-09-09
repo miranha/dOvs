@@ -57,33 +57,35 @@ interp
 exception DivisionByZero
 exception unAssignedIdentifier of string
 
-type table = string -> int option
-val emptyTable : table = fn x => NONE
+type table = (string * int option) list
+val emptyTable : table = []
 (*fun updateTable (tab : table, key : string, value : int option) 
   = fn x => if x = key then value else tab key*)
 
-fun updateTable ( t: table, y:string, v:int option) x =
-  if x = y then v
-  else t x
+fun updateTable'' (t, key:string, value:int option) = (key, value)::t
 
-fun lookupTable (t : table, key: string) = t key
-
-fun lookupTable' ((x,y)::xs , key)  = 
-  if x = key then y
-  else lookupTable' (xs, key)
-  | lookupTable' ([], key) = NONE
+fun lookupTable ([], key) = NONE
+  | lookupTable ((k,v)::xs, key) = if k = key then v
+				   else lookupTable (xs, key)
 
 
-fun updateAux ([], key , value) acc = (key, value) :: acc 
+fun updateAux' ([], key , value) acc = (key, value) :: acc 
+  (* found nothing in list, add pair to list *)
+  | updateAux' ((x,y)::xs, key, value) acc
+    = if x = key then
+	  acc @ [(key, value)] @ xs
+      else updateAux' (xs, key, value) acc @ [(x,y)]
+
+fun updateTable' (t, key, value) = updateAux (t, key, value) []
+and updateAux ([], key , value) acc = (key, value) :: acc 
   (* found nothing in list, add pair to list *)
   | updateAux ((x,y)::xs, key, value) acc
     = if x = key then
 	  acc @ [(key, value)] @ xs
       else updateAux (xs, key, value) acc @ [(x,y)]
+val emptyTable = []
 
-fun updateTable' (t, key, value) = updateAux (t, key, value) []
-val emptyTable' = []
-
+val updateTable = updateTable'
 (* Here, we start the build env function 
 ---
 Only an assign statement gives rise to a valid new id. Uassigned id's
