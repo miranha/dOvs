@@ -182,7 +182,8 @@ and interpPrint (list, env) = let val (intList, env')
 			      
 
 fun interp stm = 
-  let val res = interpStm (stm, emptyTable) in () end 
+  let   val _ = print ("Executing: " ^ (stringOfStm s) ^ "\n")
+  		val _ = interpStm (stm, emptyTable) in () end 
   handle DivisionByZero => print("Error: Division by zero not allowed" ^ "\n")
       | unAssignedIdentifier id =>  print ("Error: Using unassigned variable: " ^ id ^ "\n" )
 
