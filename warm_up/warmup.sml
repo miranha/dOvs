@@ -181,11 +181,7 @@ and interpPrint (list, env) = let val (intList, env')
 			      end
 			      
 
-fun interp stm = 
-  let   val _ = print ("Executing: " ^ (stringOfStm s) ^ "\n")
-  		val _ = interpStm (stm, emptyTable) in () end 
-  handle DivisionByZero => print("Error: Division by zero not allowed" ^ "\n")
-      | unAssignedIdentifier id =>  print ("Error: Using unassigned variable: " ^ id ^ "\n" )
+
 
 (* Begin of stringofStm implementation *)
 
@@ -202,6 +198,14 @@ and stringOfStm (G.CompoundStm(lStm, rStm)) = stringOfStm(lStm) ^ ";" ^ stringOf
   | stringOfStm (G.AssignStm(id,exp)) = id ^ ":=" ^ stringOfExp(exp)
   | stringOfStm (G.PrintStm(list)) = "print(" ^ String.concatWith "," (map stringOfExp list) ^ ")" 
 
+fun interp (stm : G.stm) = 
+  let 
+      val _ = print ("Executing: " ^ (stringOfStm stm) ^ "\n")
+      val _ = interpStm (stm, emptyTable) 
+  in () end 
+  handle DivisionByZero => print("Error: Division by zero not allowed" ^ "\n")
+      | unAssignedIdentifier id =>  print ("Error: Using unassigned variable: " ^ id ^ "\n" )
+
 (* placeholder definitions for not implemented functions *)
 (*
 exception NotImplemented
@@ -212,14 +216,14 @@ fun interpStm _   = raise NotImplemented
 fun printEnv _    = raise NotImplemented
 *)
 (* ... *)
-(*
-fun interp (s: G.stm): unit =
+
+(*fun interp (s: G.stm): unit =
     let val _ = print ("Executing: " ^ (stringOfStm s) ^ "\n")
         val env = buildEnv s
         val env' = interpStm (s, env)
-    in printEnv env'
-    end
-*)
+    in ()(*printEnv env'*)
+    end*)
+
 (* Here are the test cases from the Report *)
 
 (*
