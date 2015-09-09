@@ -228,10 +228,12 @@ fun printEnv _    = raise NotImplemented
 
 (*
 
+These test cases are described inside the report
+
+
 Test cases:
 
-1) Test1: a:=1; b:= a+2; print(a*b)
-We test for the assign statement, assign right values, NumExp, print statement
+1) source code: a:=2; b:= a+2; print(b+a,b-a,b*a,b/a)
 *)
 
 val test1 = G.CompoundStm(
@@ -244,8 +246,7 @@ val test1 = G.CompoundStm(
 	    			G.OpExp(G.IdExp "b", G.Div, G.IdExp "a")]))
 
 (*
-2) Test((3-5)/2); print(a);
-Execution order. Id not found
+2) source code: print((3-5)/2); print(a);
 *)
 
 val test2 = G.CompoundStm(
@@ -253,11 +254,9 @@ val test2 = G.CompoundStm(
 	G.PrintStm[G.IdExp "a"])
 
 
-(*3) Test3 (Prog6): Execution orde, test Eseq, nested print*)
-
-(*Test nested prints
-Source: a:=3; print((print(a+3), a*4)); print(4/2); 
-Expected output: 6 /n 12 /n 2*)
+(*
+3) source code: a:=3; print((print(a+3), a*4)); print(4/2);
+*)
 
 val test3 = 
     G.CompoundStm(
@@ -269,11 +268,7 @@ val test3 =
 	    G.PrintStm[G.OpExp(G.NumExp 4, G.Div, G.NumExp 2)]))
 
 (*
-
-
-4) Test4: a:=0; print(a); Print(2/a); Print(2+a);
-Execution order, Division by 0
-
+4) source code: Test4: a:=0; print(a); Print(2/a); Print(2+a);
 *)
 
 val test4 = G.CompoundStm(
@@ -286,9 +281,7 @@ val test4 = G.CompoundStm(
 
 
 (*
-
-5) Test5: a:=2; print(a) ; a:= 4; Print(a);
-Test reassignment of the same value
+5) source code: a:=2; print(a) ; a:= 4; Print(a);
 *)
 
 val test5 = G.CompoundStm(
@@ -301,6 +294,7 @@ val test5 = G.CompoundStm(
 
 
 (* ----- Example for testing ----- *)
+(* These are additional experiments in order to test the maxArgs and interp *)
 
 val prog =
   (* a := 5+3; b := (print(a,a-1), 10*a); print(b) *)
@@ -351,20 +345,6 @@ val prog5 =
     )
 
 (* ... *)
-
-(* Calling the interpreter on the example program. Uncomment to proceed
-   -- default implementation will raise NotImplemented exception *)
-
-(* val _ = interp prog *)
-
-exception SyntaxError
-exception unAssignedIdentifier of string
-
-
-
-(* Here begins the quest to write the interpreter *)
-
-
 
 val binPrg1 = G.PrintStm([
 	G.OpExp(
