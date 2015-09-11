@@ -42,10 +42,10 @@ idchars=[a-zA-Z0-9_]*;
 ","                        => (dopos Tokens.COMMA yypos 1);
 "var"                      => (dopos Tokens.VAR yypos 3);
 
-"type"					   => (dopos Tokens.TYPE yypos 4);
-"function"				   => (dopos Tokens.FUNCTION yypos 8);
-"break"					   => (dopos Tokens.BREAK yypos 5);
-"of"					   => (dopos Tokens.OF yypos 2);
+"type"					    => (dopos Tokens.TYPE yypos 4);
+"function"				    => (dopos Tokens.FUNCTION yypos 8);
+"break"					    => (dopos Tokens.BREAK yypos 5);
+"of"					    => (dopos Tokens.OF yypos 2);
 "end"						=> (dopos Tokens.END yypos 3);
 "in"						=> (dopos Tokens.IN yypos 2);
 "nil"						=> (dopos Tokens.NIL yypos 3);
