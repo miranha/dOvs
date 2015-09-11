@@ -60,6 +60,16 @@ idchars=[a-zA-Z0-9_]*;
 "assign"					=> (dopos Tokens.ASSIGN yypos 6);
 "or"						=> (dopos Tokens.OR yypos 2);
 "and"						=> (dopos Tokens.AND yypos 3);
+">="						=> (dopos Tokens.GE yypos 2);
+">"							=> (dopos Tokens.GT yypos 1);
+"<="						=> (dopos Tokens.LE yypos 2);
+"<"							=> (dopos Tokens.LT yypos 1);
+"/="						=> (dopos Tokens.NEQ yypos 2);
+"="							=> (dopos Tokens.EQ yypos 1);
+"/"							=> (dopos Tokens.DIVIDE yypos 1);
+"*"							=> (dopos Tokens.TIMES yypos 1);
+"+"							=> (dopos Tokens.PLUS yypos 1);
+"-"							=> (dopos Tokens.MINUS yypos 1);
 
 
 {letter}{idchars}          => (dopos3 Tokens.ID  yytext yypos
