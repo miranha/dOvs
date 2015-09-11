@@ -41,6 +41,10 @@ idchars=[a-zA-Z0-9_]*;
                                continue());
 ","                        => (dopos Tokens.COMMA yypos 1);
 "var"                      => (dopos Tokens.VAR yypos 3);
+"type"					   => (depos Tokens.TYPE yypos 4);
+"function"				   => (depos Tokens.FUNCTION yypos 8);
+"break"					   => (depos Tokens.BREAK yypos 5);
+"of"					   => (depos Tokens.OF yypos 2);
 {letter}{idchars}          => (dopos3 Tokens.ID  yytext yypos
 			       (size yytext));
 {digits}                   => (dopos3 Tokens.INT (s2i yytext yypos) yypos
