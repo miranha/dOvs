@@ -45,6 +45,23 @@ idchars=[a-zA-Z0-9_]*;
 "function"				   => (dopos Tokens.FUNCTION yypos 8);
 "break"					   => (dopos Tokens.BREAK yypos 5);
 "of"					   => (dopos Tokens.OF yypos 2);
+"end"						=> (dopos Tokens.END yypos 3);
+"in"						=> (dopos Tokens.IN yypos 2);
+"nil"						=> (dopos Tokens.NIL yypos 3);
+"let"						=> (dopos Tokens.LET yypos 3);
+"do"						=> (dopos Tokens.DO yypos 2);
+"to"						=> (dopos Tokens.TO yypos 2);
+"for"						=> (dopos Tokens.FOR yypos 3);
+"while"						=> (dopos Tokens.WHILE yypos 5);
+"else" 						=> (dopos Tokens.ELSE yypos 4);
+"then"						=> (dopos Tokens.THEN yypos 4);
+"if"						=> (dopos Tokens.IF yypos 2);
+"array"						=> (dopos Tokens.ARRAY yypos 5);
+"assign"					=> (dopos Tokens.ASSIGN yypos 6);
+"or"						=> (dopos Tokens.OR yypos 2);
+"and"						=> (dopos Tokens.AND yypos 3);
+
+
 {letter}{idchars}          => (dopos3 Tokens.ID  yytext yypos
 			       (size yytext));
 {digits}                   => (dopos3 Tokens.INT (s2i yytext yypos) yypos
