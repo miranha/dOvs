@@ -41,6 +41,8 @@ idchars=[a-zA-Z0-9_]*;
                                continue());
 ","                        => (dopos Tokens.COMMA yypos 1);
 "var"                      => (dopos Tokens.VAR yypos 3);
+{letter}{idchars}          => (dopos3 Tokens.ID  yytext yypos
+			       (size yytext));
 {digits}                   => (dopos3 Tokens.INT (s2i yytext yypos) yypos
                                                  (size yytext));
 .                          => (ErrorMsg.error yypos ("illegal char " ^ yytext);
