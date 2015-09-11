@@ -33,7 +33,7 @@ fun dopos3 token value yypos yylen = token (value, yypos, yypos + yylen)
 %%
 letter=[a-zA-Z];
 digits=[0-9]+;
-idchars=[a-zA-z][a-zA-Z0-9_]*;
+idchars=[a-zA-Z0-9_]*;
 %%
 
 "\n"	                   => (lineNum := !lineNum+1;
