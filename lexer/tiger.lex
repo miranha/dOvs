@@ -70,6 +70,7 @@ idchars=[a-zA-Z0-9_]*;
 "*"							=> (dopos Tokens.TIMES yypos 1);
 "+"							=> (dopos Tokens.PLUS yypos 1);
 "-"							=> (dopos Tokens.MINUS yypos 1);
+"."							=> (dopos Tokens.DOT yypos 1);
 
 
 {letter}{idchars}          => (dopos3 Tokens.ID  yytext yypos
