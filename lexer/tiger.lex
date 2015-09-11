@@ -41,6 +41,7 @@ idchars=[a-zA-Z0-9_]*;
                                continue());
 ","                        => (dopos Tokens.COMMA yypos 1);
 "var"                      => (dopos Tokens.VAR yypos 3);
+
 "type"					   => (dopos Tokens.TYPE yypos 4);
 "function"				   => (dopos Tokens.FUNCTION yypos 8);
 "break"					   => (dopos Tokens.BREAK yypos 5);
@@ -71,6 +72,15 @@ idchars=[a-zA-Z0-9_]*;
 "+"							=> (dopos Tokens.PLUS yypos 1);
 "-"							=> (dopos Tokens.MINUS yypos 1);
 "."							=> (dopos Tokens.DOT yypos 1);
+"}"							=> (dopos Tokens.RBRACE yypos 1);
+"{"							=> (dopos Tokens.LBRACE yypos 1);
+"]"							=> (dopos Tokens.RBRACK yypos 1);
+"["							=> (dopos Tokens.LBRACK yypos 1);
+")"							=> (dopos Tokens.RPAREN yypos 1);
+"("							=> (dopos Tokens.LPAREN yypos 1);
+";"							=> (dopos Tokens.SEMICOLON yypos 1);
+":"							=> (dopos Tokens.COLON yypos 1);
+"^"							=> (dopos Tokens.CARET yypos 1);
 
 
 {letter}{idchars}          => (dopos3 Tokens.ID  yytext yypos
