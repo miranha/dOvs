@@ -1,5 +1,5 @@
-/* Test file to see how we handle comments. This is not included */
-
-let function hi () = print("hi world") in
-	hi() end
-/* very verbose, but this test that only stuff outside functions generate tokens */
+/* Test 
+Some more text for the hell of it
+correct
+*/
+let function hello() = print("Hello"/*a comment /* going */ deep */) in hello end
