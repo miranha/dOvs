@@ -82,6 +82,9 @@ idchars=[a-zA-Z0-9_]*;
 ":"							=> (dopos Tokens.COLON yypos 1);
 "^"							=> (dopos Tokens.CARET yypos 1);
 
+"\*"						=> (YYBEGIN COMMENT; continue());
+
+<COMMENT> "*\"				=> (YYBEGIN INITIAL; continue());
 
 {letter}{idchars}          => (dopos3 Tokens.ID  yytext yypos
 			       (size yytext));
