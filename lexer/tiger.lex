@@ -14,7 +14,9 @@ fun eof () =
     let
         val pos = hd (!linePos)
     in
-        Tokens.EOF (pos,pos)
+  (if (!commentLevel > 0) then
+			    ErrorMsg.error pos "Reached EOF while parsing comment. Close all comment bloks" else ();		   
+   Tokens.EOF (pos,pos))
     end
 
 fun s2i t pos =
