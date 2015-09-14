@@ -3,6 +3,7 @@ type lexresult = Tokens.token
 
 val lineNum = ErrorMsg.lineNum
 val linePos = ErrorMsg.linePos
+val maxAsciiCode = 127
 
 val commentLevel = ref 0
 val currentString = ref ""
@@ -30,6 +31,30 @@ fun s2i t pos =
         s2i_aux opti
     end
 
+  fun addToCurString s = let val _ = currentString := !currentString ^ s
+  in ()
+  end
+
+  fun digitEsc pos s = let val sCode = (valOf (Int.fromString (String.substring (s, 1, 3)))) in 
+  if sCode <= maxAsciiCode then
+  if sCode = 0 then "\\0" else
+  Char.toString(Char.chr sCode)
+  else let val _ = ErrorMsg.error pos (s ^ " of the form \\ddd must have that ddd <= " ^ (Int.toString maxAsciiCode)) in "" end end
+
+fun handleCtrl s pos =
+	 case s of
+	 "\\^G" => "\\a"
+	 | "\\^H" => "\\b"
+	 | "\\^I" => "\\t"
+	 | "\\^J" => "\\n"
+	 | "\\^K" => "\\v"
+	 | "\\^L" => "\\f"
+	 | "\\^M" => "\\r"
+	 | "\\^[" => "\\e"
+	 | "\\^@" => "\\0"
+	 | "\\^?" => "\\^?"
+	 | _ => (ErrorMsg.error pos "Error: CTRL char must be of the form:\n\\^@ \\^[ \\^? \\^G \\^H \\^I \\^J \\^K \\^L \\^M"; "")
+
 fun dopos token yypos yylen = token (yypos, yypos + yylen)
 fun dopos3 token value yypos yylen = token (value, yypos, yypos + yylen)
 
@@ -38,8 +63,12 @@ fun dopos3 token value yypos yylen = token (value, yypos, yypos + yylen)
   %s COMMENT STRING;
 
 letter=[a-zA-Z];
+digit=[0-9];
 digits=[0-9]+;
 idchars=[a-zA-Z0-9_]*;
+ctrlchar=[@GHIJKLM"[""?"];
+printable=[! "\"" # \$ % "'" "(" ")" "\*" "\+" , \- "\." "\/" ":" "\;"];
+printable2=["\<" "\=" "\>" "\?" @ "\[" "\\" "\]" "\^" _ ` "\{" "\|" "\}" ~];
 %%
 
 <INITIAL COMMENT>"\n"	                   => (lineNum := !lineNum+1;
@@ -105,8 +134,23 @@ idchars=[a-zA-Z0-9_]*;
 <COMMENT>"*/"				=> (commentLevel := !commentLevel-1; if !commentLevel < 1 then YYBEGIN INITIAL else (); continue());
 <COMMENT>.	=> (continue());
 
-<STRING> {letter}|{digits}|" " => (currentString := !currentString ^ yytext; continue());
+
 
 <STRING> "\"" => (YYBEGIN INITIAL; dopos3 Tokens.STRING (!currentString) (!stringStart) (String.size (!currentString)));
 
-<STRING>. => (ErrorMsg.error yypos ("I do not yet know how to handle this part of a string " ^ yytext); continue());
+<STRING> "\\n"|"\\t"|"\\" => (addToCurString yytext;continue());
+
+<STRING> "\\^". => (addToCurString (handleCtrl yytext yypos);continue());
+			   
+<STRING> "\\"{digit}{3} => (addToCurString (digitEsc yypos yytext);continue());
+
+<STRING> "\\"{digit}{1,2} => (ErrorMsg.error yypos (yytext ^ " is an illformed ascii decimal escape code. ascii decimal escape code must be of the form \\ddd, with 0 <= ddd <=" ^ (Int.toString maxAsciiCode) ^ " , and d a digit between 0 and 9"); continue());
+
+<STRING> {letter}|{digits}|{printable}|{printable2} => (addToCurString yytext; continue());
+
+<STRING> "\n" => (ErrorMsg.error yypos "Only use enter when inside \\f....f\\";
+ lineNum := !lineNum+1;
+ linePos := yypos :: !linePos;
+		  continue());
+
+<STRING>.=> (ErrorMsg.error yypos ("Illegal character in string: " ^ yytext); continue());
