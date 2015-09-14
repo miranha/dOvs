@@ -7,18 +7,21 @@ val maxAsciiCode = 127
 
 val commentLevel = ref 0
 val currentString = ref ""
+val inString = ref false
 val stringStart = ref 0
+val inMultiline = ref false
 
 fun err (p1,p2) = ErrorMsg.error p1
 
 fun eof () =
-    let
+  (let
         val pos = hd (!linePos)
     in
   (if (!commentLevel > 0) then
-			    ErrorMsg.error pos "Reached EOF while parsing comment. Close all comment bloks" else ();		   
-   Tokens.EOF (pos,pos))
-    end
+			    ErrorMsg.error pos "Reached EOF while parsing comment. Close all comment bloks" 
+    else if ((!inString)) then
+				      ErrorMsg.error pos "Unclosed string. Rember to close your string with \"." else ()); 		   
+   Tokens.EOF (pos,pos) end)
 
 fun s2i t pos =
     let
@@ -55,12 +58,15 @@ fun handleCtrl s pos =
 	 | "\\^?" => "\\^?"
 	 | _ => (ErrorMsg.error pos "Error: CTRL char must be of the form:\n\\^@ \\^[ \\^? \\^G \\^H \\^I \\^J \\^K \\^L \\^M"; "")
 
+fun handleNewline ( pos ) = (lineNum := !lineNum+1;
+    linePos := pos :: !linePos)
+
 fun dopos token yypos yylen = token (yypos, yypos + yylen)
 fun dopos3 token value yypos yylen = token (value, yypos, yypos + yylen)
 
 %%
 
-  %s COMMENT STRING;
+  %s COMMENT STRING MULTILINE;
 
 letter=[a-zA-Z];
 digit=[0-9];
@@ -71,9 +77,7 @@ printable=[! "\"" # \$ % "'" "(" ")" "\*" "\+" , \- "\." "\/" ":" "\;"];
 printable2=["\<" "\=" "\>" "\?" @ "\[" "\\" "\]" "\^" _ ` "\{" "\|" "\}" ~];
 %%
 
-<INITIAL COMMENT>"\n"	                   => (lineNum := !lineNum+1;
-                               linePos := yypos :: !linePos;
-                               continue());
+<INITIAL COMMENT MULITLINE>"\n"	                   => (handleNewline(yypos);continue());
 <INITIAL> " "|"\t" => (continue());
 <INITIAL>","                        => (dopos Tokens.COMMA yypos 1);
 "var"                      => (dopos Tokens.VAR yypos 3);
@@ -118,7 +122,7 @@ printable2=["\<" "\=" "\>" "\?" @ "\[" "\\" "\]" "\^" _ ` "\{" "\|" "\}" ~];
 <INITIAL>":"							=> (dopos Tokens.COLON yypos 1);
 <INITIAL>"^"							=> (dopos Tokens.CARET yypos 1);
 
-<INITIAL>"\"" => (YYBEGIN STRING; currentString := ""; stringStart := yypos; continue());
+<INITIAL>"\"" => (YYBEGIN STRING; currentString := ""; inString := true; stringStart := yypos; continue());
 
 
  				
@@ -135,8 +139,7 @@ printable2=["\<" "\=" "\>" "\?" @ "\[" "\\" "\]" "\^" _ ` "\{" "\|" "\}" ~];
 <COMMENT>.	=> (continue());
 
 
-
-<STRING> "\"" => (YYBEGIN INITIAL; dopos3 Tokens.STRING (!currentString) (!stringStart) (String.size (!currentString)));
+<STRING> "\"" => (YYBEGIN INITIAL; inString := false; dopos3 Tokens.STRING (!currentString) (!stringStart) (String.size (!currentString)));
 
 <STRING> "\\n"|"\\t"|"\\" => (addToCurString yytext;continue());
 
@@ -153,4 +156,11 @@ printable2=["\<" "\=" "\>" "\?" @ "\[" "\\" "\]" "\^" _ ` "\{" "\|" "\}" ~];
  linePos := yypos :: !linePos;
 		  continue());
 
+<STRING> "\\"(" "|"\t") =>(inMultiline := true; YYBEGIN MULTILINE; continue());
+<STRING> "\\\n" => (handleNewline( yypos ); inMultiline := true; YYBEGIN MULTILINE; continue());
+
 <STRING>.=> (ErrorMsg.error yypos ("Illegal character in string: " ^ yytext); continue());
+
+<MULTILINE> " "|"\t" => (continue());
+<MULTILINE> "\\" => (inMultiline := false; YYBEGIN STRING; continue());
+<MULTILINE> . => (ErrorMsg.error yypos "Please only use tab, newline and space inside the \\...\\ block of a multiline string."; continue());
