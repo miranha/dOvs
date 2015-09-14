@@ -1,0 +1,4 @@
+/* A nested
+/* comment */ */
+
+"A strings with escape chars: \100 \n \t \" \\"
