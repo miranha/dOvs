@@ -15,12 +15,13 @@ fun err (p1,p2) = ErrorMsg.error p1
 
 fun eof () =
   (let
-        val pos = hd (!linePos)
-    in
-  (if (!commentLevel > 0) then
-			    ErrorMsg.error pos "Reached EOF while parsing comment. Close all comment bloks" 
-    else if ((!inString)) then
-				      ErrorMsg.error pos "Unclosed string. Rember to close your string with \"." else ()); 		   
+   val pos = hd (!linePos)
+   val res1 = (if (!commentLevel > 0) then
+					ErrorMsg.error pos "Reached EOF while parsing comment. Close all comment bloks" else ())
+   val res2 = (if ((!inString)) then
+				  ErrorMsg.error pos "Unclosed string. Rember to close your string with \"." else ())
+   val res3 = (if (!inMultiline) then ErrorMsg.error pos "Unclosed multiline block. Remember to close with \\" else ())
+   in
    Tokens.EOF (pos,pos) end)
 
 fun s2i t pos =
