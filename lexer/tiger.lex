@@ -45,6 +45,7 @@ idchars=[a-zA-Z0-9_]*;
 <INITIAL COMMENT>"\n"	                   => (lineNum := !lineNum+1;
                                linePos := yypos :: !linePos;
                                continue());
+<INITIAL> " "|"\t" => (continue());
 <INITIAL>","                        => (dopos Tokens.COMMA yypos 1);
 "var"                      => (dopos Tokens.VAR yypos 3);
 
