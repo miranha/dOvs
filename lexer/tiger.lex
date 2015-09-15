@@ -134,7 +134,7 @@ printable2=["\<" "\=" "\>" "\?" @ "\[" "\\" "\]" "\^" _ ` "\{" "\|" "\}" ~];
 <INITIAL>.                          => (ErrorMsg.error yypos ("illegal char " ^ yytext);
                                continue());
 
-"/*"						=> (commentLevel := !commentLevel+1; YYBEGIN COMMENT; continue());
+<INITIAL>"/*"						=> (commentLevel := !commentLevel+1; YYBEGIN COMMENT; continue());
 
 <COMMENT>"*/"				=> (commentLevel := !commentLevel-1; if !commentLevel < 1 then YYBEGIN INITIAL else (); continue());
 <COMMENT>.	=> (continue());
