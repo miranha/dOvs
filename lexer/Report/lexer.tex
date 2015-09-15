@@ -67,8 +67,20 @@ At last the escape control chars where handled in order to convert these to thei
 <STRING> "\\^". => (addToCurString (handleCtrl yytext yypos);continue());
 \end{lstlisting}
 
-\section{Multiline strings}
+\subsection{Multiline strings}
+For strings also the possibility to split the string over multiple lines is supported by the implemented lexer. This is handle by having a state called \texttt{MULTILINE}, which is entered from the before mentioned state \texttt{STRING}, when only a ''\textbackslash`` is typed inside a string. This change happens in the following code:
 
+\begin{lstlisting}[frame=single]
+<STRING> "\\"(" "|"\t") =>(inMultiline := true; YYBEGIN MULTILINE; continue());
+\end{lstlisting}
+
+Inside this \texttt{MULTILINE} state we only allow space and tab to be used in order to format the string.
+Afterwards, this state is left when the next ''\textbackslash`` is received at the input of the lexer. 
+\begin{lstlisting}[frame=single]
+<MULTILINE> "\\" => (inMultiline := false; YYBEGIN STRING; continue());
+\end{lstlisting}
+
+Basically this functionality enables the support of multiline strings inside the lexer. There is, however, some additional error handling for multiline strings.
 
 \section{Problems experienced}
 If you encountered any other problems describe how you solved them
