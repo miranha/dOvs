@@ -14,14 +14,16 @@
 \maketitle
 
 \section{Introduction}
-
+This report describes the approach in order to develop the lexer, which is the first component in the compilation process. 
+First, it provides an overview of the concrete solutions to specific problems, such as handling nested comments, escape code and multi-line strings. 
+Additionally, it provides an overview of problems encountered and intersting experiments during the development process. Finally, five tiger programs are provided test 
 
 \section{How did we implement the lexer}
 This lexer is implemented by using the existing tool ML-Lex. With this tool it is possible to specify which regular expression shall map to which specific tokens. At first the support for all the basic constructs in the Tiger language where implemented. For example this includes to recognise the keyword. Also the support for non nested comments was implemented in this first version of the lexer. 
 
 Following the book by using the ML-Lex tool was ...
 
-\subsection{How did we implement nested comments}
+\subsection{Nested comments}
 Implementing the nested comments functionality was harder than the first version of the lexer without this functionality. In order to implement this functionality, the possibility to use states in ML-Lex was used. In this case a \texttt{COMMENT} state was used. Additionally, a counter was used in order to handle nested comments, and detected when we jump out of the \texttt{COMMENT} state. This is accomplished by the following code:
 
 \begin{lstlisting}[frame=single]
@@ -35,7 +37,38 @@ YYBEGIN INITIAL else (); continue());
 
 This code basically shows that for each \texttt{/*} we meet, the counter is incremented by one. Afterwards, for each \texttt{*/} the counter is decremented by one. When the counter is at zero, we jump out of the \texttt{COMMENT} state. Additionally, this counter value is used in order to detect unclosed comments, and issue an error. In this case we use the function \texttt{eof}, which is called at the \texttt{EOF}. If we reach the \texttt{EOF} and the comment counter value is not zero, then an error is issued.  
 
-\subsection{How did we implement escape codes}
+\subsection{Escape codes}
+The escape codes where implemented when the lexer recognises that it is in the \texttt{STRING} state. Afterwards when a backslash is found, it check the following character/sequence in order to recognise if it is legal inside a string according to the tiger language specification. 
+
+
+When inside the \texttt{STRING} state, the three basic basics chars are handled by:
+
+\begin{lstlisting}[frame=single]
+<STRING> "\\n"|"\\t"|"\\" => (addToCurString yytext;continue());
+\end{lstlisting}
+
+Additionally, the three decimals after backslash are handled the following way:
+
+\begin{lstlisting}[frame=single]
+<STRING> "\\"{digit}{3} => (addToCurString (digitEsc yypos yytext);continue());
+\end{lstlisting}
+
+There is also some error handling for the decimal in order to ensure that there are exact three digits after the backslash:
+\begin{lstlisting}[frame=single]
+<STRING> "\\"{digit}{1,2} => (ErrorMsg.error yypos (yytext ^ " is an illformed 
+ascii decimal escape code. ascii decimal escape code must be of the form 
+\\ddd, with 0 <= ddd <=" ^ (Int.toString maxAsciiCode) ^ " , and d a digit 
+between 0 and 9"); continue());
+\end{lstlisting}
+
+At last the escape control chars where handled in order to convert these to their respective escape characteres. This achieved by recognising the character \texttt{\textbackslash \^}. Then a function handles to find if the control character is a valid one, and provide the correct mapping using the function \texttt{handleCtrl}:
+
+\begin{lstlisting}[frame=single]
+<STRING> "\\^". => (addToCurString (handleCtrl yytext yypos);continue());
+\end{lstlisting}
+
+\section{Multiline strings}
+
 
 \section{Problems experienced}
 If you encountered any other problems describe how you solved them
