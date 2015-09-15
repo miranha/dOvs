@@ -1,1 +1,10 @@
-Use the tokens test here, so we test for all of them.
+"Testing tabs, backslash and newline: \t\n\\"
+"Test ctrl char: \^@ \^[ \^? \^G \^H \^I \^J \^K \^L \^M"
+"Test ill-formed ctrl char: \^A \^:"
+"Testprintable ! # $ % ' ( ) * + , - . / : ;"
+"Test digit escape: \0000 \027 \127 \007 \008 \009 \010 \011 \012 \013 u"
+"Test printables again: < = > ? @ [ ] ^ _ ` { | } ~"
+"Test illformed ascii code: \65 \9"
+"\	\hi\
+\ we only see a space between hi and we"
+""

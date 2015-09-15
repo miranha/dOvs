@@ -76,6 +76,51 @@ If you encountered any other problems describe how you solved them
 \section{5 tiger programs}
 5 interesting tiger programs that you find test your lexer in a good way.
 
-\subsection{}
+\subsection{Test 1}
+\begin{lstlisting}[frame=single]
+/* In this part we test a simple comment and string */
+
+"Hello from a String"
+\end{lstlisting}
+
+
+\subsection{Test 2}
+\begin{lstlisting}[frame=single]
+/* A nested
+/* comment */ */
+
+"This is a unclosed string
+\end{lstlisting}
+
+\subsection{Test 3}
+\begin{lstlisting}[frame=single]
+/* A nested
+/* comment with an error */ 
+
+\end{lstlisting}
+
+\subsection{Test 4}
+\begin{lstlisting}[frame=single]
+"Testing tabs, backslash and newline: \t\n\\"
+"Test ctrl char: \^@ \^[ \^? \^G \^H \^I \^J \^K \^L \^M"
+"Test ill-formed ctrl char: \^A \^:"
+"Testprintable ! # $ % ' ( ) * + , - . / : ;"
+"Test digit escape: \0000 \027 \127 \007 \008 \009 \010 \011 \012 \013 u"
+"Test printables again: < = > ? @ [ ] ^ _ ` { | } ~"
+"Test illformed ascii code: \65 \9"
+"\	\hi\
+\ we only see a space between hi and we"
+""
+\end{lstlisting}
+
+\subsection{Test 5}
+\begin{lstlisting}[frame=single]
+/* Test 
+Some more text for the hell of it
+correct
+*/
+let function hello() = print("Hello"/*a comment /* going */ deep */) in 
+hello end
+\end{lstlisting}
 
 \end{document}
