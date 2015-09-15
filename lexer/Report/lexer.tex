@@ -15,8 +15,8 @@
 
 \section{Introduction}
 This report describes the approach in order to develop the lexer, which is the first component in the compilation process. 
-First, it provides an overview of the concrete solutions to specific problems, such as handling nested comments, escape code and multi-line strings. 
-Additionally, it provides an overview of problems encountered and intersting experiments during the development process. Finally, five tiger programs are provided test 
+First, it will provide an overview of the concrete solutions to specific problems, such as handling nested comments, escape codes and multi-line strings. 
+Additionally, it provides an overview of problems encountered and interesting experiments during the development process. Finally, five tiger programs are provided as test cases for the various elements of the lexer. 
 
 \section{How did we implement the lexer}
 This lexer is implemented by using the existing tool ML-Lex. With this tool it is possible to specify which regular expression shall map to which specific tokens. At first the support for all the basic constructs in the Tiger language where implemented. For example this includes to recognise the keyword. Also the support for non nested comments was implemented in this first version of the lexer. 
@@ -29,13 +29,15 @@ Implementing the nested comments functionality was harder than the first version
 \begin{lstlisting}[frame=single]
 "/*"=> (commentLevel := !commentLevel+1; YYBEGIN COMMENT; continue());
 
+and
+
 <COMMENT>"*/"=> (commentLevel := !commentLevel-1; if !commentLevel < 1 then 
 YYBEGIN INITIAL else (); continue());
 <COMMENT>.	=> (continue());
 \end{lstlisting}
 
 
-This code basically shows that for each \texttt{/*} we meet, the counter is incremented by one. Afterwards, for each \texttt{*/} the counter is decremented by one. When the counter is at zero, we jump out of the \texttt{COMMENT} state. Additionally, this counter value is used in order to detect unclosed comments, and issue an error. In this case we use the function \texttt{eof}, which is called at the \texttt{EOF}. If we reach the \texttt{EOF} and the comment counter value is not zero, then an error is issued.  
+This code basically shows that for each \texttt{/*} we meet, the counter is incremented by one. Afterwards, for each \texttt{*/} the counter is decremented by one. When the counter is at zero, we jump out of the \texttt{COMMENT} state. Additionally, this counter value is used in order to detect unclosed comments, and issue an error. In this case we use the function \texttt{eof}, which is called at the \texttt{EOF}. If we reach the \texttt{EOF} and the comment counter value is not zero, then an error is issued, as a comment has been made, but not closed.  
 
 \subsection{Escape codes}
 The escape codes where implemented when the lexer recognises that it is in the \texttt{STRING} state. Afterwards when a backslash is found, it check the following character/sequence in order to recognise if it is legal inside a string according to the tiger language specification. 
@@ -53,7 +55,7 @@ Additionally, the three decimals after backslash are handled the following way:
 <STRING> "\\"{digit}{3} => (addToCurString (digitEsc yypos yytext);continue());
 \end{lstlisting}
 
-There is also some error handling for the decimal in order to ensure that there are exact three digits after the backslash:
+There is also some error handling for the decimal in order to ensure that there are exact three digits after the backslash, as well as the digits being within the correct range of ASCII values of 0 - 127:
 \begin{lstlisting}[frame=single]
 <STRING> "\\"{digit}{1,2} => (ErrorMsg.error yypos (yytext ^ " is an illformed 
 ascii decimal escape code. ascii decimal escape code must be of the form 
@@ -68,14 +70,14 @@ At last the escape control chars where handled in order to convert these to thei
 \end{lstlisting}
 
 \subsection{Multiline strings}
-For strings also the possibility to split the string over multiple lines is supported by the implemented lexer. This is handle by having a state called \texttt{MULTILINE}, which is entered from the before mentioned state \texttt{STRING}, when only a ''\textbackslash`` is typed inside a string. This change happens in the following code:
+For strings also the possibility to split the string over multiple lines is supported by the implemented lexer. This is handle by having a state called \texttt{MULTILINE}, which is entered from the before mentioned state \texttt{STRING}, when only a ''\textbackslash is typed inside a string. This change happens in the following code:
 
 \begin{lstlisting}[frame=single]
 <STRING> "\\"(" "|"\t") =>(inMultiline := true; YYBEGIN MULTILINE; continue());
 \end{lstlisting}
 
 Inside this \texttt{MULTILINE} state we only allow space and tab to be used in order to format the string.
-Afterwards, this state is left when the next ''\textbackslash`` is received at the input of the lexer. 
+Afterwards, this state is left when the next ''\textbackslash is received at the input of the lexer. 
 \begin{lstlisting}[frame=single]
 <MULTILINE> "\\" => (inMultiline := false; YYBEGIN STRING; continue());
 \end{lstlisting}
@@ -88,7 +90,7 @@ If you encountered any other problems describe how you solved them
 \section{5 tiger programs}
 5 interesting tiger programs that you find test your lexer in a good way.
 
-\subsection{Test 1}
+\subsection{Test 1: Simple String}
 \begin{lstlisting}[frame=single]
 /* In this part we test a simple comment and string */
 
@@ -96,7 +98,7 @@ If you encountered any other problems describe how you solved them
 \end{lstlisting}
 
 
-\subsection{Test 2}
+\subsection{Test 2: Nested Comment}
 \begin{lstlisting}[frame=single]
 /* A nested
 /* comment */ */
@@ -104,14 +106,14 @@ If you encountered any other problems describe how you solved them
 "This is a unclosed string
 \end{lstlisting}
 
-\subsection{Test 3}
+\subsection{Test 3: Nested, with error}
 \begin{lstlisting}[frame=single]
 /* A nested
 /* comment with an error */ 
 
 \end{lstlisting}
 
-\subsection{Test 4}
+\subsection{Test 4: Escape Characters, and Errors}
 \begin{lstlisting}[frame=single]
 "Testing tabs, backslash and newline: \t\n\\"
 "Test ctrl char: \^@ \^[ \^? \^G \^H \^I \^J \^K \^L \^M"
@@ -125,7 +127,7 @@ If you encountered any other problems describe how you solved them
 ""
 \end{lstlisting}
 
-\subsection{Test 5}
+\subsection{Test 5: Multiline Strings}
 \begin{lstlisting}[frame=single]
 /* Test 
 Some more text for the hell of it
