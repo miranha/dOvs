@@ -78,7 +78,7 @@ printable=[! "\"" # \$ % "'" "(" ")" "\*" "\+" , \- "\." "\/" ":" "\;"];
 printable2=["\<" "\=" "\>" "\?" @ "\[" "\\" "\]" "\^" _ ` "\{" "\|" "\}" ~];
 %%
 
-<INITIAL MULTILINE>"\n"	                   => (handleNewline(yypos);continue());
+<INITIAL>"\n"	                   => (handleNewline(yypos);continue());
 <INITIAL> " "|"\t" => (continue());
 <INITIAL>","                        => (dopos Tokens.COMMA yypos 1);
 <INITIAL>"var"                      => (dopos Tokens.VAR yypos 3);
@@ -146,11 +146,11 @@ printable2=["\<" "\=" "\>" "\?" @ "\[" "\\" "\]" "\^" _ ` "\{" "\|" "\}" ~];
 
 <STRING> "\\n"|"\\t"|"\\\\"|"\\\"" => (addToCurString yytext;continue());
 
-<STRING> "\\^". => (addToCurString (handleCtrl yytext yypos);continue());
+<STRING> "\\^"(.?) => (addToCurString (handleCtrl yytext yypos);continue());
 			   
 <STRING> "\\"{digit}{3} => (addToCurString (digitEsc yypos yytext);continue());
 
-<STRING> "\\"{digit}{1,2} => (ErrorMsg.error yypos (yytext ^ " is an illformed ascii decimal escape code. ascii decimal escape code must be of the form \\ddd, with 0 <= ddd <=" ^ (Int.toString maxAsciiCode) ^ " , and d a digit between 0 and 9"); continue());
+<STRING> "\\"{digit}{1,2} => (ErrorMsg.error yypos (yytext ^ " is an illformed ascii decimal escape code. ascii decimal escape code must be of the form \\ddd, with 000 <= ddd <=" ^ (Int.toString maxAsciiCode) ^ " , and d a digit between 0 and 9"); continue());
 
 <STRING> {letter}|{digits}|{printable}|{printable2} => (addToCurString yytext; continue());
 
@@ -164,6 +164,7 @@ printable2=["\<" "\=" "\>" "\?" @ "\[" "\\" "\]" "\^" _ ` "\{" "\|" "\}" ~];
 
 <STRING>.=> (ErrorMsg.error yypos ("Illegal character in string: " ^ yytext); continue());
 
+<MULTILINE>"\n"	                   => (handleNewline(yypos);continue());
 <MULTILINE> " "|"\t" => (continue());
 <MULTILINE> "\\" => (inMultiline := false; YYBEGIN STRING; continue());
-<MULTILINE> .+ => (ErrorMsg.error yypos "Please only use tab, newline and space inside the \\...\\ block of a multiline string."; continue());
+<MULTILINE> . => (ErrorMsg.error yypos "Please only use tab, newline and space inside the \\...\\ block of a multiline string."; continue());
