@@ -14,48 +14,52 @@
 \maketitle
 
 \section{Introduction}
-This report describes the approach in order to develop the lexer, which is the first component in the compilation process. 
-First, it will provide an overview of the concrete solutions to specific problems, such as handling nested comments, escape codes and multi-line strings. 
+This report describes our approach to develop the lexer, which is the first component in the compilation process. 
+
+First, it will provide an overview of the concrete solutions to specific problems, such as the handling of nested comments, escape codes and multi-line strings. 
+
 Additionally, it provides an overview of problems encountered and interesting experiments during the development process. Finally, five tiger programs are provided as test cases for the various elements of the lexer. 
 
 \section{How did we implement the lexer}
-This lexer is implemented by using the existing tool ML-Lex, like it was suggest to be used by the book. With this tool it is possible to specify which regular expression shall map to which specific tokens. At first the support for all the basic constructs in the Tiger language where implemented. For example this includes to recognise the keyword. Also the support for non nested comments was implemented in this first version of the lexer. 
+This lexer is implemented by using the existing tool ML-Lex, like it was suggested by the book. With this tool it is possible to specify which regular expression should map to which specific tokens. At first the support for all the basic constructs in the Tiger language were implemented. For example this includes the ability to recognise the keywords. Also the support for non-nested comments was implemented in this first version of the lexer.
 
 \subsection{Nested comments}
-Implementing the nested comments functionality was harder than the first version of the lexer without this functionality. In order to implement this functionality, the possibility to use states in ML-Lex was used. In this case a \texttt{COMMENT} state was used. Additionally, a counter was used in order to handle nested comments, and detected when we jump out of the \texttt{COMMENT} state. This is accomplished by the following code:
+In order to implement nested comments, we used ML-Lex's ability to have states. In this case we made a state called \texttt{COMMENT}. Additionally, a counter was used in order to handle nested comments. Once the counter reaches zero, we jump out of the \texttt{COMMENT} state. This is accomplished by the following code:
 
 \begin{lstlisting}[frame=single]
-<INITIAL COMMENT>"/*"	=> (commentLevel := ((!commentLevel)+1); YYBEGIN 
+< INITIAL >"/*"	=> (commentLevel := ((!commentLevel)+1); YYBEGIN 
 COMMENT; continue());
-<COMMENT>"*/"=> (commentLevel := ((!commentLevel)-1);
+< COMMENT >"/*"	=> (commentLevel := ((!commentLevel)+1); continue());
+< COMMENT >"*/"=> (commentLevel := ((!commentLevel)-1);
  if !commentLevel < 1 then YYBEGIN INITIAL else (); continue());
 
-<COMMENT>"\n" => (handleNewline yypos; continue());
-<COMMENT>.	=> (continue());
+< COMMENT >"\n" => (handleNewline yypos; continue());
+< COMMENT >.	=> (continue());
 \end{lstlisting}
 
-
-This code basically shows that for each \texttt{/*} we meet, the counter is incremented by one. Afterwards, for each \texttt{*/} the counter is decremented by one. When the counter is at zero, we jump out of the \texttt{COMMENT} state. Additionally, this counter value is used in order to detect unclosed comments, and issue an error. In this case we use the function \texttt{eof}, which is called at the \texttt{EOF}. If we reach the \texttt{EOF} and the comment counter value is not zero, then an error is issued, as a comment has been made, but not closed.  
+This code basically shows that for each \texttt{/*} we meet, the counter is incremented by one. Afterwards, for each \texttt{*/} the counter is decremented by one. When the counter is at zero, we jump out of the \texttt{COMMENT} state. Additionally, this counter value is used in order to detect unclosed comments at EOF, and raise an error. Namely, if the counter is not zero at EOF, we raise an error.
 
 \subsection{Escape codes}
 The escape codes where implemented when the lexer recognises that it is in the \texttt{STRING} state. Afterwards when a backslash is found, it check the following character/sequence in order to recognise if it is legal inside a string according to the tiger language specification. 
 
 
-When inside the \texttt{STRING} state, the three basic basics chars are handled by:
+When inside the \texttt{STRING} state, the three basic chars are handled by:
 
 \begin{lstlisting}[frame=single]
-<STRING> "\\n"|"\\t"|"\\\\"|"\\\"" => (addToCurString yytext;continue());
+< STRING > "\\n"|"\\t"|"\\\\"|"\\\"" => (addToCurString yytext;continue());
 \end{lstlisting}
 
 Additionally, the three decimals after backslash are handled the following way:
 
 \begin{lstlisting}[frame=single]
-<STRING> "\\"{digit}{3} => (addToCurString (digitEsc yypos yytext);continue());
+< STRING > "\\"{digit}{3} => (addToCurString (digitEsc yypos yytext);continue());
 \end{lstlisting}
 
-There is also some error handling for the decimal in order to ensure that there are exact three digits after the backslash, as well as the digits being within the correct range of ASCII values of 0 - 127:
+\texttt{digitEsc} will convert the escape character to its standard representation, such converting \\097 to a. It will raise an error if the number \texttt{ddd} is not in the correct range of ASCII values. 
+
+There is also some error handling for the decimal in order to ensure that there are exact three digits after the backslash.
 \begin{lstlisting}[frame=single]
-<STRING> "\\"{digit}{1,2} => (ErrorMsg.error yypos (yytext ^ " is an illformed 
+< STRING > "\\"{digit}{1,2} => (ErrorMsg.error yypos (yytext ^ " is an illformed 
 ascii decimal escape code. ascii decimal escape code must be of the form 
 \\ddd, with 0 <= ddd <=" ^ (Int.toString maxAsciiCode) ^ " , and d a digit 
 between 0 and 9"); continue());
@@ -64,20 +68,20 @@ between 0 and 9"); continue());
 At last the escape control chars where handled in order to convert these to their respective escape characteres. This achieved by recognising the character \texttt{\textbackslash \^}. Then a function handles to find if the control character is a valid one, and provide the correct mapping using the function \texttt{handleCtrl}:
 
 \begin{lstlisting}[frame=single]
-<STRING> "\\^". => (addToCurString (handleCtrl yytext yypos);continue());
+< STRING > "\\^". => (addToCurString (handleCtrl yytext yypos);continue());
 \end{lstlisting}
 
 \subsection{Multiline strings}
-For strings also the possibility to split the string over multiple lines is supported by the implemented lexer. This is handle by having a state called \texttt{MULTILINE}, which is entered from the before mentioned state \texttt{STRING}, when only a ''\textbackslash is typed inside a string. This change happens in the following code:
+For strings also the possibility to split the string over multiple lines is supported by the implemented lexer. This is handle by having a state called \texttt{MULTILINE}, which is entered from the before mentioned state \texttt{STRING}, when only a ''\textbackslash'' is typed inside a string, followed by either tab, space or newline. This change happens in the following code:
 
 \begin{lstlisting}[frame=single]
-<STRING> "\\"(" "|"\t") =>(inMultiline := true; YYBEGIN MULTILINE; continue());
+< STRING > "\\"(" "|"\t") =>(inMultiline := true; YYBEGIN MULTILINE; continue());
 \end{lstlisting}
 
-Inside this \texttt{MULTILINE} state we only allow space and tab to be used in order to format the string.
-Afterwards, this state is left when the next ''\textbackslash is received at the input of the lexer. 
+Inside this \texttt{MULTILINE} state we only allow space, tab and newline to be used in order to format the string.
+Afterwards, this state is left when the next ''\textbackslash'' is received at the input of the lexer. 
 \begin{lstlisting}[frame=single]
-<MULTILINE> "\\" => (inMultiline := false; YYBEGIN STRING; continue());
+< MULTILINE > "\\" => (inMultiline := false; YYBEGIN STRING; continue());
 \end{lstlisting}
 
 Basically this functionality enables the support of multiline strings inside the lexer. There is, however, some additional error handling for multiline strings.
@@ -85,7 +89,7 @@ Basically this functionality enables the support of multiline strings inside the
 \section{Problems experienced}
 One of the problems of the more interesting nature is how to handle EOF. While it is rather straightforward to make the lexer jump between relevant states, it quite another matter when wanting to query about it's current state. By looking through the documentation, there does not seem to be any built in way to do so.
 
-This means that we decided to include boolean variables, that we can set when we enter and exit a state, for use in EOF to detect if, for example, a string is unclosed. We also use the commentLevel counter to detect if we still where in the COMMENT state.
+This means that we decided to include boolean variables, that we can set when we enter and exit a state, to use at EOF to detect if, for example, a string is unclosed. We also use the commentLevel counter to detect if we still are in the COMMENT state.
 
 Also it shall be noted that the expression */ was chosen to be treated as a close comment in all cases, and not a multiple and divide token.
 
@@ -93,19 +97,23 @@ Also it shall be noted that the expression */ was chosen to be treated as a clos
 
 A bizarre bug occurred when using a newline inside a comment. It caused everything to be considered a comment. The fix was going from
 \begin{lstlisting}[frame=single]
-<INITIAL COMMENT MULTILINE>"\n" => (handleNewline yypos; continue());
+< INITIAL COMMENT MULTILINE >"\n" => (handleNewline yypos; continue());
 \end{lstlisting}
 to
 \begin{lstlisting}[frame=single]
-<INITIAL MULTILINE>"\n" => (handleNewline yypos; continue());
+< INITIAL >"\n" => (handleNewline yypos; continue());
 
-<COMMENT>"\n" => (handleNewline yypos; continue());
+< MULTILINE >"\n" => (handleNewline yypos; continue());
+
+< COMMENT >"\n" => (handleNewline yypos; continue());
 \end{lstlisting}
 
 \section{5 tiger programs}
-These test show five tiger programs, which where used in order to test the lexer. It shall be noted that the main focus of these test are to test if error are reported correctly in different cases. Additionally, it is used in order to test if the lexer ''jumps``correctly between the states described above. For this reason the tests are made simple. However, in order to test for more complicated tiger programs, the provided test cases can be used.  
+These test show five tiger programs, which where used in order to test the lexer. It shall be noted that the main focus of these test are to test if error are reported correctly in different cases. Additionally, it is used in order to test if the lexer correctly jumps between the states described above. For this reason the tests are made simple. However, in order to test for more complicated tiger programs, the provided test cases can be used.
 
-\subsection{Test 1: Simple Comment+String}
+Note there is more than the 5 test cases described in this report in the test folder. They are merely artefacts of the development process. They merely served to test earlier and incomplete implementations of the lexer.
+
+\subsection{own\_test01.tig: Simple Comment and String}
 Here it is tested if the \texttt{COMMENT} state is entered correctly, and that the \texttt{STRING} state gets entered when necessary.
 
 \begin{lstlisting}[frame=single]
@@ -116,7 +124,7 @@ Here it is tested if the \texttt{COMMENT} state is entered correctly, and that t
 
 The lexer behaves as expected, in that it ignores the comment and makes a string token.
 
-\subsection{Test 2: Nested Comment+unclosed string}
+\subsection{own\_test02.tig: Nested Comment and unclosed string}
 In this test a nested comment is tested, and that an error is issued because of the unclosed string.
 
 \begin{lstlisting}[frame=single]
@@ -128,7 +136,7 @@ In this test a nested comment is tested, and that an error is issued because of 
 
 The lexer behaves as expected. It ignores the nested comment, and issues an error for the unclosed string.
 
-\subsection{Test 3: Nested comment, with error}
+\subsection{own\_test03.tig: Nested comment, with error}
 In this part it is check if en error is issued when a nested comment is not closed correctly.
 
 \begin{lstlisting}[frame=single]
@@ -139,7 +147,7 @@ In this part it is check if en error is issued when a nested comment is not clos
 
 The lexer behaves as expected, and gives an error for the unclosed nested comment.
 
-\subsection{Test 4: Escape Characters, and Errors}
+\subsection{own\_test04.tig: Escape Characters and Errors}
 In this part escape characters are tested, and if the necessary errors are given for illegal characters.
 Lines 8-9 test the multiline string functionality.
 
@@ -157,7 +165,7 @@ Lines 8-9 test the multiline string functionality.
 ""
 \end{lstlisting}
 
-\subsection{Test 5: Switching between the different states}
+\subsection{own\_test05.tig: Switching between the different states}
 This last test just check if the switching between the different states is correct.
 
 \begin{lstlisting}[frame=single]
