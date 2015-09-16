@@ -85,35 +85,53 @@ Afterwards, this state is left when the next ''\textbackslash is received at the
 Basically this functionality enables the support of multiline strings inside the lexer. There is, however, some additional error handling for multiline strings.
 
 \section{Problems experienced}
-If you encountered any other problems describe how you solved them
+One of the problems of the more interesting nature is how to handle EOF. While it is rather straightforward to make the lexer jump between relevant states, it quite another matter when wanting to query about it's current state. By looking through the documentation, there does not seem to be any built in way to do so.
+
+This means that we decided to include boolean variables, that we can set when we enter and exit a state, for use in EOF to detect if, for example, a string is unclosed. We also use the commentLevel counter to detect if we still where in the COMMENT state.
+
+%While this works and has very little impact on code readability, it feels like a rather hackey and inelegant way to do so, when a more elegant method would be to ask the lexer itself in what state it was.
 
 \section{5 tiger programs}
-5 interesting tiger programs that you find test your lexer in a good way.
+These test show five tiger programs, which where used in order to test the lexer. It shall be noted that the main focus of these test are to test if error are reported correctly in different cases. Additionally, it is used in order to test if the lexer ''jumps``correctly between the states described above. For this reason the tests are made simple. However, in order to test for more complicated tiger programs, the provided test cases can be used.  
 
-\subsection{Test 1: Simple String}
+\subsection{Test 1: Simple Comment+String}
+Here it is tested if the \texttt{COMMENT} state is entered correctly, and that the \texttt{STRING} state gets entered when necessary.
+
 \begin{lstlisting}[frame=single]
 /* In this part we test a simple comment and string */
 
 "Hello from a String"
 \end{lstlisting}
 
+The lexer behaves as expected, with the following output:
 
-\subsection{Test 2: Nested Comment}
+\subsection{Test 2: Nested Comment+unclosed string}
 \begin{lstlisting}[frame=single]
+In this test a nested comment is tested, and that an error is issued because of the unclosed string.
+
 /* A nested
 /* comment */ */
 
 "This is a unclosed string
 \end{lstlisting}
 
-\subsection{Test 3: Nested, with error}
+The lexer behaves as expected, with the following output:
+
+\subsection{Test 3: Nested comment, with error}
+In this part it is check if en error is issued when a nested comment is not closed correctly.
+
 \begin{lstlisting}[frame=single]
 /* A nested
 /* comment with an error */ 
 
 \end{lstlisting}
 
+The lexer behaves as expected, with the following output:
+
 \subsection{Test 4: Escape Characters, and Errors}
+
+
+
 \begin{lstlisting}[frame=single]
 "Testing tabs, backslash and newline: \t\n\\"
 "Test ctrl char: \^@ \^[ \^? \^G \^H \^I \^J \^K \^L \^M"
