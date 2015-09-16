@@ -80,6 +80,9 @@ printable2=["\<" "\=" "\>" "\?" @ "\[" "\\" "\]" "\^" _ ` "\{" "\|" "\}" ~];
 
 <INITIAL>"\n"	                   => (handleNewline(yypos);continue());
 <INITIAL> " "|"\t" => (continue());
+
+<INITIAL>"*/" => (ErrorMsg.error yypos "*/ must have a matching */"; continue());
+
 <INITIAL>","                        => (dopos Tokens.COMMA yypos 1);
 <INITIAL>"var"                      => (dopos Tokens.VAR yypos 3);
 
