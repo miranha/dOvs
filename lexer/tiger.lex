@@ -18,9 +18,9 @@ fun eof () =
    val pos = hd (!linePos)
    val res1 = (if (!commentLevel > 0) then
 					ErrorMsg.error pos "Reached EOF while parsing comment. Close all comment bloks" else ())
-   val res2 = (if ((!inString)) then
-				  ErrorMsg.error pos "Unclosed string. Rember to close your string with \"." else ())
-   val res3 = (if (!inMultiline) then ErrorMsg.error pos "Unclosed multiline block. Remember to close with \\" else ())
+   val res3 = (if (!inMultiline) then ErrorMsg.error pos "Unclosed multiline block. Remember to close with \\" 
+		 else if ((!inString)) then
+					 ErrorMsg.error pos "Unclosed string. Rember to close your string with \"." else ())
    in
    Tokens.EOF (pos,pos) end)
 
@@ -78,7 +78,7 @@ printable=[! "\"" # \$ % "'" "(" ")" "\*" "\+" , \- "\." "\/" ":" "\;"];
 printable2=["\<" "\=" "\>" "\?" @ "\[" "\\" "\]" "\^" _ ` "\{" "\|" "\}" ~];
 %%
 
-<INITIAL COMMENT MULITLINE>"\n"	                   => (handleNewline(yypos);continue());
+<INITIAL MULTILINE>"\n"	                   => (handleNewline(yypos);continue());
 <INITIAL> " "|"\t" => (continue());
 <INITIAL>","                        => (dopos Tokens.COMMA yypos 1);
 <INITIAL>"var"                      => (dopos Tokens.VAR yypos 3);
@@ -134,15 +134,17 @@ printable2=["\<" "\=" "\>" "\?" @ "\[" "\\" "\]" "\^" _ ` "\{" "\|" "\}" ~];
 <INITIAL>.                          => (ErrorMsg.error yypos ("illegal char " ^ yytext);
                                continue());
 
-<INITIAL>"/*"						=> (commentLevel := !commentLevel+1; YYBEGIN COMMENT; continue());
+<INITIAL COMMENT>"/*"						=> (commentLevel := ((!commentLevel)+1); YYBEGIN COMMENT; continue());
 
-<COMMENT>"*/"				=> (commentLevel := !commentLevel-1; if !commentLevel < 1 then YYBEGIN INITIAL else (); continue());
+<COMMENT>"*/"				=> (commentLevel := ((!commentLevel)-1); if !commentLevel < 1 then YYBEGIN INITIAL else (); continue());
+
+<COMMENT>"\n" => (handleNewline yypos; continue());
 <COMMENT>.	=> (continue());
 
 
 <STRING> "\"" => (YYBEGIN INITIAL; inString := false; dopos3 Tokens.STRING (!currentString) (!stringStart) (String.size (!currentString)));
 
-<STRING> "\\n"|"\\t"|"\\"|"\\\"" => (addToCurString yytext;continue());
+<STRING> "\\n"|"\\t"|"\\\\"|"\\\"" => (addToCurString yytext;continue());
 
 <STRING> "\\^". => (addToCurString (handleCtrl yytext yypos);continue());
 			   
@@ -164,4 +166,4 @@ printable2=["\<" "\=" "\>" "\?" @ "\[" "\\" "\]" "\^" _ ` "\{" "\|" "\}" ~];
 
 <MULTILINE> " "|"\t" => (continue());
 <MULTILINE> "\\" => (inMultiline := false; YYBEGIN STRING; continue());
-<MULTILINE> . => (ErrorMsg.error yypos "Please only use tab, newline and space inside the \\...\\ block of a multiline string."; continue());
+<MULTILINE> .+ => (ErrorMsg.error yypos "Please only use tab, newline and space inside the \\...\\ block of a multiline string."; continue());
