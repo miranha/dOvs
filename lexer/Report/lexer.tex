@@ -85,11 +85,9 @@ Basically this functionality enables the support of multiline strings inside the
 \section{Problems experienced}
 One of the problems of the more interesting nature is how to handle EOF. While it is rather straightforward to make the lexer jump between relevant states, it quite another matter when wanting to query about it's current state. By looking through the documentation, there does not seem to be any built in way to do so.
 
-
-
 This means that we decided to include boolean variables, that we can set when we enter and exit a state, for use in EOF to detect if, for example, a string is unclosed. We also use the commentLevel counter to detect if we still where in the COMMENT state.
 
-
+Also it shall be noted that the expression */ was chosen to be treated as a close comment in all cases, and not a multiple and divide token.
 
 %While this works and has very little impact on code readability, it feels like a rather hackey and inelegant way to do so, when a more elegant method would be to ask the lexer itself in what state it was.
 
@@ -173,6 +171,9 @@ hello end
 The lexer parses this tiger program as expected
 
 Additionally, we have a interesting test inside \texttt{string2.tig}, which shows the multiline string error.
+
+\section{Conlusion}
+This report showed the implementation of the lexer. Furthermore some intersting problem encountered where described. Finally, some tests provided confidence that this lexer is working correctly.
 
 
 \end{document}
