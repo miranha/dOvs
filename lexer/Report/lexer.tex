@@ -87,9 +87,24 @@ Basically this functionality enables the support of multiline strings inside the
 \section{Problems experienced}
 One of the problems of the more interesting nature is how to handle EOF. While it is rather straightforward to make the lexer jump between relevant states, it quite another matter when wanting to query about it's current state. By looking through the documentation, there does not seem to be any built in way to do so.
 
+
+
 This means that we decided to include boolean variables, that we can set when we enter and exit a state, for use in EOF to detect if, for example, a string is unclosed. We also use the commentLevel counter to detect if we still where in the COMMENT state.
 
+
+
 %While this works and has very little impact on code readability, it feels like a rather hackey and inelegant way to do so, when a more elegant method would be to ask the lexer itself in what state it was.
+
+A bizarre bug occurred when using a newline inside a comment. It caused everything to be considered a comment. The fix was going from
+\begin{lstlisting}[frame=single]
+<INITIAL COMMENT MULTILINE>"\n" => (handleNewline yypos; continue());
+\end{lstlisting}
+to
+\begin{lstlisting}[frame=single]
+<INITIAL MULTILINE>"\n" => (handleNewline yypos; continue());
+
+<COMMENT>"\n" => (handleNewline yypos; continue());
+\end{lstlisting}
 
 \section{5 tiger programs}
 These test show five tiger programs, which where used in order to test the lexer. It shall be noted that the main focus of these test are to test if error are reported correctly in different cases. Additionally, it is used in order to test if the lexer ''jumps``correctly between the states described above. For this reason the tests are made simple. However, in order to test for more complicated tiger programs, the provided test cases can be used.  
