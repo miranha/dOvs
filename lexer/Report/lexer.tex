@@ -159,9 +159,8 @@ Lines 9-10 test the multiline string functionality.
 ""
 \end{lstlisting}
 
-\subsection{Test 5: Multiline Strings}
+\subsection{Test 5: Switching between the different states}
 This last test just check if the switching between the different states is correct.
-
 
 \begin{lstlisting}[frame=single]
 /* Test 
@@ -172,6 +171,8 @@ let function hello() = print("Hello"/*a comment /* going */ deep */) in
 hello end
 \end{lstlisting}
 The lexer parses this tiger program as expected
+
+Additionally, we have a interesting test inside \texttt{string2.tig}, which shows the multiline string error.
 
 
 \end{document}
