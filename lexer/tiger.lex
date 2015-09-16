@@ -142,7 +142,7 @@ printable2=["\<" "\=" "\>" "\?" @ "\[" "\\" "\]" "\^" _ ` "\{" "\|" "\}" ~];
 
 <STRING> "\"" => (YYBEGIN INITIAL; inString := false; dopos3 Tokens.STRING (!currentString) (!stringStart) (String.size (!currentString)));
 
-<STRING> "\\n"|"\\t"|"\\" => (addToCurString yytext;continue());
+<STRING> "\\n"|"\\t"|"\\"|"\\\"" => (addToCurString yytext;continue());
 
 <STRING> "\\^". => (addToCurString (handleCtrl yytext yypos);continue());
 			   
