@@ -72,7 +72,7 @@ fun makeFundecl (idsym, ps, rty, e, p) =
   | seqexp | seqsexps
   | letexp 
   | binop | unaryop
-  | ifexp | ifelsethenexp
+  | ifexp | ifelseexp
   | whileexp
   | forexp
 
@@ -124,6 +124,7 @@ exp: INT       ()
   | forexp ()
   | whileexp ()
   | ifexp ()
+  | ifelseexp ()
 
 binop : exp PLUS	exp 	%prec PLUS ()
 		 | exp MINUS exp 	%prec MINUS ()
@@ -147,6 +148,8 @@ forexp : FOR ID COLON EQ exp TO exp DO exp ()
 whileexp : WHILE exp DO exp ()
 
 ifexp : IF exp THEN exp ()
+
+ifelseexp : IF exp THEN exp ELSE exp ()
 
     (* [..missing rules for exp..] *)
 
