@@ -121,7 +121,7 @@ binop : exp PLUS	exp 	%prec PLUS ()
 		 | exp DIVIDE exp 	%prec DIVIDE ()
 		 | exp CARET exp 	%prec CARET ()
 
-unaryop : MINUS exp
+unaryop : MINUS exp ()
 
 
     (* [..missing rules for exp..] *)
