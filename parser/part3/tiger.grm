@@ -57,6 +57,14 @@ fun makeFundecl (idsym, ps, rty, e, p) =
 (* [add missing nonterminals; in second phase: add semantic values] *)
 
 %nonterm program | exp
+  | dec 
+  | tydec | vardec | fundec
+  | ty | typeid | tyfields
+  | arrtype | recordtype
+  (* Here we define certain non terminals to stand for expressions *)
+  | seqexp | letexp |
+  | binop | unaryop
+  | ifexp 
 
 %pos int
 %verbose
