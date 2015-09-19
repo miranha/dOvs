@@ -81,6 +81,14 @@ fun makeFundecl (idsym, ps, rty, e, p) =
 %eop EOF
 %noshift EOF
 
+(* Here we will esablish precedence for standard Arithmetic expressions +,-,/,*,^ *)
+%left PLUS MINUS
+%left TIMES DIVIDE
+%right CARET
+%left UMINUS
+
+
+
 %name Tiger
 
 %keyword WHILE FOR TO BREAK LET IN END FUNCTION
@@ -105,6 +113,13 @@ fun makeFundecl (idsym, ps, rty, e, p) =
 program: exp                  ()
 
 exp: INT                      ()
+infixExp : exp PLUS	exp 	%prec PLUS ()
+		 | exp MINUS exp 	%prec MINUS ()
+		 | exp TIMES exp 	%prec TIMES ()
+		 | exp DIVIDE exp 	%prec DIVIDE ()
+		 | exp CARET exp 	%prec CARET ()
+		 
+
     (* [..missing rules for exp..] *)
 
 (* [..missing rules for missing nonterminals..] *)
