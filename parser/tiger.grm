@@ -85,7 +85,7 @@ fun makeFundecl (idsym, ps, rty, e, p) =
 %left PLUS MINUS
 %left TIMES DIVIDE
 %right CARET
-%left UMINUS
+%right UMINUS
 
 
 
@@ -118,7 +118,9 @@ infixExp : exp PLUS	exp 	%prec PLUS ()
 		 | exp TIMES exp 	%prec TIMES ()
 		 | exp DIVIDE exp 	%prec DIVIDE ()
 		 | exp CARET exp 	%prec CARET ()
-		 
+
+uminus : MINUS exp 	%prec UMINUS ()
+
 
     (* [..missing rules for exp..] *)
 
