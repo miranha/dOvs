@@ -111,8 +111,8 @@ fun makeFundecl (idsym, ps, rty, e, p) =
 
 program: exp                  ()
 
-exp: INT
-  | unarop exp
+exp: INT       ()
+  | unarop exp  ()
   | exp binop exp                   ()
 
 binop : exp PLUS	exp 	%prec PLUS ()
