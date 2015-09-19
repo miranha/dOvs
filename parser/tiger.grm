@@ -69,7 +69,8 @@ fun makeFundecl (idsym, ps, rty, e, p) =
   | reccreate
   | fieldcreate
   | assignment
-  | seqexp | letexp 
+  | seqexp | seqsexps
+  | letexp 
   | binop | unaryop
   | ifexp | ifelsethenexp
   | whileep
@@ -112,6 +113,9 @@ fun makeFundecl (idsym, ps, rty, e, p) =
 program: exp                  ()
 
 exp: INT       ()
+  | STRING ()
+  | NIL ()
+  | seqexp ()
   | unaryop  ()
   | binop                   ()
 
@@ -122,6 +126,11 @@ binop : exp PLUS	exp 	%prec PLUS ()
 		 | exp CARET exp 	%prec CARET ()
 
 unaryop : MINUS exp ()
+
+seqexp : LPAREN seqsexps RPAREN ()
+
+seqsexps : exp ()
+        | exp SEMICOLON seqsexps ()
 
 
     (* [..missing rules for exp..] *)
