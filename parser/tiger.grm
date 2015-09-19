@@ -73,7 +73,7 @@ fun makeFundecl (idsym, ps, rty, e, p) =
   | letexp 
   | binop | unaryop
   | ifexp | ifelsethenexp
-  | whileep
+  | whileexp
   | forexp
 
 %pos int
@@ -115,9 +115,15 @@ program: exp                  ()
 exp: INT       ()
   | STRING ()
   | NIL ()
+  | BREAK ()
   | seqexp ()
   | unaryop  ()
   | binop                   ()
+  | callexp ()
+  | assignment ()
+  | forexp ()
+  | whileexp ()
+  | ifexp ()
 
 binop : exp PLUS	exp 	%prec PLUS ()
 		 | exp MINUS exp 	%prec MINUS ()
@@ -132,6 +138,15 @@ seqexp : LPAREN seqsexps RPAREN ()
 seqsexps : exp ()
         | exp SEMICOLON seqsexps ()
 
+callexp : ID LPAREN RPAREN ()
+
+assignment : ID COLON EQ exp ()
+
+forexp : FOR ID COLON EQ exp TO exp DO exp ()
+
+whileexp : WHILE exp DO exp ()
+
+ifexp : IF exp THEN exp ()
 
     (* [..missing rules for exp..] *)
 
