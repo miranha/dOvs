@@ -61,7 +61,6 @@ fun makeFundecl (idsym, ps, rty, e, p) =
   | tydec | vardec | fundec
   | ty | typeid | tyfields
   | arrtype | recordtype
-  (* Here we define certain non terminals to stand for expressions *)
   | seqexp | letexp |
   | binop | unaryop
   | ifexp 
