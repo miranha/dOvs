@@ -113,13 +113,14 @@ fun makeFundecl (idsym, ps, rty, e, p) =
 program: exp                  ()
 
 exp: INT                      ()
-infixExp : exp PLUS	exp 	%prec PLUS ()
+
+binop : exp PLUS	exp 	%prec PLUS ()
 		 | exp MINUS exp 	%prec MINUS ()
 		 | exp TIMES exp 	%prec TIMES ()
 		 | exp DIVIDE exp 	%prec DIVIDE ()
 		 | exp CARET exp 	%prec CARET ()
 
-uminus : MINUS exp 	%prec UMINUS ()
+unaryop : MINUS exp 	%prec UMINUS ()
 
 
     (* [..missing rules for exp..] *)
