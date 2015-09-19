@@ -58,13 +58,22 @@ fun makeFundecl (idsym, ps, rty, e, p) =
 
 %nonterm program | exp
   | dec 
-  | tydec | vardec | fundec
+  | tydec | vardec | fundec | fielddec
   | ty | typeid | tyfields
   | arrtype | recordtype
   (* Here we define certain non terminals to stand for expressions *)
+  | lvalue | subscript
+  | fieldexp
+  | callexp
+  | arrcreate
+  | reccreate
+  | fieldcreate
+  | assignment
   | seqexp | letexp 
   | binop | unaryop
-  | ifexp 
+  | ifexp | ifelsethenexp
+  | whileep
+  | forexp
 
 %pos int
 %verbose
