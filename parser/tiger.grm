@@ -85,7 +85,6 @@ fun makeFundecl (idsym, ps, rty, e, p) =
 %left PLUS MINUS
 %left TIMES DIVIDE
 %right CARET
-%right UMINUS
 
 
 
@@ -112,7 +111,9 @@ fun makeFundecl (idsym, ps, rty, e, p) =
 
 program: exp                  ()
 
-exp: INT                      ()
+exp: INT
+  | unarop exp
+  | exp binop exp                   ()
 
 binop : exp PLUS	exp 	%prec PLUS ()
 		 | exp MINUS exp 	%prec MINUS ()
@@ -120,7 +121,7 @@ binop : exp PLUS	exp 	%prec PLUS ()
 		 | exp DIVIDE exp 	%prec DIVIDE ()
 		 | exp CARET exp 	%prec CARET ()
 
-unaryop : MINUS exp 	%prec UMINUS ()
+unaryop : MINUS exp
 
 
     (* [..missing rules for exp..] *)
