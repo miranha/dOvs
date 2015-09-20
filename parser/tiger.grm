@@ -57,10 +57,10 @@ fun makeFundecl (idsym, ps, rty, e, p) =
 (* [add missing nonterminals; in second phase: add semantic values] *)
 
 %nonterm program | exp
-  | dec 
+  | dec
   | tydec | vardec | fundec | fielddec | fielddeccontent
   | ty | typeid | tyfields
-  | arrtype | recordtype
+  | arrty | recty
   (* Here we define certain non terminals to stand for expressions *)
   | lvalue | subscript
   | fieldexp
@@ -201,14 +201,16 @@ reccreatecon : fieldcreate ()
 			| ()
 
 fieldcreate : ID EQ exp ()
-
+(*
 letexp : LET deccon IN seqsexps END
 
 deccon : dec ()
 		| dec deccon ()
 
-
-
+dec : tydec ()
+    | vardec ()
+    | fundec ()
+*)
 
     (* [..missing rules for exp..] *)
 
