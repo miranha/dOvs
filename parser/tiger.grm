@@ -7,6 +7,8 @@ structure S = Symbol
 datatype lvaluePartSpec = Field of S.symbol
                         | Subscript of A.exp
 
+fun makeInt(e)=A.IntExp e
+
 fun makeLvaluePartSpec (v, pos, l::r) =
   (case l
     of Field idsym =>
@@ -56,25 +58,25 @@ fun makeFundecl (idsym, ps, rty, e, p) =
 
 (* [add missing nonterminals; in second phase: add semantic values] *)
 
-%nonterm program | exp
-  | dec
-  | tydec | vardec | fundec | fielddec | fielddeccontent
-  | ty | typeid | tyfields
-  | arrty | recty
+%nonterm program of A.exp | exp of A.exp
+(*  | dec of A.exp
+  | tydec of A.exp | vardec of A.exp | fundec of A.exp | fielddec of A.exp | fielddeccontent of A.exp
+  | ty of A.exp | typeid of A.exp | tyfields of A.exp
+  | arrty of A.exp | recty of A.exp
   (* Here we define certain non terminals to stand for expressions *)
-  | lvalue | subscript
-  | fieldexp
-  | callexp | callexpcon
-  | arrcreate
-  | reccreate | reccreatecon
-  | fieldcreate
-  | assignment
-  | seqexp | seqsexps
-  | letexp | deccon
-  | binop | unaryop
-  | ifexp | ifelseexp
-  | whileexp
-  | forexp
+  | lvalue of A.exp | subscript of A.exp
+  | fieldexp of A.exp
+  | callexp of A.exp | callexpcon of A.exp
+  | arrcreate of A.exp
+  | reccreate of A.exp | reccreatecon of A.exp
+  | fieldcreate of A.exp
+  | assignment of A.exp
+  | seqexp of A.exp | seqsexps of A.exp
+  | letexp of A.exp | deccon of A.exp
+  | binop of A.exp | unaryop of A.exp
+  | ifexp of A.exp | ifelseexp of A.exp
+  | whileexp of A.exp
+  | forexp of A.exp *)
 
 
 
@@ -113,8 +115,8 @@ fun makeFundecl (idsym, ps, rty, e, p) =
 
 program: exp                  (exp)
 
-exp: INT       ( ( print("Hej..."^(Int.toString INT)) , A.IntExp(INT) ) )
-  | STRING ()
+exp: INT       ( A.IntExp INT)
+(*  | STRING ()
   | NIL ()
   | BREAK ()
   | seqexp ()
@@ -211,7 +213,7 @@ dec : tydec ()
     | vardec ()
     | fundec ()
 
-
+*)
     (* [..missing rules for exp..] *)
 
 (* [..missing rules for missing nonterminals..] *)

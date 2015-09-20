@@ -1,5 +1,5 @@
-structure Parse: sig val parse: string -> unit end =
-struct 
+structure Parse: sig val parse: string -> Absyn.exp end =
+struct
 
 structure TigerLrVals = TigerLrValsFun (structure Token = LrParser.Token)
 structure Lex = TigerLexFun (structure Tokens = TigerLrVals.Tokens)
@@ -20,8 +20,7 @@ fun parse filename =
     in
         TextIO.closeIn file;
 	parseresult
-    end 
+    end
     handle LrParser.ParseError => raise ErrorMsg.Error
 
 end (* Parse *)
-
