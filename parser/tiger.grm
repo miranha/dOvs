@@ -66,15 +66,16 @@ fun makeFundecl (idsym, ps, rty, e, p) =
   | fieldexp
   | callexp | callexpcon
   | arrcreate
-  | reccreate
+  | reccreate | reccreatecon
   | fieldcreate
   | assignment
   | seqexp | seqsexps
-  | letexp 
+  | letexp | deccon
   | binop | unaryop
   | ifexp | ifelseexp
   | whileexp
   | forexp
+
 
 %pos int
 %verbose
