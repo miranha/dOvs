@@ -58,13 +58,13 @@ fun makeFundecl (idsym, ps, rty, e, p) =
 
 %nonterm program | exp
   | dec 
-  | tydec | vardec | fundec | fielddec
+  | tydec | vardec | fundec | fielddec | fielddeccontent
   | ty | typeid | tyfields
   | arrtype | recordtype
   (* Here we define certain non terminals to stand for expressions *)
   | lvalue | subscript
   | fieldexp
-  | callexp
+  | callexp | callexpcon
   | arrcreate
   | reccreate
   | fieldcreate
@@ -118,13 +118,17 @@ exp: INT       ()
   | BREAK ()
   | seqexp ()
   | unaryop  ()
-  | binop                   ()
+  | binop  ()
   | callexp ()
   | assignment ()
   | forexp ()
   | whileexp ()
   | ifexp ()
   | ifelseexp ()
+  | lvalue ()
+  | arrcreate ()
+  | reccreate ()
+  | letexp ()
 
 binop : exp PLUS	exp 	%prec PLUS ()
 		 | exp MINUS exp 	%prec MINUS ()
@@ -138,18 +142,72 @@ seqexp : LPAREN seqsexps RPAREN ()
 
 seqsexps : exp ()
         | exp SEMICOLON seqsexps ()
+        | ()
 
-callexp : ID LPAREN RPAREN ()
+callexp : ID LPAREN callexpcon RPAREN ()
 
-assignment : ID COLON EQ exp ()
+callexpcon : exp ()
+			| exp COMMA callexpcon ()
+			| ()
 
-forexp : FOR ID COLON EQ exp TO exp DO exp ()
+assignment : ID ASSIGN exp ()
+
+forexp : FOR ID ASSIGN exp TO exp DO exp ()
 
 whileexp : WHILE exp DO exp ()
 
 ifexp : IF exp THEN exp ()
 
 ifelseexp : IF exp THEN exp ELSE exp ()
+
+tydec : TYPE ID	EQ ty ()
+
+ty : ID ()
+	| arrty ()
+	| recty ()
+
+arrty : ARRAY OF ID ()
+
+recty : LBRACE fielddeccontent RBRACE ()
+
+fielddeccontent : fielddec ()
+				| fielddec COMMA fielddeccontent ()
+				| ()
+
+
+fielddec : ID COLON ID ()
+
+fundec : ID LPAREN fielddeccontent RPAREN EQ exp ()
+		| ID LPAREN fielddeccontent RPAREN COLON ID EQ exp ()
+
+vardec : ID ASSIGN exp ()
+		| ID COLON ID ASSIGN exp ()
+
+lvalue : ID ()
+		| subscript ()
+		| fieldexp ()
+
+subscript : lvalue LBRACK exp RBRACK ()
+
+fieldexp : lvalue DOT ID ()
+
+arrcreate : ID LBRACK exp RBRACK OF exp ()
+
+reccreate : ID LBRACE reccreatecon RBRACE ()
+
+reccreatecon : fieldcreate ()
+			| fieldcreate COMMA reccreatecon ()
+			| ()
+
+fieldcreate : ID EQ exp ()
+
+letexp : LET deccon IN seqsexps END
+
+deccon : dec ()
+		| dec deccon ()
+
+
+
 
     (* [..missing rules for exp..] *)
 
