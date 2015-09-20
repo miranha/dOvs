@@ -77,18 +77,11 @@ fun makeFundecl (idsym, ps, rty, e, p) =
   | forexp
 
 
-%pos int
-%verbose
-%start program
-%eop EOF
-%noshift EOF
 
 (* Here we will esablish precedence for standard Arithmetic expressions +,-,/,*,^ *)
 %left PLUS MINUS
 %left TIMES DIVIDE
 %right CARET
-
-
 
 %name Tiger
 
@@ -107,13 +100,20 @@ fun makeFundecl (idsym, ps, rty, e, p) =
 %right      ELSE
 (* [..more tokens & levels..] *)
 
+%pos int
+%verbose
+%start program
+%eop EOF
+%noshift EOF
+
+
 %%
 
 (* Top level constructs *)
 
-program: exp                  ()
+program: exp                  (exp)
 
-exp: INT       ()
+exp: INT       ( ( print("Hej..."^(Int.toString INT)) , A.IntExp(INT) ) )
   | STRING ()
   | NIL ()
   | BREAK ()
@@ -201,8 +201,8 @@ reccreatecon : fieldcreate ()
 			| ()
 
 fieldcreate : ID EQ exp ()
-(*
-letexp : LET deccon IN seqsexps END
+
+letexp : LET deccon IN seqsexps END ()
 
 deccon : dec ()
 		| dec deccon ()
@@ -210,7 +210,7 @@ deccon : dec ()
 dec : tydec ()
     | vardec ()
     | fundec ()
-*)
+
 
     (* [..missing rules for exp..] *)
 

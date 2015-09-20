@@ -1,7 +1,7 @@
 Group is
 
       config.sml
-      tiger.lex
+      rescue-tiger.lex.sml
       tiger.grm
       parse.sml
       absyn.sml
@@ -15,4 +15,3 @@ Group is
       $/basis.cm
       $/smlnj-lib.cm
       $/ml-yacc-lib.cm
-
