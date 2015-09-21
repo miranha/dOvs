@@ -1,0 +1,44 @@
+structure A = Ast
+
+%%
+
+%term EOF | ID of string | INT of int | PLUS | MINUS | TIMES | DIV | LPAREN | RPAREN | IF | THEN | ELSE | ASSIGN | SEMICOLON
+
+%nonterm exp of A.aexp | cmd of A.cmd | cmds of A.cmd list | program of A.cmd
+
+%pos int
+%verbose
+
+%start program
+
+%eop EOF
+%noshift EOF
+
+%left PLUS MINUS
+%left TIMES DIV
+
+
+%name Cmd
+
+%%
+program : cmds  (A.Cmds cmds)
+
+exp : ID                ( A.Id (ID) )
+    | INT               ( A.Number (INT) ) 
+    | LPAREN exp RPAREN ( exp )
+
+    | exp PLUS exp      ( A.Op (A.Plus, exp1, exp2 ))
+    | exp MINUS exp     ( A.Op (A.Minus, exp1, exp2 ))
+
+    | exp TIMES exp     ( A.Op (A.Times, exp1, exp2 ))
+    | exp DIV exp       ( A.Op (A.Div, exp1, exp2 ))
+
+
+cmd : ID ASSIGN exp            ( A.Assign (ID, exp) )
+    | IF exp THEN cmd          ( A.If (exp, cmd1, NONE))
+    | IF exp THEN cmd ELSE cmd ( A.If (exp, cmd1, SOME cmd2))
+    | LPAREN cmds RPAREN       ( A.Cmds cmds )
+
+
+cmds: cmd                    ( [cmd] )
+    | cmd SEMICOLON cmds     ( cmd::cmds )

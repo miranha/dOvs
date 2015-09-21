@@ -1,0 +1,2 @@
+Skeleton 5
+ae"CmdLexFun"i2aä¢Tokens"gp1c"Cmd_TOKENS"f5Cd"Int"d"Char"ä¢TextIO"ÿä¢Vector"Nh3aä¢yyInput"jh3aä¢TIO"gp1ÿ9ad"TSIO"gp2ÿd"StreamIO"ad"TPIO"gp1d"TextPrimIO"è0aä¢UserDeclarations"ÿ‚bbd2egp1ÿ‚f5Cd"IO"ÿÿ‚ÿÿNf0f1ÿ
