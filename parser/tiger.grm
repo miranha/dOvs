@@ -1,0 +1,221 @@
+structure A = Absyn
+structure S = Symbol
+
+(* [these functions and similar ones may be convenient
+ * for the creation of abstract syntax trees] *)
+
+datatype lvaluePartSpec = Field of S.symbol
+                        | Subscript of A.exp
+
+fun makeInt(e)=A.IntExp e
+
+fun makeLvaluePartSpec (v, pos, l::r) =
+  (case l
+    of Field idsym =>
+       makeLvaluePartSpec (A.FieldVar (v, idsym, pos), pos, r)
+     | Subscript exp =>
+       makeLvaluePartSpec (A.SubscriptVar (v, exp, pos), pos,r))
+  | makeLvaluePartSpec (v, _, nil) = v
+
+fun makeBinop (e1, bop, e2, p) =
+    A.OpExp  { left = e1
+             , oper = bop
+             , right = e2
+             , pos = p}
+
+fun makeIf (et, en, el, p) =
+    A.IfExp  { test = et
+             , thn = en
+             , els = el
+             , pos = p}
+
+fun makeVarDec (idsym, ty, e, p) =
+    A.VarDec { name = idsym
+             , escape = ref true
+             , typ = ty
+             , init = e
+             , pos = p}
+
+fun makeFundecl (idsym, ps, rty, e, p) =
+             { name = idsym
+             , params = ps
+             , result = rty
+             , body = e
+             , pos = p} : A.fundecldata
+
+%%
+%term
+    EOF
+  | ID of string
+  | INT of int | STRING of string
+  | COMMA | COLON | SEMICOLON | LPAREN | RPAREN | LBRACK | RBRACK
+  | LBRACE | RBRACE | DOT
+  | PLUS | MINUS | TIMES | DIVIDE | EQ | NEQ | LT | LE | GT | GE | CARET
+  | AND | OR | ASSIGN
+  | ARRAY | IF | THEN | ELSE | WHILE | FOR | TO | DO | LET | IN | END | OF
+  | BREAK | NIL
+  | FUNCTION | VAR | TYPE
+
+(* [add missing nonterminals; in second phase: add semantic values] *)
+
+%nonterm program of A.exp | exp of A.exp
+  | dec of A.exp
+  | tydec of A.exp | vardec of A.exp | fundec of A.exp | fielddec of A.exp | fielddeccontent of A.exp
+  | ty of A.exp | typeid of A.exp | tyfields of A.exp
+  | arrty of A.exp | recty of A.exp
+  (* Here we define certain non terminals to stand for expressions *)
+  | lvalue of A.exp | subscript of A.exp
+  | fieldexp of A.exp
+  | callexp of A.exp | callexpcon of A.exp
+  | arrcreate of A.exp
+  | reccreate of A.exp | reccreatecon of A.exp
+  | fieldcreate of A.exp
+  | assignment of A.exp
+  | seqexp of A.exp | seqsexps of A.exp
+  | letexp of A.exp | deccon of A.exp
+  | binop of A.exp | unaryop of A.exp
+  | ifexp of A.exp | ifelseexp of A.exp
+  | whileexp of A.exp
+  | forexp of A.exp
+  | id of A.exp 
+
+
+
+(* Here we will esablish precedence for standard Arithmetic expressions +,-,/,*,^ *)
+%left PLUS MINUS
+%left TIMES DIVIDE
+%right CARET
+%right ID
+
+%name Tiger
+
+%keyword WHILE FOR TO BREAK LET IN END FUNCTION
+         VAR TYPE ARRAY IF THEN ELSE DO OF NIL
+
+%prefer THEN ELSE LPAREN
+
+%value ID ("bogus")
+%value INT (1)
+%value STRING ("")
+
+(* [specify precedence/associativity, least tight binding first] *)
+
+%nonassoc   FUNCTION VAR TYPE THEN DO OF ASSIGN
+%right      ELSE
+(* [..more tokens & levels..] *)
+
+%pos int
+%verbose
+%start program
+%eop EOF
+%noshift EOF
+
+
+%%
+
+(* Top level constructs *)
+
+program: exp                  (exp)
+
+exp: INT       ( A.IntExp INT)
+   | STRING ( A.StringExp(STRING , STRING1left) )
+  | NIL ( A.NilExp )
+  | BREAK (A.BreakExp BREAK1left)
+  | seqexp (A.IntExp (0))
+  | unaryop  (A.IntExp (0))
+  | binop  (binop)
+  | callexp (A.IntExp (0))
+  | assignment ( A.IntExp (0) )
+  | forexp ( A.IntExp(0) )
+  | whileexp ( A.IntExp(0) )
+  | ifexp ( A.IntExp(0) )
+  | ifelseexp ( A.IntExp(0) )
+  | lvalue ( A.IntExp(0) )
+  | arrcreate ( A.IntExp(0) )
+  | reccreate ( A.IntExp(0) )
+  | letexp ( A.IntExp(0) )
+
+binop : exp PLUS exp 	%prec PLUS ( makeBinop (exp1,A.PlusOp,exp2, PLUSleft ))
+		 | exp MINUS exp 	%prec MINUS (makeBinop (exp1,A.MinusOp,exp2, MINUSleft ))
+		 | exp TIMES exp 	%prec TIMES ( makeBinop( exp1, A.TimesOp, exp2, TIMESleft ))
+		 | exp DIVIDE exp 	%prec DIVIDE ( makeBinop(exp1, A.DivideOp, exp2, DIVIDEleft ))
+		 | exp CARET exp 	%prec CARET ( makeBinop( exp1, A.ExponentOp, exp2, CARETleft ))
+
+unaryop : MINUS exp (makeBinop(A.IntExp(0), A.MinusOp, exp, MINUSleft))
+
+seqexp : LPAREN seqsexps RPAREN (A.IntExp(0))
+
+seqsexps : exp (A.IntExp(0))
+        | exp SEMICOLON seqsexps (A.IntExp(0))
+        | (A.IntExp(0))
+
+callexp : ID LPAREN callexpcon RPAREN (A.IntExp(0))
+
+callexpcon : exp (A.IntExp(0))
+			| exp COMMA callexpcon (A.IntExp(0))
+			| (A.IntExp(0))
+
+assignment : ID ASSIGN exp (A.IntExp(0))
+
+forexp : FOR ID ASSIGN exp TO exp DO exp (A.IntExp(0))
+
+whileexp : WHILE exp DO exp (A.IntExp(0))
+
+ifexp : IF exp THEN exp (A.IntExp(0))
+
+ifelseexp : IF exp THEN exp ELSE exp (A.IntExp(0))
+
+tydec : TYPE ID	EQ ty (A.IntExp(0))
+
+ty : ID (A.IntExp(0))
+	| arrty (A.IntExp(0))
+	| recty (A.IntExp(0))
+
+arrty : ARRAY OF ID (A.IntExp(0))
+
+recty : LBRACE fielddeccontent RBRACE (A.IntExp(0))
+
+fielddeccontent : fielddec (A.IntExp(0))
+				| fielddec COMMA fielddeccontent (A.IntExp(0))
+				| (A.IntExp(0))
+
+
+fielddec : ID COLON ID (A.IntExp(0))
+
+fundec : ID LPAREN fielddeccontent RPAREN EQ exp (A.IntExp(0))
+		| ID LPAREN fielddeccontent RPAREN COLON ID EQ exp (A.IntExp(0))
+
+vardec : ID ASSIGN exp (A.IntExp(0))
+		| ID COLON ID ASSIGN exp (A.IntExp(0))
+
+lvalue : subscript (A.IntExp(0))
+       | fieldexp (A.IntExp(0))
+       | ID (A.IntExp(0))
+
+subscript : lvalue LBRACK exp RBRACK (A.IntExp(0))
+
+fieldexp : lvalue DOT ID (A.IntExp(0))
+
+arrcreate : ID LBRACK exp RBRACK OF exp (A.IntExp(0))
+
+reccreate : ID LBRACE reccreatecon RBRACE (A.IntExp(0))
+
+reccreatecon : fieldcreate (A.IntExp(0))
+			| fieldcreate COMMA reccreatecon (A.IntExp(0))
+			| (A.IntExp(0))
+
+fieldcreate : ID EQ exp (A.IntExp(0))
+
+letexp : LET deccon IN seqsexps END (A.IntExp(0))
+
+deccon : dec (A.IntExp(0))
+		| dec deccon (A.IntExp(0))
+
+dec : tydec (A.IntExp(0))
+    | vardec (A.IntExp(0))
+    | fundec (A.IntExp(0))
+
+
+    (* [..missing rules for exp..] *)
+
+(* [..missing rules for missing nonterminals..] *)
