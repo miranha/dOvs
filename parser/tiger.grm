@@ -43,6 +43,26 @@ fun makeFundecl (idsym, ps, rty, e, p) =
              , body = e
              , pos = p} : A.fundecldata
 
+fun makeTydecl (idsym, typ, p) =
+			 { name = idsym
+			 , ty = typ
+			 , pos = p} : A.tydecldata
+
+fun makeFielddec (idsym, ty, p) =
+				{
+				  name = idsym
+				, escape = ref true
+				, typ = ty
+				, pos = p 
+				}
+
+
+
+fielddata   = { name: S.symbol
+                       , escape: bool ref
+                       , typ: (S.symbol * pos)
+                       , pos: pos}
+
 %%
 %term
     EOF
@@ -165,8 +185,6 @@ ifexp : IF exp THEN exp (A.IntExp(0))
 
 ifelseexp : IF exp THEN exp ELSE exp (A.IntExp(0))
 
-tydec : TYPE ID	EQ ty (A.IntExp(0))
-
 ty : ID (A.IntExp(0))
 	| arrty (A.IntExp(0))
 	| recty (A.IntExp(0))
@@ -180,13 +198,15 @@ fielddeccontent : fielddec (A.IntExp(0))
 				| (A.IntExp(0))
 
 
-fielddec : ID COLON ID (A.IntExp(0))
+fielddec : ID COLON ID (makeFielddec(ID1,(ID2,ID2left), ID2right))
 
-fundec : ID LPAREN fielddeccontent RPAREN EQ exp (A.IntExp(0))
-		| ID LPAREN fielddeccontent RPAREN COLON ID EQ exp (A.IntExp(0))
+fundec : ID LPAREN fielddeccontent RPAREN EQ exp (makeFundecl(ID, fielddeccontent, exp, expright))
+		| ID LPAREN fielddeccontent RPAREN COLON ID EQ exp (makeFundecl(ID1, fielddeccontent, ID2, exp, expright))
 
-vardec : ID ASSIGN exp (A.IntExp(0))
-		| ID COLON ID ASSIGN exp (A.IntExp(0))
+vardec : ID ASSIGN exp (makeVarDec(ID1, ASSIGN, exp, expright))
+		| ID COLON ID ASSIGN exp (makeVarDec(ID1, ASSIGN, ID2, exp, expright))
+
+tydec : TYPE ID	EQ ty (makeTydec(ID, ty, tyright))
 
 lvalue : ID ltail (A.IntExp(0))
 
@@ -212,7 +232,7 @@ letexp : LET deccon IN seqsexps END (A.IntExp(0))
 
 deccon : fundeclbegin (A.IntExp(0))
 		| vardeclbegin (A.IntExp(0))
-		| fundeclbegin (A.IntExp(0))
+		| tydeclbegin (A.IntExp(0))
 
 fundeclbegin : fundeclist ()
 		   | fundeclist tydeclbegin ()
@@ -222,7 +242,7 @@ vardeclbegin : vardeclist ()
 		   | vardeclist fundeclbegin ()
 		   | vardeclist tydeclbegin ()
 
-tydeclbegin : tydeclist ( (*Add this to list*) )
+tydeclbegin : tydeclist ( (*Stop List*) )
 		  | tydeclist vardeclbegin ( (*Close List, continue with vardeclist*) )
 		  | tydeclist fundeclbegin ( (*Close List, continue with fundeclist*) )
 
