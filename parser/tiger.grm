@@ -59,7 +59,7 @@ fun makeFundecl (idsym, ps, rty, e, p) =
 (* [add missing nonterminals; in second phase: add semantic values] *)
 
 %nonterm program of A.exp | exp of A.exp
-(*  | dec of A.exp
+  | dec of A.exp
   | tydec of A.exp | vardec of A.exp | fundec of A.exp | fielddec of A.exp | fielddeccontent of A.exp
   | ty of A.exp | typeid of A.exp | tyfields of A.exp
   | arrty of A.exp | recty of A.exp
@@ -76,7 +76,8 @@ fun makeFundecl (idsym, ps, rty, e, p) =
   | binop of A.exp | unaryop of A.exp
   | ifexp of A.exp | ifelseexp of A.exp
   | whileexp of A.exp
-  | forexp of A.exp *)
+  | forexp of A.exp
+  | id of A.exp 
 
 
 
@@ -84,6 +85,7 @@ fun makeFundecl (idsym, ps, rty, e, p) =
 %left PLUS MINUS
 %left TIMES DIVIDE
 %right CARET
+%right ID
 
 %name Tiger
 
@@ -116,104 +118,104 @@ fun makeFundecl (idsym, ps, rty, e, p) =
 program: exp                  (exp)
 
 exp: INT       ( A.IntExp INT)
-(*  | STRING ()
-  | NIL ()
-  | BREAK ()
-  | seqexp ()
-  | unaryop  ()
-  | binop  ()
-  | callexp ()
-  | assignment ()
-  | forexp ()
-  | whileexp ()
-  | ifexp ()
-  | ifelseexp ()
-  | lvalue ()
-  | arrcreate ()
-  | reccreate ()
-  | letexp ()
+   | STRING ( A.StringExp(STRING , STRING1left) )
+  | NIL ( A.NilExp )
+  | BREAK (A.BreakExp BREAK1left)
+  | seqexp (A.IntExp (0))
+  | unaryop  (A.IntExp (0))
+  | binop  (binop)
+  | callexp (A.IntExp (0))
+  | assignment ( A.IntExp (0) )
+  | forexp ( A.IntExp(0) )
+  | whileexp ( A.IntExp(0) )
+  | ifexp ( A.IntExp(0) )
+  | ifelseexp ( A.IntExp(0) )
+  | lvalue ( A.IntExp(0) )
+  | arrcreate ( A.IntExp(0) )
+  | reccreate ( A.IntExp(0) )
+  | letexp ( A.IntExp(0) )
 
-binop : exp PLUS	exp 	%prec PLUS ()
-		 | exp MINUS exp 	%prec MINUS ()
-		 | exp TIMES exp 	%prec TIMES ()
-		 | exp DIVIDE exp 	%prec DIVIDE ()
-		 | exp CARET exp 	%prec CARET ()
+binop : exp PLUS exp 	%prec PLUS ( makeBinop (exp1,A.PlusOp,exp2, PLUSleft ))
+		 | exp MINUS exp 	%prec MINUS (makeBinop (exp1,A.MinusOp,exp2, MINUSleft ))
+		 | exp TIMES exp 	%prec TIMES ( makeBinop( exp1, A.TimesOp, exp2, TIMESleft ))
+		 | exp DIVIDE exp 	%prec DIVIDE ( makeBinop(exp1, A.DivideOp, exp2, DIVIDEleft ))
+		 | exp CARET exp 	%prec CARET ( makeBinop( exp1, A.ExponentOp, exp2, CARETleft ))
 
-unaryop : MINUS exp ()
+unaryop : MINUS exp (makeBinop(A.IntExp(0), A.MinusOp, exp, MINUSleft))
 
-seqexp : LPAREN seqsexps RPAREN ()
+seqexp : LPAREN seqsexps RPAREN (A.IntExp(0))
 
-seqsexps : exp ()
-        | exp SEMICOLON seqsexps ()
-        | ()
+seqsexps : exp (A.IntExp(0))
+        | exp SEMICOLON seqsexps (A.IntExp(0))
+        | (A.IntExp(0))
 
-callexp : ID LPAREN callexpcon RPAREN ()
+callexp : ID LPAREN callexpcon RPAREN (A.IntExp(0))
 
-callexpcon : exp ()
-			| exp COMMA callexpcon ()
-			| ()
+callexpcon : exp (A.IntExp(0))
+			| exp COMMA callexpcon (A.IntExp(0))
+			| (A.IntExp(0))
 
-assignment : ID ASSIGN exp ()
+assignment : ID ASSIGN exp (A.IntExp(0))
 
-forexp : FOR ID ASSIGN exp TO exp DO exp ()
+forexp : FOR ID ASSIGN exp TO exp DO exp (A.IntExp(0))
 
-whileexp : WHILE exp DO exp ()
+whileexp : WHILE exp DO exp (A.IntExp(0))
 
-ifexp : IF exp THEN exp ()
+ifexp : IF exp THEN exp (A.IntExp(0))
 
-ifelseexp : IF exp THEN exp ELSE exp ()
+ifelseexp : IF exp THEN exp ELSE exp (A.IntExp(0))
 
-tydec : TYPE ID	EQ ty ()
+tydec : TYPE ID	EQ ty (A.IntExp(0))
 
-ty : ID ()
-	| arrty ()
-	| recty ()
+ty : ID (A.IntExp(0))
+	| arrty (A.IntExp(0))
+	| recty (A.IntExp(0))
 
-arrty : ARRAY OF ID ()
+arrty : ARRAY OF ID (A.IntExp(0))
 
-recty : LBRACE fielddeccontent RBRACE ()
+recty : LBRACE fielddeccontent RBRACE (A.IntExp(0))
 
-fielddeccontent : fielddec ()
-				| fielddec COMMA fielddeccontent ()
-				| ()
+fielddeccontent : fielddec (A.IntExp(0))
+				| fielddec COMMA fielddeccontent (A.IntExp(0))
+				| (A.IntExp(0))
 
 
-fielddec : ID COLON ID ()
+fielddec : ID COLON ID (A.IntExp(0))
 
-fundec : ID LPAREN fielddeccontent RPAREN EQ exp ()
-		| ID LPAREN fielddeccontent RPAREN COLON ID EQ exp ()
+fundec : ID LPAREN fielddeccontent RPAREN EQ exp (A.IntExp(0))
+		| ID LPAREN fielddeccontent RPAREN COLON ID EQ exp (A.IntExp(0))
 
-vardec : ID ASSIGN exp ()
-		| ID COLON ID ASSIGN exp ()
+vardec : ID ASSIGN exp (A.IntExp(0))
+		| ID COLON ID ASSIGN exp (A.IntExp(0))
 
-lvalue : ID ()
-		| subscript ()
-		| fieldexp ()
+lvalue : subscript (A.IntExp(0))
+       | fieldexp (A.IntExp(0))
+       | ID (A.IntExp(0))
 
-subscript : lvalue LBRACK exp RBRACK ()
+subscript : lvalue LBRACK exp RBRACK (A.IntExp(0))
 
-fieldexp : lvalue DOT ID ()
+fieldexp : lvalue DOT ID (A.IntExp(0))
 
-arrcreate : ID LBRACK exp RBRACK OF exp ()
+arrcreate : ID LBRACK exp RBRACK OF exp (A.IntExp(0))
 
-reccreate : ID LBRACE reccreatecon RBRACE ()
+reccreate : ID LBRACE reccreatecon RBRACE (A.IntExp(0))
 
-reccreatecon : fieldcreate ()
-			| fieldcreate COMMA reccreatecon ()
-			| ()
+reccreatecon : fieldcreate (A.IntExp(0))
+			| fieldcreate COMMA reccreatecon (A.IntExp(0))
+			| (A.IntExp(0))
 
-fieldcreate : ID EQ exp ()
+fieldcreate : ID EQ exp (A.IntExp(0))
 
-letexp : LET deccon IN seqsexps END ()
+letexp : LET deccon IN seqsexps END (A.IntExp(0))
 
-deccon : dec ()
-		| dec deccon ()
+deccon : dec (A.IntExp(0))
+		| dec deccon (A.IntExp(0))
 
-dec : tydec ()
-    | vardec ()
-    | fundec ()
+dec : tydec (A.IntExp(0))
+    | vardec (A.IntExp(0))
+    | fundec (A.IntExp(0))
 
-*)
+
     (* [..missing rules for exp..] *)
 
 (* [..missing rules for missing nonterminals..] *)
