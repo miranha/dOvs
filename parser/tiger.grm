@@ -4,18 +4,27 @@ structure S = Symbol
 (* [these functions and similar ones may be convenient
  * for the creation of abstract syntax trees] *)
 
-datatype lvaluePartSpec = Field of S.symbol
-                        | Subscript of A.exp
+datatype lvalueSpec = Field of S.symbol
+		| Subscript of A.exp
 
 fun makeInt(e)=A.IntExp e
 
-fun makeLvaluePartSpec (v, pos, l::r) =
-  (case l
-    of Field idsym =>
-       makeLvaluePartSpec (A.FieldVar (v, idsym, pos), pos, r)
-     | Subscript exp =>
-       makeLvaluePartSpec (A.SubscriptVar (v, exp, pos), pos,r))
-  | makeLvaluePartSpec (v, _, nil) = v
+
+fun makeCallExp( f , arglist, p) =
+ A.CallExp { func = S.symbol f, 
+	      args = arglist, 
+	      pos = p}
+(* have to wait until we resolve lvalue
+fun makeAssignExp (id, expr, p) =
+A.AssignExp{ var = _, exp = expr, pos = p}
+*)
+
+
+fun makeLvalue (v, p, (value,pos)::l) = (case value of
+					   Field(s) => makeLvalue(A.FieldVar(v, s , pos), pos, l)
+						  | Subscript(exp) => makeLvalue(A.SubscriptVar(v,exp,pos), pos, l)
+)
+				       |  makeLvalue (v,_,[]) = v
 
 fun makeBinop (e1, bop, e2, p) =
     A.OpExp  { left = e1
@@ -43,6 +52,7 @@ fun makeFundecl (idsym, ps, rty, e, p) =
              , body = e
              , pos = p} : A.fundecldata
 
+
 %%
 %term
     EOF
@@ -64,9 +74,10 @@ fun makeFundecl (idsym, ps, rty, e, p) =
   | ty of A.exp | typeid of A.exp | tyfields of A.exp
   | arrty of A.exp | recty of A.exp
   (* Here we define certain non terminals to stand for expressions *)
-  | lvalue of A.exp | subscript of A.exp
-  | fieldexp of A.exp
-  | callexp of A.exp | callexpcon of A.exp
+  | lvalue of A.exp | subscript of (lvalueSpec * int)
+  | fieldexp of (lvalueSpec * int)
+  | ltail of (lvalueSpec * int) list
+  | callexp of A.exp | callexpcon of (A.exp * A.pos) list
   | arrcreate of A.exp
   | reccreate of A.exp | reccreatecon of A.exp
   | fieldcreate of A.exp
@@ -82,6 +93,8 @@ fun makeFundecl (idsym, ps, rty, e, p) =
 
 
 (* Here we will esablish precedence for standard Arithmetic expressions +,-,/,*,^ *)
+%left OR
+%left AND
 %left PLUS MINUS
 %left TIMES DIVIDE
 %right CARET
@@ -100,7 +113,7 @@ fun makeFundecl (idsym, ps, rty, e, p) =
 
 (* [specify precedence/associativity, least tight binding first] *)
 
-%nonassoc   FUNCTION VAR TYPE THEN DO OF ASSIGN
+%nonassoc   FUNCTION VAR TYPE THEN DO OF ASSIGN EQ NEQ LT LE GT GE
 %right      ELSE
 (* [..more tokens & levels..] *)
 
@@ -121,16 +134,16 @@ exp: INT       ( A.IntExp INT)
    | STRING ( A.StringExp(STRING , STRING1left) )
   | NIL ( A.NilExp )
   | BREAK (A.BreakExp BREAK1left)
-  | seqexp (A.IntExp (0))
-  | unaryop  (A.IntExp (0))
+  | seqexp (A.IntExp(0))
+  | unaryop  (unaryop)
   | binop  (binop)
-  | callexp (A.IntExp (0))
-  | assignment ( A.IntExp (0) )
+  | callexp (callexp)
+  | assignment ( A.IntExp(0) )
   | forexp ( A.IntExp(0) )
   | whileexp ( A.IntExp(0) )
   | ifexp ( A.IntExp(0) )
   | ifelseexp ( A.IntExp(0) )
-  | lvalue ( A.IntExp(0) )
+  | lvalue ( lvalue )
   | arrcreate ( A.IntExp(0) )
   | reccreate ( A.IntExp(0) )
   | letexp ( A.IntExp(0) )
@@ -149,13 +162,13 @@ seqsexps : exp (A.IntExp(0))
         | exp SEMICOLON seqsexps (A.IntExp(0))
         | (A.IntExp(0))
 
-callexp : ID LPAREN callexpcon RPAREN (A.IntExp(0))
+callexp : ID LPAREN callexpcon RPAREN (makeCallExp(ID,callexpcon,IDleft))
 
-callexpcon : exp (A.IntExp(0))
-			| exp COMMA callexpcon (A.IntExp(0))
-			| (A.IntExp(0))
+callexpcon : exp ([(exp,expleft)])
+			| exp COMMA callexpcon ((exp,expleft)::callexpcon)
+			| ([])
 
-assignment : ID ASSIGN exp (A.IntExp(0))
+assignment : lvalue ASSIGN exp (A.IntExp(0))
 
 forexp : FOR ID ASSIGN exp TO exp DO exp (A.IntExp(0))
 
@@ -188,13 +201,17 @@ fundec : ID LPAREN fielddeccontent RPAREN EQ exp (A.IntExp(0))
 vardec : ID ASSIGN exp (A.IntExp(0))
 		| ID COLON ID ASSIGN exp (A.IntExp(0))
 
-lvalue : subscript (A.IntExp(0))
-       | fieldexp (A.IntExp(0))
-       | ID (A.IntExp(0))
+lvalue : ID ltail ( A.VarExp(makeLvalue(
+			A.SimpleVar(S.symbol ID, IDleft), IDleft, ltail))
+		  )
 
-subscript : lvalue LBRACK exp RBRACK (A.IntExp(0))
+ltail : subscript ltail (subscript::ltail)
+      | fieldexp ltail (fieldexp::ltail)
+      | ([])
 
-fieldexp : lvalue DOT ID (A.IntExp(0))
+subscript : LBRACK exp RBRACK ((Subscript(exp), LBRACKleft))
+
+fieldexp : DOT ID ((Field(S.symbol ID), DOTleft))
 
 arrcreate : ID LBRACK exp RBRACK OF exp (A.IntExp(0))
 
