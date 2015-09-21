@@ -64,8 +64,7 @@ fun makeFundecl (idsym, ps, rty, e, p) =
   | ty of A.exp | typeid of A.exp | tyfields of A.exp
   | arrty of A.exp | recty of A.exp
   (* Here we define certain non terminals to stand for expressions *)
-  | lvalue of A.exp | subscript of A.exp
-  | fieldexp of A.exp
+  | lvalue of A.exp | ltail of A.exp | subscript of A.exp | fieldexp of A.exp
   | callexp of A.exp | callexpcon of A.exp
   | arrcreate of A.exp
   | reccreate of A.exp | reccreatecon of A.exp
@@ -186,13 +185,15 @@ fundec : ID LPAREN fielddeccontent RPAREN EQ exp ()
 vardec : ID ASSIGN exp ()
 		| ID COLON ID ASSIGN exp ()
 
-lvalue : ID ()
-		| subscript ()
-		| fieldexp ()
+lvalue : ID ltail()
 
-subscript : lvalue LBRACK exp RBRACK ()
+ltail : ()
+	  |lvalue subscript ()
+	  |lvalue fieldexp ()
 
-fieldexp : lvalue DOT ID ()
+subscript : LBRACK exp RBRACK ()
+
+fieldexp : DOT ID ()
 
 arrcreate : ID LBRACK exp RBRACK OF exp ()
 
