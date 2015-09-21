@@ -188,11 +188,11 @@ fundec : ID LPAREN fielddeccontent RPAREN EQ exp (A.IntExp(0))
 vardec : ID ASSIGN exp (A.IntExp(0))
 		| ID COLON ID ASSIGN exp (A.IntExp(0))
 
-lvalue : ltail (A.IntExp(0))
+lvalue : ltail ID (A.IntExp(0))
 
 ltail : lvalue subscript (A.IntExp(0))
        | lvalue fieldexp (A.IntExp(0))
-       | ID (A.IntExp(0))
+       | (A.IntExp(0))
 
 subscript : LBRACK exp RBRACK (A.IntExp(0))
 
