@@ -13,11 +13,8 @@ fun makeCallExp( f , arglist, p) =
  A.CallExp { func = S.symbol f, 
 	      args = arglist, 
 	      pos = p}
-(* have to wait until we resolve lvalue
-fun makeAssignExp (id, expr, p) =
-A.AssignExp{ var = _, exp = expr, pos = p}
-*)
 
+(* Construct the lvalue one list element at the time*)
 fun makeLvalue (v, p, (value,pos)::l) = (case value of
 					   Field(s) => makeLvalue(A.FieldVar(v, s , pos), pos, l)
 						  | Subscript(exp) => makeLvalue(A.SubscriptVar(v,exp,pos), pos, l)
@@ -175,6 +172,7 @@ exp: INT       ( A.IntExp INT)
   | reccreate ( A.IntExp(0) )
   | letexp ( A.IntExp(0) )
 
+(* Here we create the arithmetic operators *)
 binop : exp PLUS exp 	%prec PLUS ( makeBinop (exp1,A.PlusOp,exp2, PLUSleft ))
 	| exp MINUS exp 	%prec MINUS (makeBinop (exp1,A.MinusOp,exp2, MINUSleft ))
 	| exp TIMES exp 	%prec TIMES ( makeBinop( exp1, A.TimesOp, exp2, TIMESleft ))
@@ -199,6 +197,7 @@ seqsexps : exp ( [(exp, expleft)] )
         | exp SEMICOLON seqsexps ( (exp,expleft)::seqsexps )
         | ([])
 
+(* Split callexp up in order to construct a list *)
 callexp : ID LPAREN callexpcon RPAREN (makeCallExp(ID,callexpcon,IDleft))
 
 callexpcon : exp ([(exp,expleft)])
@@ -238,10 +237,11 @@ fundec : ID LPAREN fielddeccontent RPAREN EQ exp (A.IntExp(0))
 vardec : ID ASSIGN exp (A.IntExp(0))
 		| ID COLON ID ASSIGN exp (A.IntExp(0))
 
+(* an lValue can be rather complicated in apperance. We know we are starting with an ID, then expand if so required *)
 lvalue : ID ltail ( A.VarExp( makeLvalue(
 			A.SimpleVar(S.symbol ID, IDleft), IDleft, ltail))
 		  )
-
+(* ltail construct a list we can use to determiny the variable type of an lvalue *)
 ltail : subscript ltail (subscript::ltail)
       | fieldexp ltail (fieldexp::ltail)
       | ([])
