@@ -24,20 +24,49 @@ Following these sections an overview of the problems encountered and experience 
 \section{The tiger grammar}
 %You should not write how you extracted the grammar from the appendix.
 
+The tiger grammar was implemented in the file \texttt{tiger.grm}. The parser development was divided into two separate parts; first the tiger grammars was implemented, and next the semantics action where added. These two parts reflect the two \textit{program} section for the chapters three and four, respectively. Using this approach it was possible to divide the problem in two parts. First it could be ensured that we did not have any conflicts in the grammars, and afterwards the semantics actions could be implemented in order to create the Abstract Syntax Tree (AST). 
+
+In order to specify the grammar and rules Appendix A was used. However, using this grammar directly provided some conflicts and problem, which is discussed below.  
+
+\section{The abstract syntax}
+%Write how the semantics actions are used to construct the AST for the program.
+The abstract syntax was provided with the handout file \texttt{absyn.sml}. This file provided the types of the different nodes that can be used when creating an AST from a tiger program. 
+
 \begin{lstlisting}[frame=single]
 Listing test
 \end{lstlisting}
 
-\section{The abstract syntax}
-%Write how the semantics actions are used to construct the AST for the program.
-
 \section{Conflict management}
 %How conflicts where detected and what you did to resolve them. If you were unable to remove all conflicts, state why they are benign.
 
+\subsection{lvalue}
+
+\subsection{Mutual recursie function declarations}
+
+\subsection{If-Else conflict}
+
 \section{Problems encountered \& experience gained}
 %If you had any problems in the work process, write it here with what you gained.
+\subsection{Solving conflicts}
+
+\subsection{Creating the abstract syntax}
+
 
 \section{5 tiger programs}
 %5 interesting tiger programs that you find test your parser in a good way.
+
+%You should also create 5 small Tiger programs containing syntax errors, and describe how your parser reacts to them in your report. Make sure that your implementation works on the provided test files
+
+These five tiger programs presented here are created simple in order to focus on different aspects of the implemented parser. These tests contain different syntax errors as required by the project description. 
+
+\subsection{Test1}
+
+\subsection{Test1}
+\subsection{Test1}
+\subsection{Test1}
+\subsection{Test1}
+
+
+\section{Conlusion}
 
 \end{document}
