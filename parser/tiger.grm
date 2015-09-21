@@ -192,7 +192,7 @@ lvalue : ID ltail (A.IntExp(0))
 
 ltail : lvalue subscript (A.IntExp(0))
        | lvalue fieldexp (A.IntExp(0))
-       | (A.IntExp(0))
+       | (nil)
 
 subscript : LBRACK exp RBRACK (A.IntExp(0))
 
