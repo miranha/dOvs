@@ -116,7 +116,7 @@ fun makeFundecl (idsym, ps, rty, e, p) =
 program: exp                  (exp)
 
 exp: INT       ( A.IntExp INT)
-(*  | STRING ()
+  | STRING ()
   | NIL ()
   | BREAK ()
   | seqexp ()
@@ -186,13 +186,15 @@ fundec : ID LPAREN fielddeccontent RPAREN EQ exp ()
 vardec : ID ASSIGN exp ()
 		| ID COLON ID ASSIGN exp ()
 
-lvalue : ID ()
-		| subscript ()
-		| fieldexp ()
+lvalue : ID ltail ()
 
-subscript : lvalue LBRACK exp RBRACK ()
+ltail : | ()
+		| lvalue subscript ()
+		| lvalue fieldexp ()
 
-fieldexp : lvalue DOT ID ()
+subscript : LBRACK exp RBRACK ()
+
+fieldexp : DOT ID ()
 
 arrcreate : ID LBRACK exp RBRACK OF exp ()
 
@@ -213,7 +215,6 @@ dec : tydec ()
     | vardec ()
     | fundec ()
 
-*)
     (* [..missing rules for exp..] *)
 
 (* [..missing rules for missing nonterminals..] *)
