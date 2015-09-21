@@ -190,13 +190,13 @@ vardec : ID ASSIGN exp (A.IntExp(0))
 
 lvalue : ID ltail (A.IntExp(0))
 
-ltail : subscript (A.IntExp(0))
-       | fieldexp (A.IntExp(0))
+ltail : lvalue subscript (A.IntExp(0))
+       | lvalue fieldexp (A.IntExp(0))
        | (A.IntExp(0))
 
-subscript : lvalue LBRACK exp RBRACK (A.IntExp(0))
+subscript : LBRACK exp RBRACK (A.IntExp(0))
 
-fieldexp : lvalue DOT ID (A.IntExp(0))
+fieldexp : DOT ID (A.IntExp(0))
 
 arrcreate : ID LBRACK exp RBRACK OF exp (A.IntExp(0))
 
