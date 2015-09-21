@@ -24,6 +24,8 @@ fun makeLvalue (v, p, (value,pos)::l) = (case value of
 )
 				       |  makeLvalue (v,_,[]) = v
 
+(* check if we have var expression, extract the
+underlying variable *)
 fun getLvalue ( var : A.exp) : A.var = 
   (case var of A.VarExp(v) => v
 	    | _  => A.SimpleVar(S.symbol "bogusVar", 0))
@@ -51,6 +53,21 @@ fun makeAssign (v, e, p) =
   A.AssignExp { var = v
 	      , exp = e
 	      , pos = p }
+
+fun makeWhile (t, e, p) =
+  A.WhileExp { test = t
+	   , body = e
+	   , pos = p }
+
+fun makeFor (i, low, high, e, p) =
+  let val s = (S.symbol i) in
+  A.ForExp { var = s
+	   , escape = ref true
+	   , lo = low
+	   , hi = high
+	   , body = e
+	   , pos = p }
+  end
 				
 fun makeFundecl (idsym, ps, rty, e, p) =
              { name = idsym
@@ -99,13 +116,7 @@ fun makeFundecl (idsym, ps, rty, e, p) =
 
 
 
-(* Here we will esablish precedence for standard Arithmetic expressions +,-,/,*,^ *)
-%left OR
-%left AND
-%left PLUS MINUS
-%left TIMES DIVIDE
-%right CARET
-%right ID
+
 
 %name Tiger
 
@@ -120,9 +131,18 @@ fun makeFundecl (idsym, ps, rty, e, p) =
 
 (* [specify precedence/associativity, least tight binding first] *)
 
-%nonassoc   FUNCTION VAR TYPE THEN DO OF ASSIGN EQ NEQ LT LE GT GE
-%right      ELSE
+(* Here we will esablish precedence for standard operators including +,-,/,*,^ *)
+%left OR
+%left AND
+%nonassoc EQ NEQ LT LE GT GE
+%left PLUS MINUS
+%left TIMES DIVIDE
+%right CARET
+%right ID
+%right ELSE
 (* [..more tokens & levels..] *)
+
+%nonassoc FUNCTION VAR TYPE THEN DO OF ASSIGN 
 
 %pos int
 %verbose
@@ -147,8 +167,8 @@ exp: INT       ( A.IntExp INT)
   | callexp (callexp)
   | assignment ( assignment )
   | lvalue (lvalue)
-  | forexp ( A.IntExp(0) )
-  | whileexp ( A.IntExp(0) )
+  | forexp ( forexp )
+  | whileexp ( whileexp )
   | ifexp ( ifexp )
   | ifelseexp ( ifelseexp )
   | arrcreate ( A.IntExp(0) )
@@ -160,14 +180,15 @@ binop : exp PLUS exp 	%prec PLUS ( makeBinop (exp1,A.PlusOp,exp2, PLUSleft ))
 	| exp TIMES exp 	%prec TIMES ( makeBinop( exp1, A.TimesOp, exp2, TIMESleft ))
 	| exp DIVIDE exp 	%prec DIVIDE ( makeBinop(exp1, A.DivideOp, exp2, DIVIDEleft ))
 	| exp CARET exp 	%prec CARET ( makeBinop( exp1, A.ExponentOp, exp2, CARETleft ))
-	| exp AND exp %prec AND ( A.IntExp(0))
-	| exp OR exp %prec OR ( A.IntExp(0))
-	| exp EQ exp %prec EQ ( A.IntExp(0))
-	| exp NEQ exp %prec NEQ ( A.IntExp(0))
-	| exp LT exp %prec LT ( A.IntExp(0))
-	| exp LE exp %prec LE ( A.IntExp(0))
-	| exp GT exp %prec GT ( A.IntExp(0))
-	| exp GE exp %prec GE ( A.IntExp(0))
+(* logical operators here *)
+	| exp AND exp %prec AND ( makeIf(exp1,exp2,SOME (A.IntExp(0)), ANDleft))
+	| exp OR exp %prec OR ( makeIf (exp1, A.IntExp(1), SOME exp2, ORleft))
+	| exp EQ exp %prec EQ (makeBinop(exp1,A.EqOp,exp2,EQleft))
+	| exp NEQ exp %prec NEQ ( makeBinop(exp1,A.NeqOp,exp2,NEQleft) )
+	| exp LT exp %prec LT ( makeBinop(exp1,A.LtOp,exp2,LTleft) )
+	| exp LE exp %prec LE ( makeBinop(exp1,A.LeOp,exp2,LEleft) )
+	| exp GT exp %prec GT ( makeBinop(exp1,A.GtOp,exp2,GTleft) )
+	| exp GE exp %prec GE ( makeBinop(exp1,A.GeOp,exp2,GEleft) )
       
 
 unaryop : MINUS exp (makeBinop(A.IntExp(0), A.MinusOp, exp, MINUSleft))
@@ -186,9 +207,9 @@ callexpcon : exp ([(exp,expleft)])
 
 assignment : lvalue ASSIGN exp ( makeAssign( getLvalue(lvalue) , exp, ASSIGNleft) )
 
-forexp : FOR ID ASSIGN exp TO exp DO exp (A.IntExp(0))
+forexp : FOR ID ASSIGN exp TO exp DO exp (makeFor(ID, exp1, exp2, exp3, FORleft))
 
-whileexp : WHILE exp DO exp (A.IntExp(0))
+whileexp : WHILE exp DO exp ( makeWhile( exp1, exp2, WHILEleft) )
 
 ifexp : IF exp THEN exp ( makeIf(exp1, exp2, (NONE), IFleft) )
 
