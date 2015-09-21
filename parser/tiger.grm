@@ -210,13 +210,30 @@ fieldcreate : ID EQ exp (A.IntExp(0))
 
 letexp : LET deccon IN seqsexps END (A.IntExp(0))
 
-deccon : dec (A.IntExp(0))
-		| dec deccon (A.IntExp(0))
+deccon : fundeclbegin (A.IntExp(0))
+		| vardeclbegin (A.IntExp(0))
+		| fundeclbegin (A.IntExp(0))
 
-dec : tydec (A.IntExp(0))
-    | vardec (A.IntExp(0))
-    | fundec (A.IntExp(0))
+fundeclbegin : fundeclist ()
+		   | fundeclist tydeclbegin ()
+		   | fundeclist vardeclbegin ()
 
+vardeclbegin : vardeclist ()
+		   | vardeclist fundeclbegin ()
+		   | vardeclist tydeclbegin ()
+
+tydeclbegin : tydeclist ( (*Add this to list*) )
+		  | tydeclist vardeclbegin ( (*Close List, continue with vardeclist*) )
+		  | tydeclist fundeclbegin ( (*Close List, continue with fundeclist*) )
+
+fundeclist : fundec (fundec :: nil)
+		   | fundec fundeclist (fundec :: fundeclist)
+
+vardeclist : vardec (vardec :: nil)
+		   | vardec vardeclist (vardec :: vardeclist)
+
+tydeclist : tydec (tydec :: nil)
+		  | tydec tydeclist (tydec :: tydeclist)
 
     (* [..missing rules for exp..] *)
 
