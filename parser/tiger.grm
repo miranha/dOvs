@@ -188,7 +188,7 @@ vardec : ID ASSIGN exp ()
 
 lvalue : ID ltail ()
 
-ltail : | ()
+ltail : ()
 		| lvalue subscript ()
 		| lvalue fieldexp ()
 
