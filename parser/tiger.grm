@@ -10,8 +10,8 @@ datatype lvalueSpec = Field of S.symbol
 fun makeInt(e)=A.IntExp e
 
 fun makeCallExp( f , arglist, p) =
- A.CallExp { func = S.symbol f, 
-	      args = arglist, 
+ A.CallExp { func = S.symbol f,
+	      args = arglist,
 	      pos = p}
 
 (* Construct the lvalue one list element at the time*)
@@ -23,10 +23,10 @@ fun makeLvalue (v, p, (value,pos)::l) = (case value of
 
 (* check if we have var expression, extract the
 underlying variable *)
-fun getLvalue ( var : A.exp) : A.var = 
+fun getLvalue ( var : A.exp) : A.var =
   (case var of A.VarExp(v) => v
 	    | _  => A.SimpleVar(S.symbol "bogusVar", 0))
-  
+
 fun makeBinop (e1, bop, e2, p) =
     A.OpExp  { left = e1
              , oper = bop
@@ -65,7 +65,7 @@ fun makeFor (i, low, high, e, p) =
 	   , body = e
 	   , pos = p }
   end
-				
+
 fun makeFundecl (idsym, ps, rty, e, p) =
              { name = idsym
              , params = ps
@@ -73,6 +73,12 @@ fun makeFundecl (idsym, ps, rty, e, p) =
              , body = e
              , pos = p} : A.fundecldata
 
+
+fun makeArrCreate (ty, s, i, p) =
+A.ArrayExp{typ = S.symbol ty
+            , size = s
+            , init = i
+            , pos = p }
 
 %%
 %term
@@ -94,8 +100,8 @@ fun makeFundecl (idsym, ps, rty, e, p) =
   | tydec of A.exp | vardec of A.exp | fundec of A.exp | fielddec of A.exp | fielddeccontent of A.exp
   | ty of A.exp | typeid of A.exp | tyfields of A.exp
   | arrty of A.exp | recty of A.exp
-  (* Here we define certain non terminals to stand for expressions *) 
-  | lvalue of A.exp  
+  (* Here we define certain non terminals to stand for expressions *)
+  | lvalue of A.exp
   | subscript of (lvalueSpec * int)
   | fieldexp of (lvalueSpec * int)
   | ltail of (lvalueSpec * int) list
@@ -139,7 +145,7 @@ fun makeFundecl (idsym, ps, rty, e, p) =
 %right ELSE
 (* [..more tokens & levels..] *)
 
-%nonassoc FUNCTION VAR TYPE THEN DO OF ASSIGN 
+%nonassoc FUNCTION VAR TYPE THEN DO OF ASSIGN
 
 %pos int
 %verbose
@@ -168,7 +174,7 @@ exp: INT       ( A.IntExp INT)
   | whileexp ( whileexp )
   | ifexp ( ifexp )
   | ifelseexp ( ifelseexp )
-  | arrcreate ( A.IntExp(0) )
+  | arrcreate ( arrcreate )
   | reccreate ( A.IntExp(0) )
   | letexp ( A.IntExp(0) )
 
@@ -187,7 +193,7 @@ binop : exp PLUS exp 	%prec PLUS ( makeBinop (exp1,A.PlusOp,exp2, PLUSleft ))
 	| exp LE exp %prec LE ( makeBinop(exp1,A.LeOp,exp2,LEleft) )
 	| exp GT exp %prec GT ( makeBinop(exp1,A.GtOp,exp2,GTleft) )
 	| exp GE exp %prec GE ( makeBinop(exp1,A.GeOp,exp2,GEleft) )
-      
+
 
 unaryop : MINUS exp (makeBinop(A.IntExp(0), A.MinusOp, exp, MINUSleft))
 
@@ -220,7 +226,7 @@ ty : ID (A.IntExp(0))
 	| arrty (A.IntExp(0))
 	| recty (A.IntExp(0))
 
-arrty : ARRAY OF ID (A.IntExp(0))
+arrty : ARRAY OF ID (A.IntExp(1))
 
 recty : LBRACE fielddeccontent RBRACE (A.IntExp(0))
 
@@ -250,7 +256,7 @@ subscript : LBRACK exp RBRACK ((Subscript(exp), LBRACKleft))
 
 fieldexp : DOT ID ((Field(S.symbol ID), DOTleft))
 
-arrcreate : ID LBRACK exp RBRACK OF exp (A.IntExp(0))
+arrcreate : ID LBRACK exp RBRACK OF exp (makeArrCreate(ID,exp1,exp2,IDleft))
 
 reccreate : ID LBRACE reccreatecon RBRACE (A.IntExp(0))
 
