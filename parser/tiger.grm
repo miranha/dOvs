@@ -264,6 +264,7 @@ fieldexp : DOT ID ((Field(S.symbol ID), DOTleft))
 arrcreate : ID LBRACK exp RBRACK OF exp (makeArrCreate(ID,exp1,exp2,IDleft))
 
 reccreate : ID LBRACE reccreatecon RBRACE (makeRecCreate(ID,reccreatecon,IDleft))
+      | ID LBRACE RBRACE (makeRecCreate(ID,[],IDleft))
 
 reccreatecon : fieldcreate ([fieldcreate])
 			| fieldcreate COMMA reccreatecon (fieldcreate:: reccreatecon)
