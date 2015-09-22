@@ -1,1 +1,8 @@
-a{}
+let var a := 5
+ type aa = x
+ function f() : int = g(a)
+ function g(i:int) = f()
+ function h(i:int) = f()
+ type ba = x
+in f(); g(); h()
+end

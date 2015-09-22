@@ -96,6 +96,13 @@ fun makeFieldTy(id1,id2,pos2,pos1) =
     escape = ref true,
     typ = ((S.symbol id2), pos2),
     pos = pos1} : A.fielddata
+
+    (*MakeLetExp*)
+fun makeLetExp (decl, bod, p) =
+          A.LetExp{ decls = decl
+                , body = bod
+                , pos = p
+                }
 %%
 %term
     EOF
@@ -107,13 +114,13 @@ fun makeFieldTy(id1,id2,pos2,pos1) =
   | AND | OR | ASSIGN
   | ARRAY | IF | THEN | ELSE | WHILE | FOR | TO | DO | LET | IN | END | OF
   | BREAK | NIL
-  | FUNCTION | VAR | TYPE
+  | FUNCTION | VAR | TYPE | UMINUS
 
 (* [add missing nonterminals; in second phase: add semantic values] *)
 
 %nonterm program of A.exp | exp of A.exp
-  | dec of A.exp
-  | tydec of A.tydecldata | vardec of A.exp | fundec of A.exp
+  | dec of A.decl | deccon of A.decl list
+  | tydec of A.tydecldata | vardec of A.decl | fundec of A.fundecldata
   | fielddec of A.fielddata | fielddeccontent of A.fielddata list
   | ty of A.ty | typeid of A.exp | tyfields of A.exp
   | arrty of A.ty | recty of A.ty
@@ -127,16 +134,23 @@ fun makeFieldTy(id1,id2,pos2,pos1) =
   | reccreate of A.exp | reccreatecon of (S.symbol * A.exp * pos) list
   | fieldcreate of (S.symbol * A.exp * pos)
   | assignment of A.exp
-  | seqexp of A.exp | seqsexps of (A.exp * int) list
-  | letexp of A.exp | deccon of A.exp
+  | seqexp of A.exp | seqsexps of (A.exp * pos) list
+  | letexp of A.exp
   | binop of A.exp | unaryop of A.exp
   | ifexp of A.exp | ifelseexp of A.exp
   | whileexp of A.exp
   | forexp of A.exp
+  | fundeclbegin of A.decl list | tydeclbegin of A.decl list
+  | vardeclbegin of A.decl list
+  | fundeclist of A.fundecldata list | tydeclist of A.tydecldata list
+  | vardeclist of A.vardecldata
 
 
-
-
+%pos int
+%verbose
+%start program
+%eop EOF
+%noshift EOF
 
 %name Tiger
 
@@ -152,24 +166,17 @@ fun makeFieldTy(id1,id2,pos2,pos1) =
 (* [specify precedence/associativity, least tight binding first] *)
 
 (* Here we will esablish precedence for standard operators including +,-,/,*,^ *)
+%nonassoc FUNCTION VAR TYPE THEN DO OF ASSIGN
+%right ELSE
 %left OR
 %left AND
 %nonassoc EQ NEQ LT LE GT GE
 %left PLUS MINUS
 %left TIMES DIVIDE
+%left UMINUS
 %right CARET
-%right ID
-%right ELSE
+
 (* [..more tokens & levels..] *)
-
-%nonassoc FUNCTION VAR TYPE THEN DO OF ASSIGN
-
-%pos int
-%verbose
-%start program
-%eop EOF
-%noshift EOF
-
 
 %%
 
@@ -193,7 +200,7 @@ exp: INT       ( A.IntExp INT)
   | ifelseexp ( ifelseexp )
   | arrcreate ( arrcreate )
   | reccreate ( reccreate )
-  | letexp ( A.IntExp(0) )
+  | letexp ( letexp )
 
 (* Here we create the arithmetic operators *)
 binop : exp PLUS exp 	%prec PLUS ( makeBinop (exp1,A.PlusOp,exp2, PLUSleft ))
@@ -212,7 +219,7 @@ binop : exp PLUS exp 	%prec PLUS ( makeBinop (exp1,A.PlusOp,exp2, PLUSleft ))
 	| exp GE exp %prec GE ( makeBinop(exp1,A.GeOp,exp2,GEleft) )
 
 
-unaryop : MINUS exp (makeBinop(A.IntExp(0), A.MinusOp, exp, MINUSleft))
+unaryop : MINUS exp %prec UMINUS (makeBinop(A.IntExp(0), A.MinusOp, exp, MINUSleft))
 
 seqexp : LPAREN seqsexps RPAREN ( A.SeqExp(seqsexps) )
 
@@ -254,12 +261,6 @@ fielddeccontent : fielddec ([fielddec])
 
 fielddec : ID COLON ID (makeFieldTy(ID1,ID2, ID2left,ID1left))
 
-fundec : ID LPAREN fielddeccontent RPAREN EQ exp (A.IntExp(0))
-		| ID LPAREN fielddeccontent RPAREN COLON ID EQ exp (A.IntExp(0))
-
-vardec : ID ASSIGN exp (A.IntExp(0))
-		| ID COLON ID ASSIGN exp (A.IntExp(0))
-
 (* an lValue can be rather complicated in apperance. We know we are starting with an ID, then expand if so required *)
 lvalue : ID ltail ( A.VarExp( makeLvalue(
 			A.SimpleVar(S.symbol ID, IDleft), IDleft, ltail))
@@ -283,15 +284,44 @@ reccreatecon : fieldcreate ([fieldcreate])
 
 fieldcreate : ID EQ exp ((S.symbol ID,exp,IDleft))
 
-letexp : LET deccon IN seqsexps END (A.IntExp(0))
+(*Let Exp*)
+letexp : LET deccon IN seqsexps END ( makeLetExp(deccon, A.SeqExp seqsexps, decconleft) )
 
-deccon : dec (A.IntExp(0))
-		| dec deccon (A.IntExp(0))
+deccon : fundeclbegin (fundeclbegin)
+        | vardeclbegin (vardeclbegin)
+        | tydeclbegin (tydeclbegin)
 
-dec : tydec (A.IntExp(0))
-    | vardec (A.IntExp(0))
-    | fundec (A.IntExp(0))
+fundeclbegin : fundeclist ([A.FunctionDec fundeclist])
+           | fundeclist tydeclbegin ((A.FunctionDec fundeclist)::tydeclbegin)
+           | fundeclist vardeclbegin ((A.FunctionDec fundeclist)::vardeclbegin)
 
+vardeclbegin : vardec ([vardec])
+           | vardec fundeclbegin (vardec::fundeclbegin)
+           | vardec tydeclbegin (vardec::tydeclbegin)
+           | vardec vardeclbegin(vardec::vardeclbegin)
+
+tydeclbegin : tydeclist ([A.TypeDec tydeclist])
+          | tydeclist vardeclbegin ((A.TypeDec tydeclist)::vardeclbegin )
+          | tydeclist fundeclbegin ((A.TypeDec tydeclist)::fundeclbegin )
+
+fundeclist : fundec ([fundec])
+           | fundec fundeclist (fundec :: fundeclist)
+
+tydeclist : tydec ([tydec])
+          | tydec tydeclist (tydec :: tydeclist)
+
+fundec : FUNCTION ID LPAREN fielddeccontent RPAREN EQ exp
+            (makeFundecl(S.symbol ID, fielddeccontent, NONE, exp, ID1left))
+        | FUNCTION ID LPAREN fielddeccontent RPAREN COLON ID EQ exp
+          (makeFundecl(S.symbol ID1, fielddeccontent, SOME (S.symbol ID2,ID2left), exp, ID1left))
+        | FUNCTION ID LPAREN RPAREN COLON ID EQ exp
+          (makeFundecl(S.symbol ID1, nil, SOME (S.symbol ID2,ID2left), exp, ID1left))
+	| FUNCTION ID LPAREN RPAREN EQ exp
+            (makeFundecl(S.symbol ID, nil, NONE, exp, ID1left))
+
+
+vardec : VAR ID ASSIGN exp (makeVarDec(S.symbol ID1, NONE ,exp, ID1left))
+        | VAR ID COLON ID ASSIGN exp (makeVarDec( S.symbol ID1, SOME (S.symbol ID2,ID2left), exp, ID1left))
 
     (* [..missing rules for exp..] *)
 
