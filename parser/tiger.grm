@@ -85,6 +85,17 @@ fun makeRecCreate(i, fi, p) =
             , typ = S.symbol i
             , pos = p }
 
+fun makeTyDec(n, t, p) =
+  {name = S.symbol n
+              , ty = t
+              , pos = p } : A.tydecldata
+
+fun makeFieldTy(id1,id2,pos2,pos1) =
+  {
+    name = S.symbol id1,
+    escape = ref true,
+    typ = ((S.symbol id2), pos2),
+    pos = pos1} : A.fielddata
 %%
 %term
     EOF
@@ -102,9 +113,10 @@ fun makeRecCreate(i, fi, p) =
 
 %nonterm program of A.exp | exp of A.exp
   | dec of A.exp
-  | tydec of A.exp | vardec of A.exp | fundec of A.exp | fielddec of A.exp | fielddeccontent of A.exp
-  | ty of A.exp | typeid of A.exp | tyfields of A.exp
-  | arrty of A.exp | recty of A.exp
+  | tydec of A.tydecldata | vardec of A.exp | fundec of A.exp
+  | fielddec of A.fielddata | fielddeccontent of A.fielddata list
+  | ty of A.ty | typeid of A.exp | tyfields of A.exp
+  | arrty of A.ty | recty of A.ty
   (* Here we define certain non terminals to stand for expressions *)
   | lvalue of A.exp
   | subscript of (lvalueSpec * int)
@@ -225,22 +237,22 @@ ifexp : IF exp THEN exp ( makeIf(exp1, exp2, (NONE), IFleft) )
 
 ifelseexp : IF exp THEN exp ELSE exp ( makeIf(exp1, exp2, (SOME exp3), IFleft)  )
 
-tydec : TYPE ID	EQ ty (A.IntExp(0))
+tydec : TYPE ID	EQ ty (makeTyDec(ID,ty, TYPEleft))
 
-ty : ID (A.IntExp(0))
-	| arrty (A.IntExp(0))
-	| recty (A.IntExp(0))
+ty : ID (A.NameTy((S.symbol ID),IDleft))
+	| arrty (arrty)
+	| recty (recty)
 
-arrty : ARRAY OF ID (A.IntExp(1))
+arrty : ARRAY OF ID (A.ArrayTy((S.symbol ID),ARRAYleft))
 
-recty : LBRACE fielddeccontent RBRACE (A.IntExp(0))
+recty : LBRACE fielddeccontent RBRACE (A.RecordTy fielddeccontent)
+  | LBRACE RBRACE (A.RecordTy [])
 
-fielddeccontent : fielddec (A.IntExp(0))
-				| fielddec COMMA fielddeccontent (A.IntExp(0))
-				| (A.IntExp(0))
+fielddeccontent : fielddec ([fielddec])
+				| fielddec COMMA fielddeccontent (fielddec::fielddeccontent)
 
 
-fielddec : ID COLON ID (A.IntExp(0))
+fielddec : ID COLON ID (makeFieldTy(ID1,ID2, ID2left,ID1left))
 
 fundec : ID LPAREN fielddeccontent RPAREN EQ exp (A.IntExp(0))
 		| ID LPAREN fielddeccontent RPAREN COLON ID EQ exp (A.IntExp(0))
