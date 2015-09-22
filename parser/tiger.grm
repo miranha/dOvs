@@ -219,7 +219,7 @@ binop : exp PLUS exp 	%prec PLUS ( makeBinop (exp1,A.PlusOp,exp2, PLUSleft ))
 	| exp GE exp %prec GE ( makeBinop(exp1,A.GeOp,exp2,GEleft) )
 
 
-unaryop : MINUS exp %prec UMINUS (makeBinop(A.IntExp(0), A.MinusOp, exp, MINUSleft))
+unaryop : MINUS exp (makeBinop(A.IntExp(0), A.MinusOp, exp, MINUSleft))
 
 seqexp : LPAREN seqsexps RPAREN ( A.SeqExp(seqsexps) )
 

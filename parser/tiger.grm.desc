@@ -1145,6 +1145,8 @@ state 55:
 	binop : exp . GE exp 
 	unaryop : MINUS exp .  (reduce by rule 31)
 
+	TIMES	shift 37
+	DIVIDE	shift 36
 	CARET	shift 29
 
 
@@ -3634,5 +3636,5 @@ state 173:
 
 	.	error
 
-559 of 1131 action table entries left after compaction
+561 of 1133 action table entries left after compaction
 605 goto table entries
