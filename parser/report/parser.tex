@@ -81,7 +81,7 @@ tail3  -> fieldExp  = ID subscript subscript fieldExp tail4
 tail4  -> subscript = ID subscript subscript fieldExp subscript tail5
 tail5  -> NONE      = ID subscript subscript fieldExp subscript
 \end{lstlisting}
-As seen, the two final strings are the same, and doesn't provide a shift/reduce conflict.
+As seen, the two final strings are the same, and doesn't provide a shift/reduce conflict. However as a final note, while we now make the string from left to right, when actually resolving the lvalue, we will still need to read it from right to left.
 
 \subsection{Mutual recursive function declarations}
 Mutual recursive types are implented as they're explained in the apendix, which also proved to be quite the task, as they function in quite a specific way.
