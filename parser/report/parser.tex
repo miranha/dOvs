@@ -40,8 +40,94 @@ Listing test
 %How conflicts where detected and what you did to resolve them. If you were unable to remove all conflicts, state why they are benign.
 
 \subsection{lvalue}
+lvalue was the primary example of association and gramma not always matching, as the following code:
+\begin{lstlisting}[frame=single]
+lvalue : ID (...)
+	   | subscript (...)
+	   | fieldExp (...)
 
-\subsection{Mutual recursie function declarations}
+subscript : lvalue LBRACK exp RBRACK (...)
+
+fieldExp : lvalvue DOT ID (...)
+
+\end{lstlisting}
+
+This however produces a shift/reduce error, so we will need to fix it by making the lvalue nonterminal right associative. And we will do this by introducing a tail.
+
+\begin{lstlisting}[frame=single]
+lvalue : ID ltail (...)
+
+ltail : subscript ltail (subscript::ltail)
+      | fieldexp ltail (fieldexp::ltail)
+      | ([])
+\end{lstlisting}
+
+this will work, as we're merely now able to create the same lvalue, just from another direction, now going from left to right, rather than from right to left.
+As an example, I will make the string ID, sub, sub, field, sub. first using the first implementation of lvalue, and the second time with the updated version with a tail.
+
+\begin{lstlisting}[frame=single]
+lvalue -> subscript  = lvalue2 subscript
+lvalue2 -> fieldExp  = lvalue3 fieldExp subscript
+lvalue3 -> subscript = lvalue4 subscript fieldExp subscript
+lvalue4 -> subscript = lvalue5 subscript subscript fieldExp subscript
+lvalue5 -> ID        = ID subscript subscript fieldExp subscript
+\end{lstlisting}
+And now with the updates Version
+\begin{lstlisting}[frame=single]
+lvalue -> ID tail1
+tail1  -> subscript = ID subscript tail2
+tail2  -> subscript = ID subscript subscript tail3
+tail3  -> fieldExp  = ID subscript subscript fieldExp tail4
+tail4  -> subscript = ID subscript subscript fieldExp subscript tail5
+tail5  -> NONE      = ID subscript subscript fieldExp subscript
+\end{lstlisting}
+As seen, the two final strings are the same, and doesn't provide a shift/reduce conflict.
+
+\subsection{Mutual recursive function declarations}
+Mutual recursive types are implented as they're explained in the apendix, which also proved to be quite the task, as they function in quite a specific way.
+Functions, Variables and Type are mutually recursive as long as they're declared by a consecutive sequence of the same kind. 
+
+To implement this we did the following:
+1. Identify the kind of element that's found first in the let expression.
+2. Make a list of the consecutive elements of the same kind.
+3. pattern match to check whether a new kind of element is found next, if so, begin a new list with this kind.
+4. Repeat 2 and 3 until no more elements left.
+
+to implent this in our parser, we did the following code:
+\begin{lstlisting}[frame=single]
+letexp : LET deccon IN seqsexps END (...) )
+
+deccon : fundeclbegin (...)
+        | vardeclbegin (...)
+        | tydeclbegin (...)
+
+fundeclbegin : fundeclist ([fundeclist])
+           | fundeclist tydeclbegin (fundeclist::tydeclbegin)
+           | fundeclist vardeclbegin (fundeclist::vardeclbegin)
+
+vardeclbegin : vardec ([vardec])
+           | vardec fundeclbegin (vardec::fundeclbegin)
+           | vardec tydeclbegin (vardec::tydeclbegin)
+           | vardec vardeclbegin(vardec::vardeclbegin)
+
+tydeclbegin : tydeclist (tydeclist)
+          | tydeclist vardeclbegin (tydeclist::vardeclbegin )
+          | tydeclist fundeclbegin (tydeclist::fundeclbegin )
+
+fundeclist : fundec ([fundec])
+           | fundec fundeclist (fundec :: fundeclist)
+
+tydeclist : tydec ([tydec])
+          | tydec tydeclist (tydec :: tydeclist)
+
+\end{lstlisting}
+Note however that vardec isn't made into a list, this is because value doesn't follow the same rules as Function and Types, as also seen in the absyn.sml file. As vardecldata isn't a list.
+
+\begin{lstlisting}[frame=single]
+and decl     = FunctionDec of fundecldata list
+             | VarDec of vardecldata
+             | TypeDec of tydecldata list
+\end{lstlisting}
 
 \subsection{If-Else conflict}
 
