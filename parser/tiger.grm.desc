@@ -895,34 +895,34 @@ state 40:
 
 state 41:
 
-	dec : fundec .  (reduce by rule 76)
-
-
-
-	.	reduce by rule 76
-
-
-state 42:
-
-	dec : vardec .  (reduce by rule 75)
+	dec : fundec .  (reduce by rule 75)
 
 
 
 	.	reduce by rule 75
 
 
-state 43:
+state 42:
 
-	dec : tydec .  (reduce by rule 74)
+	dec : vardec .  (reduce by rule 74)
 
 
 
 	.	reduce by rule 74
 
 
+state 43:
+
+	dec : tydec .  (reduce by rule 73)
+
+
+
+	.	reduce by rule 73
+
+
 state 44:
 
-	deccon : dec .  (reduce by rule 72)
+	deccon : dec .  (reduce by rule 71)
 	deccon : dec . deccon 
 
 	ID	shift 46
@@ -934,7 +934,7 @@ state 44:
 	fundec	goto 41
 	deccon	goto 75
 
-	.	reduce by rule 72
+	.	reduce by rule 71
 
 
 state 45:
@@ -1173,7 +1173,7 @@ state 57:
 	reccreatecon	goto 90
 	fieldcreate	goto 89
 
-	.	reduce by rule 69
+	.	error
 
 
 state 58:
@@ -1749,11 +1749,11 @@ state 74:
 
 state 75:
 
-	deccon : dec deccon .  (reduce by rule 73)
+	deccon : dec deccon .  (reduce by rule 72)
 
 
 
-	.	reduce by rule 73
+	.	reduce by rule 72
 
 
 state 76:
@@ -2383,7 +2383,7 @@ state 107:
 	reccreatecon	goto 127
 	fieldcreate	goto 89
 
-	.	reduce by rule 69
+	.	error
 
 
 state 108:
@@ -2486,11 +2486,11 @@ state 112:
 
 state 113:
 
-	letexp : LET deccon IN seqsexps END .  (reduce by rule 71)
+	letexp : LET deccon IN seqsexps END .  (reduce by rule 70)
 
 
 
-	.	reduce by rule 71
+	.	reduce by rule 70
 
 
 state 114:
@@ -2707,7 +2707,7 @@ state 127:
 
 state 128:
 
-	fieldcreate : ID EQ exp .  (reduce by rule 70)
+	fieldcreate : ID EQ exp .  (reduce by rule 69)
 	binop : exp . PLUS exp 
 	binop : exp . MINUS exp 
 	binop : exp . TIMES exp 
@@ -2737,7 +2737,7 @@ state 128:
 	OR	shift 27
 
 
-	.	reduce by rule 70
+	.	reduce by rule 69
 
 
 state 129:

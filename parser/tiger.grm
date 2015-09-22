@@ -75,9 +75,14 @@ fun makeFundecl (idsym, ps, rty, e, p) =
 
 
 fun makeArrCreate (ty, s, i, p) =
-A.ArrayExp{typ = S.symbol ty
+  A.ArrayExp{typ = S.symbol ty
             , size = s
             , init = i
+            , pos = p }
+
+fun makeRecCreate(i, fi, p) =
+  A.RecordExp{fields = fi
+            , typ = S.symbol i
             , pos = p }
 
 %%
@@ -107,8 +112,8 @@ A.ArrayExp{typ = S.symbol ty
   | ltail of (lvalueSpec * int) list
   | callexp of A.exp | callexpcon of (A.exp * A.pos) list
   | arrcreate of A.exp
-  | reccreate of A.exp | reccreatecon of A.exp
-  | fieldcreate of A.exp
+  | reccreate of A.exp | reccreatecon of (S.symbol * A.exp * pos) list
+  | fieldcreate of (S.symbol * A.exp * pos)
   | assignment of A.exp
   | seqexp of A.exp | seqsexps of (A.exp * int) list
   | letexp of A.exp | deccon of A.exp
@@ -175,7 +180,7 @@ exp: INT       ( A.IntExp INT)
   | ifexp ( ifexp )
   | ifelseexp ( ifelseexp )
   | arrcreate ( arrcreate )
-  | reccreate ( A.IntExp(0) )
+  | reccreate ( reccreate )
   | letexp ( A.IntExp(0) )
 
 (* Here we create the arithmetic operators *)
@@ -258,13 +263,12 @@ fieldexp : DOT ID ((Field(S.symbol ID), DOTleft))
 
 arrcreate : ID LBRACK exp RBRACK OF exp (makeArrCreate(ID,exp1,exp2,IDleft))
 
-reccreate : ID LBRACE reccreatecon RBRACE (A.IntExp(0))
+reccreate : ID LBRACE reccreatecon RBRACE (makeRecCreate(ID,reccreatecon,IDleft))
 
-reccreatecon : fieldcreate (A.IntExp(0))
-			| fieldcreate COMMA reccreatecon (A.IntExp(0))
-			| (A.IntExp(0))
+reccreatecon : fieldcreate ([fieldcreate])
+			| fieldcreate COMMA reccreatecon (fieldcreate:: reccreatecon)
 
-fieldcreate : ID EQ exp (A.IntExp(0))
+fieldcreate : ID EQ exp ((S.symbol ID,exp,IDleft))
 
 letexp : LET deccon IN seqsexps END (A.IntExp(0))
 
