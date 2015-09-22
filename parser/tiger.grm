@@ -56,12 +56,11 @@ fun makeFielddec (idsym, ty, p) =
 				, pos = p 
 				}
 
-
-
-fielddata   = { name: S.symbol
-                       , escape: bool ref
-                       , typ: (S.symbol * pos)
-                       , pos: pos}
+fun makeLetExp (decl, bod, p) =
+			{ decls = decl
+			, body = bod
+			, pos = p
+			} : A.letdata
 
 %%
 %term
@@ -98,6 +97,8 @@ fielddata   = { name: S.symbol
   | whileexp of A.exp
   | forexp of A.exp
   | id of A.exp 
+  | fundeclbegin of A.exp | tydeclbegin of A.exp | vardeclbegin of A.exp
+  | fundeclist of A.exp | tydeclist of A.exp | vardeclist of A.exp
 
 
 
@@ -153,7 +154,7 @@ exp: INT       ( A.IntExp INT)
   | lvalue ( A.IntExp(0) )
   | arrcreate ( A.IntExp(0) )
   | reccreate ( A.IntExp(0) )
-  | letexp ( A.IntExp(0) )
+  | letexp ( letexp )
 
 binop : exp PLUS exp 	%prec PLUS ( makeBinop (exp1,A.PlusOp,exp2, PLUSleft ))
 		 | exp MINUS exp 	%prec MINUS (makeBinop (exp1,A.MinusOp,exp2, MINUSleft ))
@@ -193,21 +194,6 @@ arrty : ARRAY OF ID (A.IntExp(0))
 
 recty : LBRACE fielddeccontent RBRACE (A.IntExp(0))
 
-fielddeccontent : fielddec (A.IntExp(0))
-				| fielddec COMMA fielddeccontent (A.IntExp(0))
-				| (A.IntExp(0))
-
-
-fielddec : ID COLON ID (makeFielddec(ID1,(ID2,ID2left), ID2right))
-
-fundec : ID LPAREN fielddeccontent RPAREN EQ exp (makeFundecl(ID, fielddeccontent, exp, expright))
-		| ID LPAREN fielddeccontent RPAREN COLON ID EQ exp (makeFundecl(ID1, fielddeccontent, ID2, exp, expright))
-
-vardec : ID ASSIGN exp (makeVarDec(ID1, ASSIGN, exp, expright))
-		| ID COLON ID ASSIGN exp (makeVarDec(ID1, ASSIGN, ID2, exp, expright))
-
-tydec : TYPE ID	EQ ty (makeTydec(ID, ty, tyright))
-
 lvalue : ID ltail (A.IntExp(0))
 
 ltail : subscript ltail (A.IntExp(0))
@@ -226,25 +212,29 @@ reccreatecon : fieldcreate (A.IntExp(0))
 			| fieldcreate COMMA reccreatecon (A.IntExp(0))
 			| (A.IntExp(0))
 
+
+
 fieldcreate : ID EQ exp (A.IntExp(0))
 
-letexp : LET deccon IN seqsexps END (A.IntExp(0))
 
-deccon : fundeclbegin (A.IntExp(0))
-		| vardeclbegin (A.IntExp(0))
-		| tydeclbegin (A.IntExp(0))
 
-fundeclbegin : fundeclist ()
-		   | fundeclist tydeclbegin ()
-		   | fundeclist vardeclbegin ()
+letexp : LET deccon IN seqsexps END ( makeLetExp(deccon, seqsexps, decconleft) )
 
-vardeclbegin : vardeclist ()
-		   | vardeclist fundeclbegin ()
-		   | vardeclist tydeclbegin ()
+deccon : fundeclbegin (fundeclbegin)
+		| vardeclbegin (vardeclbegin)
+		| tydeclbegin (tydeclbegin)
 
-tydeclbegin : tydeclist ( (*Stop List*) )
-		  | tydeclist vardeclbegin ( (*Close List, continue with vardeclist*) )
-		  | tydeclist fundeclbegin ( (*Close List, continue with fundeclist*) )
+fundeclbegin : fundeclist ([fundeclist])
+		   | fundeclist tydeclbegin (fundeclist::tydeclbegin)
+		   | fundeclist vardeclbegin (fundeclist::vardeclbegin)
+
+vardeclbegin : vardeclist ([vardeclist])
+		   | vardeclist fundeclbegin (vardeclist::fundeclbegin)
+		   | vardeclist tydeclbegin (vardeclist::tydeclbegin)
+
+tydeclbegin : tydeclist ([tydeclist])
+		  | tydeclist vardeclbegin ( tydeclist::vardeclbegin )
+		  | tydeclist fundeclbegin ( tydeclist::fundeclbegin )
 
 fundeclist : fundec (fundec :: nil)
 		   | fundec fundeclist (fundec :: fundeclist)
@@ -255,6 +245,29 @@ vardeclist : vardec (vardec :: nil)
 tydeclist : tydec (tydec :: nil)
 		  | tydec tydeclist (tydec :: tydeclist)
 
-    (* [..missing rules for exp..] *)
+fundec : ID LPAREN fielddeccontent RPAREN EQ exp (makeFundecl(ID, fielddeccontent, exp, ID1left))
+		| ID LPAREN fielddeccontent RPAREN COLON ID EQ exp (makeFundecl(ID1, fielddeccontent, ID2, exp, ID1left))
+
+vardec : ID ASSIGN exp (makeVarDec(ID1, ASSIGN, exp, ID1left))
+		| ID COLON ID ASSIGN exp (makeVarDec(ID1, ASSIGN, ID2, exp, ID1left))
+
+tydec : TYPE ID	EQ ty (makeTydec(ID, ty, IDleft))
+
+fielddec : ID COLON ID (makeFielddec(ID1,(ID2,ID2left), ID1left))
+
+fielddeccontent : fielddec ([fielddec])
+				| fielddec COMMA fielddeccontent (fielddec::fielddeccontent)
+				| ([])   
+
+
+
+
+
+
+
+
+
+
+(* [..missing rules for exp..] *)
 
 (* [..missing rules for missing nonterminals..] *)
