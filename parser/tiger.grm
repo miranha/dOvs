@@ -2,7 +2,7 @@ structure A = Absyn
 structure S = Symbol
 
 (* [these functions and similar ones may be convenient
- * for the creation of abstract syntax trees] *)
+ * for the creation of abstract syntax tree] *)
 
 datatype lvalueSpec = Field of S.symbol
 		| Subscript of A.exp
@@ -158,7 +158,8 @@ fun makeLetExp (decl, bod, p) =
          VAR TYPE ARRAY IF THEN ELSE DO OF NIL
 
 %prefer THEN ELSE LPAREN
-
+%subst EQ for ASSIGN | ASSIGN for EQ
+%change -> IN END
 %value ID ("bogus")
 %value INT (1)
 %value STRING ("")
