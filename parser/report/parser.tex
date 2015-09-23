@@ -17,14 +17,14 @@
 This report describes our approach to develop the parser, which is the first component in the compilation process. This parser is implemented using the ML-Yacc, as it is suggested by the book and the project description.
 
 The first three section describe different parts of the parser development.
-First, important parts of the tiger grammar are introduced with respect to the ML-Yacc. Secondly, it is described how the semantics actions are used to construct the AST for the program. Then it is shown how conflicts where detected, and what was done in order to resolve them.
+First, important parts of the tiger grammar are introduced with respect to the ML-Yacc. Secondly, it is described how the semantics actions are used to construct the Abstract Syntax Tree (AST) for the program. Then it is shown how conflicts where detected, and what was done in order to resolve them.
 
 Following these sections an overview of the problems encountered and experience gain during the work process is provided. Finally, five tiger programs are provided as test cases for different aspects of the developed parser.
 
 \section{The tiger grammar}
 %You should not write how you extracted the grammar from the appendix.
 
-The tiger grammar was implemented in the file \texttt{tiger.grm}. The parser development was divided into two separate parts; first the tiger grammars was implemented, and next the semantics action where added. These two parts reflect the two \textit{program} section for the chapters three and four, respectively. Using this approach it was possible to divide the problem in two parts. First it could be ensured that we did not have any conflicts in the grammars, and afterwards the semantics actions could be implemented in order to create the Abstract Syntax Tree (AST). 
+The tiger grammar was implemented in the file \texttt{tiger.grm}. The parser development was divided into two separate parts; first the tiger grammars was implemented, and next the semantics action where added. These two parts reflect the two \textit{program} section for the chapters three and four, respectively. Using this approach it was possible to divide the problem in two parts. First it could be ensured that we did not have any conflicts in the grammars, and afterwards the semantics actions could be implemented in order to create the AST. 
 
 In order to specify the grammar and rules Appendix A was used. However, using this grammar directly provided some conflicts and problem, which is discussed below.  
 
@@ -136,20 +136,21 @@ It can also be noted that the tiger grammar will have a dangling else conflict. 
 A key problem encountered was the implementation of tiger grammar, when a shift/reduce conflict was reported. In this part experience was gain in understanding the tiger grammar better, and understanting how to rewrite the part of the \texttt{tiger.grm} file. 
 
 \subsection{Creating the abstract syntax}
-Another main problem encountered was the notion of mutual recursive functions and type declarations. This was not part of the grammar defintion, but still had to be addressed, when creation the specification when using ML-Yacc to create the parser. As explained above this was solved by introducing an intermediate representation in order to being able to sort the relevant mutual recursive declarations. Tiger does in have a specific construct for creating mutual recursive function declaration, as can be achieved in ML using the \texttt{and} keyword. Cite the book about the functioddec FINISH...
+Another main problem encountered was the notion of mutual recursive functions and type declarations. This was not part of the grammar defintion, but still had to be addressed, when creation the specification when using ML-Yacc to create the parser. As explained above this was solved by introducing an intermediate representation in order to being able to sort the relevant mutual recursive declarations. Tiger does in have a specific construct for creating mutual recursive function declaration, as can be achieved in ML using the \texttt{and} keyword. From Appendix A in the book, the following is stated about mutual recursive functions. '' Mutually recursive functions and procedures are declared by a sequence of consecutive function declarations (with no intervening type or variable declarations.)
 
 \subsection{Debugging}
-Quite some time was also used on debugging the code, especially when an operator was used with the wrong input. A key problem was that some errors where reported as part of the generated parser file \texttt{tiger.grm.sml}. Then we had to read this error and try to find which error in the \texttt{tiger.grm} this was related to.
+Quite some time was also used on debugging the code, especially when an operator was used with the wrong input. A key problem was that some errors where reported as part of the generated parser file \texttt{tiger.grm.sml}. Then we had to read this error and try to find which error in the \texttt{tiger.grm} this was related to. Also it helped that we could use the provided function \texttt{(PrintAbsyn.print (TextIO.stdOut, Parse.parse(file)))} in order to see that we create the correct tree.
 
 
 \subsection{Error handling}
+When using ML-Yacc it uses the error correction method Burke-Fisher. However, it is also possible to add some manual error correction. This we tried to do after we had created some tiger programs with syntax errors.
 
 \section{5 tiger programs}
 %5 interesting tiger programs that you find test your parser in a good way.
 
 %You should also create 5 small Tiger programs containing syntax errors, and describe how your parser reacts to them in your report. Make sure that your implementation works on the provided test files
 
-These five tiger programs presented here are created simple in order to focus on different aspects of the implemented parser. These tests contain different syntax errors as required by the project description. In order to ensure that this parser works it is run on the provided testcases by the course. Additionally, some intersting experiments where made in order to test some of the more challenging aspects of this parser. This includes creating test for the \texttt{lvalue}, test that exponent binds tighter then unary minus\footnote{This is changed according to Aslans new requirement} and that the mutual recursive function are sorted correctly according to the tiger programming language.
+These five tiger programs presented here are created simple in order to focus on different aspects of the implemented parser. These tests contain different syntax errors as required by the project description. In order to ensure that this parser works it is run on the provided testcases by the course. Additionally, some intersting experiments where made in order to test some of the more challenging aspects of this parser. This includes creating test for the \texttt{lvalue}, test that exponent binds tighter then unary minus\footnote{This is changed according to Aslan's new requirement} and that the mutual recursive function are sorted correctly according to the tiger programming language.
 
 \subsection{test1.tig - Forgot to close parenthesis}
 \begin{lstlisting}[frame=single]
@@ -201,7 +202,7 @@ end
 In this test the parser should try to insert en assign instead of the equals according to the error correction added. 
 
 \section{Conclusion}
-This report showed the implementation of the parser. Furthermore some intersting problem encountered where described. Finally, some tests provided confidence that this parser is working correctly.
+This report showed the implementation of the parser. Furthermore some intersting problem encountered where described. Finally, some tests provided confidence that this parser is working correctly and also reports correct syntax errors.
 
 
 \end{document}
