@@ -151,39 +151,54 @@ Quite some time was also used on debugging the code, especially when an operator
 
 These five tiger programs presented here are created simple in order to focus on different aspects of the implemented parser. These tests contain different syntax errors as required by the project description. In order to ensure that this parser works it is run on the provided testcases by the course. Additionally, some intersting experiments where made in order to test some of the more challenging aspects of this parser. This includes creating test for the \texttt{lvalue}, test that exponent binds tighter then unary minus\footnote{This is changed according to Aslans new requirement} and that the mutual recursive function are sorted correctly according to the tiger programming language.
 
-\subsection{test1 - Forgot end in a let exp}
+\subsection{test1.tig - Forgot to close parenthesis}
 \begin{lstlisting}[frame=single]
-letvar a :=5a
+let var h :=  (5+4
+in
+h end
 \end{lstlisting}
 
-%In this test the let declaration is left unclosed. The parser responds to this by closing the let statement by inserting IN and END, as per the %change directive.
-
-\subsection{test2 - Using an equals instead of an assign}
-\begin{lstlisting}[frame=single]
-let var  b=3 in bend
-\end{lstlisting}
-
-% This test demonstrates an example where the parser uses a preferred substitution of EQ with ASSIGN.
-
-\subsection{test3 - Forgot using then in a if}
-\begin{lstlisting}[frame=single]if a<>0 1 else 2
-\end{lstlisting}
-
-% This test demonstrates an example where the parser inserts the preferred THEN keyword.
-
-\subsection{test4 - Forgot to close parenthesis}
-\begin{lstlisting}[frame=single]let var h := 3+ (5+4inh end
-\end{lstlisting}
+This test the default error correction, and the missing parser inserts it automatically.
 
 % In this test the right parenthesis is missing in the arithmetic expression and the parser inserts it, relying on the default error recovery mechanism.
 
-\subsection{test5 - Wrong array declaration}
+\subsection{test2.tig - Wrong array declaration}
 
 % In this test the parser replaces the OF keyword with a PLUS using default error mechanisms since no preference has been speci??ed.
 
-\begin{lstlisting}[frame=single]let var x := intArray  of 0in  0end
+\begin{lstlisting}[frame=single]
+let var x := aArry  of 0
+in
+  0
+end
 \end{lstlisting}
 
+In this test case the parser will try to insert a plus according to the standard error correction.
+
+\subsection{test3.tig - Forgot end in a let exp}
+\begin{lstlisting}[frame=single]
+let
+var a :=5
+a
+\end{lstlisting}
+
+In this part the \% change is tested to test that the in and end are inserted.
+
+\subsection{test4.tig - Forgot using then in a if}
+\begin{lstlisting}[frame=single]
+if a=0 1 else 2
+\end{lstlisting}
+
+In this case the then should be insert automatically in order to make it work.
+
+\subsection{test5.tig - Using an equals instead of an assign}
+\begin{lstlisting}[frame=single]
+let var  b=3
+ in b
+end
+\end{lstlisting}
+
+In this test the parser should try to insert en assign instead of the equals according to the error correction added. 
 
 \section{Conclusion}
 This report showed the implementation of the parser. Furthermore some intersting problem encountered where described. Finally, some tests provided confidence that this parser is working correctly.
