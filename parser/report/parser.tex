@@ -30,11 +30,7 @@ In order to specify the grammar and rules Appendix A was used. However, using th
 
 \section{The abstract syntax}
 %Write how the semantics actions are used to construct the AST for the program.
-The abstract syntax was provided with the handout file \texttt{absyn.sml}. This file provided the types of the different nodes that can be used when creating an AST from a tiger program. 
-
-\begin{lstlisting}[frame=single]
-Listing test
-\end{lstlisting}
+The abstract syntax was provided with the handout file \texttt{absyn.sml}. This file provided the types of the different nodes that can be used when creating an AST from a tiger program.  Hence the key work was to use this provided structure for the abstract syntax, when creating the semantic action for the parser using ML-YACC. Also it shall be noted that both the function declaration data and type declaration were made as list inside \texttt{absyn.sml}. The reason was in order to sort mutual recursive functions and type declaration, which is allowed in tiger.
 
 \section{Conflict management}
 %How conflicts where detected and what you did to resolve them. If you were unable to remove all conflicts, state why they are benign.
@@ -84,7 +80,7 @@ tail5  -> NONE      = ID subscript subscript fieldExp subscript
 As seen, the two final strings are the same, and doesn't provide a shift/reduce conflict. However as a final note, while we now make the string from left to right, when actually resolving the lvalue, we will still need to read it from right to left.
 
 \subsection{Mutual recursive function declarations}
-Mutual recursive types are implented as they're explained in the apendix, which also proved to be quite the task, as they function in quite a specific way.
+Mutual recursive types are implemented as they're explained in the appendix, which also proved to be quite the task, as they function in quite a specific way.
 Functions, Variables and Type are mutually recursive as long as they're declared by a consecutive sequence of the same kind. 
 
 To implement this we did the following:
@@ -93,7 +89,9 @@ To implement this we did the following:
 3. pattern match to check whether a new kind of element is found next, if so, begin a new list with this kind.
 4. Repeat 2 and 3 until no more elements left.
 
-to implent this in our parser, we did the following code:
+to implement this in our parser, we did the following code:
+
+TODO: Insert correct code
 \begin{lstlisting}[frame=single]
 letexp : LET deccon IN seqsexps END (...) )
 
@@ -121,38 +119,74 @@ tydeclist : tydec ([tydec])
           | tydec tydeclist (tydec :: tydeclist)
 
 \end{lstlisting}
-Note however that vardec isn't made into a list, this is because value doesn't follow the same rules as Function and Types, as also seen in the absyn.sml file. As vardecldata isn't a list.
+Note however that vardec isn't made into a list, this is because value doesn't follow the same rules as Function and Types, as also seen in the absyn.sml file. As vardecldata is not a list.
 
 \begin{lstlisting}[frame=single]
-and decl     = FunctionDec of fundecldata list
+decl     = FunctionDec of fundecldata list
              | VarDec of vardecldata
              | TypeDec of tydecldata list
 \end{lstlisting}
 
-\subsection{If-Else conflict}
+\subsection{If-Else shift/conflict}
+It can also be noted that the tiger grammar will have a dangling else conflict. However, this conflict was already solved in the provided code by making else right associative, which makes it use shift instead of reduce. Another solution can be found in the book page 67, in which an auxiliary nonterminal can be used in order to remove this conflict.
 
 \section{Problems encountered \& experience gained}
 %If you had any problems in the work process, write it here with what you gained.
 \subsection{Solving conflicts}
+A key problem encountered was the implementation of tiger grammar, when a shift/reduce conflict was reported. In this part experience was gain in understanding the tiger grammar better, and understanting how to rewrite the part of the \texttt{tiger.grm} file. 
 
 \subsection{Creating the abstract syntax}
+Another main problem encountered was the notion of mutual recursive functions and type declarations. This was not part of the grammar defintion, but still had to be addressed, when creation the specification when using ML-Yacc to create the parser. As explained above this was solved by introducing an intermediate representation in order to being able to sort the relevant mutual recursive declarations. Tiger does in have a specific construct for creating mutual recursive function declaration, as can be achieved in ML using the \texttt{and} keyword. Cite the book about the functioddec FINISH...
 
+\subsection{Debugging}
+Quite some time was also used on debugging the code, especially when an operator was used with the wrong input. A key problem was that some errors where reported as part of the generated parser file \texttt{tiger.grm.sml}. Then we had to read this error and try to find which error in the \texttt{tiger.grm} this was related to.
+
+
+\subsection{Error handling}
 
 \section{5 tiger programs}
 %5 interesting tiger programs that you find test your parser in a good way.
 
 %You should also create 5 small Tiger programs containing syntax errors, and describe how your parser reacts to them in your report. Make sure that your implementation works on the provided test files
 
-These five tiger programs presented here are created simple in order to focus on different aspects of the implemented parser. These tests contain different syntax errors as required by the project description. 
+These five tiger programs presented here are created simple in order to focus on different aspects of the implemented parser. These tests contain different syntax errors as required by the project description. In order to ensure that this parser works it is run on the provided testcases by the course. Additionally, some intersting experiments where made in order to test some of the more challenging aspects of this parser. This includes creating test for the \texttt{lvalue}, test that exponent binds tighter then unary minus\footnote{This is changed according to Aslans new requirement} and that the mutual recursive function are sorted correctly according to the tiger programming language.
 
-\subsection{Test1}
+\subsection{test1 - Forgot end in a let exp}
+\begin{lstlisting}[frame=single]
+letvar a :=5a
+\end{lstlisting}
 
-\subsection{Test1}
-\subsection{Test1}
-\subsection{Test1}
-\subsection{Test1}
+%In this test the let declaration is left unclosed. The parser responds to this by closing the let statement by inserting IN and END, as per the %change directive.
+
+\subsection{test2 - Using an equals instead of an assign}
+\begin{lstlisting}[frame=single]
+let var  b=3 in bend
+\end{lstlisting}
+
+% This test demonstrates an example where the parser uses a preferred substitution of EQ with ASSIGN.
+
+\subsection{test3 - Forgot using then in a if}
+\begin{lstlisting}[frame=single]if a<>0 1 else 2
+\end{lstlisting}
+
+% This test demonstrates an example where the parser inserts the preferred THEN keyword.
+
+\subsection{test4 - Forgot to close parenthesis}
+\begin{lstlisting}[frame=single]let var h := 3+ (5+4inh end
+\end{lstlisting}
+
+% In this test the right parenthesis is missing in the arithmetic expression and the parser inserts it, relying on the default error recovery mechanism.
+
+\subsection{test5 - Wrong array declaration}
+
+% In this test the parser replaces the OF keyword with a PLUS using default error mechanisms since no preference has been speci??ed.
+
+\begin{lstlisting}[frame=single]let var x := intArray  of 0in  0end
+\end{lstlisting}
 
 
-\section{Conlusion}
+\section{Conclusion}
+This report showed the implementation of the parser. Furthermore some intersting problem encountered where described. Finally, some tests provided confidence that this parser is working correctly.
+
 
 \end{document}
