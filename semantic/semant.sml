@@ -130,7 +130,7 @@ fun convertOper (oper) =
     | A.GeOp => TAbs.GeOp
     | A.PlusOp => TAbs.PlusOp
     | A.MinusOp => TAbs.MinusOp
-    | A.TimesOp => TAbs.MinusOp
+    | A.TimesOp => TAbs.TimesOp
     | A.DivideOp => TAbs.DivideOp
     | A.ExponentOp => TAbs.ExponentOp
 
