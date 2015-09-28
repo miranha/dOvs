@@ -125,7 +125,7 @@ fun transExp (venv, tenv, extra : extra) =
           | trexp (A.StringExp(s,_)) = makePair (TAbs.StringExp(s), Ty.STRING)
           | trexp _ = (print("sry, got nothing\n"); TODO)
 
-        and trvar (A.SimpleVar (id, pos)) = let val ty = lookupTy(tenv, id, pos) in
+        and trvar (A.SimpleVar (id, pos)) = let val ty = lookupTy(venv, id, pos) in
                                               if ty then makeVar(T.SimpleVar(id), ty)
                                               else errorVar(pos, id)
                                               end
