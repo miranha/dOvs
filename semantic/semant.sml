@@ -154,7 +154,7 @@ fun transExp (venv, tenv, extra : extra) =
                                         val texp2 = trexp(#right data)
                                         in
                                           if checkInt(#ty texp1, #pos data) andalso checkInt(#ty texp2, #pos data) then
-                                            makeBinop(#exp texp1, #oper data, #exp texp2)
+                                            makeBinop(texp1, #oper data, texp2)
                                           else makePair(TAbs.ErrorExp, Ty.ERROR)
                                     end
           | trexp _ = (print("sry, got nothing\n"); TODO)
