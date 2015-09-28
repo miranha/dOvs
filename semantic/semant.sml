@@ -134,9 +134,9 @@ fun convertOper (oper) =
     | A.DivideOp => TAbs.DivideOp
     | A.ExponentOp => TAbs.ExponentOp
 
-fun makeBinop(epx1, opt, exp2) =
+fun makeBinop(exp1, opt, exp2) =
   TAbs.OpExp {left = exp1,
-    oper = converOper(opt),
+    oper = convertOper(opt),
     right = exp2}
 
 fun transTy (tenv, t) = Ty.ERROR (* TODO *)
@@ -150,7 +150,7 @@ fun transExp (venv, tenv, extra : extra) =
           | trexp (A.VarExp var) = trvar(var)
           | trexp (A.IntExp value) = makePair (TAbs.IntExp(value), Ty.INT)
           | trexp (A.StringExp(s,_)) = makePair (TAbs.StringExp(s), Ty.STRING)
-          | trexp (A.BinOp(texp1,opt,texp2, pos)) = let val res1 = checkInt(#ty texp1, pos)
+          | trexp (A.OpExp(texp1,opt,texp2, pos)) = let val res1 = checkInt(#ty texp1, pos)
                                                       val res2 = checkInt(#ty texp2, pos)
                                                       in if res1 andalso res2 then
                                                         makeBinop(#exp texp1, opt, #exp texp2)
