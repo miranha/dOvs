@@ -134,10 +134,10 @@ fun convertOper (oper) =
     | A.DivideOp => TAbs.DivideOp
     | A.ExponentOp => TAbs.ExponentOp
 
-fun makeBinop(exp1, opt, exp2) =
-  makePair( TAbs.OpExp {left = exp1,
+fun makeBinop(texp1, opt, texp2) =
+  makePair( TAbs.OpExp {left = texp1,
     oper = convertOper(opt),
-    right = exp2}, Ty.INT )
+    right = texp2}, Ty.INT )
 
 fun transTy (tenv, t) = Ty.ERROR (* TODO *)
 
@@ -155,10 +155,8 @@ fun transExp (venv, tenv, extra : extra) =
                                         in
                                           if checkInt(#ty texp1, #pos data) andalso checkInt(#ty texp2, #pos data) then
                                             makeBinop(#exp texp1, #oper data, #exp texp2)
-                                          else MakePair(TAbs.ErrorExp, Ty.ERROR)
+                                          else makePair(TAbs.ErrorExp, Ty.ERROR)
                                     end
-
-            makeBinop(exp1,opt,exp2)
           | trexp _ = (print("sry, got nothing\n"); TODO)
 
           (* It should be possible to reuse this in other functions *)
