@@ -90,9 +90,9 @@ fun actualTy (Ty.NAME (s, ty)) pos =
 
 fun checkInt (ty, pos) =
     case ty
-     of Ty.INT => ()
-      | Ty.ERROR => ()
-      | _ => errorInt (pos, ty)
+     of Ty.INT => true
+      | Ty.ERROR => false      
+      | _ => (errorInt (pos, ty); false)
 
 fun isUnit (ty) =
     case ty
@@ -120,6 +120,25 @@ fun makeVar (varDesc, ty) =
     ty = ty
   }, ty)
 
+fun convertOper (oper) =
+  case oper of
+      A.EqOp => TAbs.EqOp
+    | A.NeqOp => TAbs.NeqOp
+    | A.LtOp => TAbs.LtOp
+    | A.LeOp => TAbs.LeOp
+    | A.GtOp => TAbs.GtOp
+    | A.GeOp => TAbs.GeOp
+    | A.PlusOp => TAbs.PlusOp
+    | A.MinusOp => TAbs.MinusOp
+    | A.TimesOp => TAbs.MinusOp
+    | A.DivideOp => TAbs.DivideOp
+    | A.ExponentOp => TAbs.ExponentOp
+
+fun makeBinop(epx1, opt, exp2) =
+  TAbs.OpExp {left = exp1,
+    oper = converOper(opt),
+    right = exp2}
+
 fun transTy (tenv, t) = Ty.ERROR (* TODO *)
 
 fun transExp (venv, tenv, extra : extra) =
@@ -131,8 +150,16 @@ fun transExp (venv, tenv, extra : extra) =
           | trexp (A.VarExp var) = trvar(var)
           | trexp (A.IntExp value) = makePair (TAbs.IntExp(value), Ty.INT)
           | trexp (A.StringExp(s,_)) = makePair (TAbs.StringExp(s), Ty.STRING)
+          | trexp (A.BinOp(texp1,opt,texp2, pos)) = let val res1 = checkInt(#ty texp1, pos)
+                                                      val res2 = checkInt(#ty texp2, pos)
+                                                      in if res1 and res2 then
+                                                        makeBinop(#exp texp1, opt, #exp texp2)
+                                                      else MakePair(TAbs.ErrorExp, Ty.ERROR)
+
+            makeBinop(exp1,opt,exp2)
           | trexp _ = (print("sry, got nothing\n"); TODO)
 
+          (* It should be possible to reuse this in other functions *)
         and trvar (A.SimpleVar (id, pos)) = let val ty = lookupVar venv id pos in
                                               case ty of
                                               SOME(Env.VarEntry({ty = t})) => makeVar(TAbs.SimpleVar(id), t)
