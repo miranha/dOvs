@@ -152,7 +152,7 @@ fun transExp (venv, tenv, extra : extra) =
           | trexp (A.StringExp(s,_)) = makePair (TAbs.StringExp(s), Ty.STRING)
           | trexp (A.BinOp(texp1,opt,texp2, pos)) = let val res1 = checkInt(#ty texp1, pos)
                                                       val res2 = checkInt(#ty texp2, pos)
-                                                      in if res1 and res2 then
+                                                      in if res1 andalso res2 then
                                                         makeBinop(#exp texp1, opt, #exp texp2)
                                                       else MakePair(TAbs.ErrorExp, Ty.ERROR)
                                                       end
