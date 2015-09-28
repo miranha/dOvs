@@ -136,7 +136,7 @@ fun transExp (venv, tenv, extra : extra) =
         and trvar (A.SimpleVar (id, pos)) = let val ty = lookupVar venv id pos in
                                               case ty of
                                               SOME(t) => makeVar(TAbs.SimpleVar(id), t)
-                                              |_ => (errorVar(pos, id); TAbs.ErrorExp)
+                                              |_ => (errorVar(pos, id); makePair(TAbs.ErrorExp,TY.ERROR))
                                               end
           | trvar (A.FieldVar (var, id, pos)) = TODO
           | trvar (A.SubscriptVar (var, exp, pos)) = TODO
