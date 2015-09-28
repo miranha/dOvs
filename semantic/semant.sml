@@ -103,14 +103,15 @@ fun checkAssignable (declared: Ty.ty, assigned: Ty.ty, pos, msg) =
 
 (* Helper functions to make life easier *)
 fun makePair (expDesc, ty) =
-  TAbs.exp {exp = expDesc, 
-    ty = ty}
+    { exp = expDesc, 
+      ty = ty} : Tabs.exp
 
 fun makeVar (varDesc, ty) =
-  TAbs.VarExp {
+  makePair(
+    TAbs.VarExp {
     var = varDesc,
     ty = ty
-  }
+  }, ty)
 
 fun transTy (tenv, t) = Ty.ERROR (* TODO *)
 
