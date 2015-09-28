@@ -137,7 +137,7 @@ fun convertOper (oper) =
 fun makeBinop(exp1, opt, exp2) =
   makePair( TAbs.OpExp {left = exp1,
     oper = convertOper(opt),
-    right = exp2}, TY.INT )
+    right = exp2}, Ty.INT )
 
 fun transTy (tenv, t) = Ty.ERROR (* TODO *)
 
@@ -150,12 +150,13 @@ fun transExp (venv, tenv, extra : extra) =
           | trexp (A.VarExp var) = trvar(var)
           | trexp (A.IntExp value) = makePair (TAbs.IntExp(value), Ty.INT)
           | trexp (A.StringExp(s,_)) = makePair (TAbs.StringExp(s), Ty.STRING)
-          | trexp (A.OpExp(texp1,opt,texp2, pos)) = let val res1 = checkInt(#ty texp1, pos)
-                                                      val res2 = checkInt(#ty texp2, pos)
-                                                      in if res1 andalso res2 then
-                                                        makeBinop(#exp texp1, opt, #exp texp2)
-                                                      else MakePair(TAbs.ErrorExp, Ty.ERROR)
-                                                      end
+          | trexp (A.OpExp(data)) = let val texp1 = trexp(#left data)
+                                        val texp2 = trexp(#right data)
+                                        in
+                                          if checkInt(#ty texp1, #pos data) andalso checkInt(#ty texp2, #pos data) then
+                                            makeBinop(#exp texp1, #oper data, #exp texp2)
+                                          else MakePair(TAbs.ErrorExp, Ty.ERROR)
+                                    end
 
             makeBinop(exp1,opt,exp2)
           | trexp _ = (print("sry, got nothing\n"); TODO)
