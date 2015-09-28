@@ -48,7 +48,7 @@ fun errorUnit (pos, ty) =
 fun errorNil (pos, id) =
     err pos ("need to give " ^ S.name id ^ " a type when assigning the value nil")
 
-fun errorVar (pos, id)
+fun errorVar (pos, id) =
   err pos ((S.name id) ^ " is undefined")
 
 (* Write additional error messages here *)
