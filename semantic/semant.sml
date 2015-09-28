@@ -128,7 +128,7 @@ fun transExp (venv, tenv, extra : extra) =
         val TODO = {exp = TAbs.ErrorExp, ty = Ty.ERROR}
 
         fun trexp (A.NilExp) = TODO
-          | trexp (A.VarExp var) = TODO
+          | trexp (A.VarExp var) = trvar(var)
           | trexp (A.IntExp value) = makePair (TAbs.IntExp(value), Ty.INT)
           | trexp (A.StringExp(s,_)) = makePair (TAbs.StringExp(s), Ty.STRING)
           | trexp _ = (print("sry, got nothing\n"); TODO)
