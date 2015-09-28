@@ -98,6 +98,10 @@ fun checkAssignable (declared: Ty.ty, assigned: Ty.ty, pos, msg) =
         () (* TODO *)
     end
 
+(* Helper functions to make life easier *)
+fun makePair (exp, ty) =
+  {exp = exp, ty = ty}
+
 fun transTy (tenv, t) = Ty.ERROR (* TODO *)
 
 fun transExp (venv, tenv, extra : extra) =
@@ -107,8 +111,8 @@ fun transExp (venv, tenv, extra : extra) =
 
         fun trexp (A.NilExp) = TODO
           | trexp (A.VarExp var) = TODO
-          | trexp (A.IntExp value) = {exp = TAbs.IntExp(value), ty = Ty.INT}
-          | trexp (A.StringExp(s,_)) = {exp = TAbs.StringExp(s), ty = Ty.STRING}
+          | trexp (A.IntExp value) = makePair (TAbs.IntExp(value), Ty.INT)
+          | trexp (A.StringExp(s,_)) = makePair (TAbs.StringExp(s), Ty.STRING)
           | trexp _ = (print("sry, got nothing\n"); TODO)
 
         and trvar (A.SimpleVar (id, pos)) = TODO
