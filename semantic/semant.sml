@@ -102,8 +102,8 @@ fun checkAssignable (declared: Ty.ty, assigned: Ty.ty, pos, msg) =
     end
 
 (* Helper functions to make life easier *)
-fun makePair (exp, ty) =
-  TAbs.exp {exp = exp, 
+fun makePair (expDesc, ty) =
+  TAbs.exp {exp = expDesc, 
     ty = ty}
 
 fun makeVar (varDesc, ty) =
@@ -128,7 +128,7 @@ fun transExp (venv, tenv, extra : extra) =
         and trvar (A.SimpleVar (id, pos)) = let val ty = lookupTy venv id pos in
                                               case ty of
                                               SOME(t) => makeVar(TAbs.SimpleVar(id), t)
-                                              |_ => errorVar(pos, id)
+                                              |_ => (errorVar(pos, id); TAbs.ErrorExp)
                                               end
           | trvar (A.FieldVar (var, id, pos)) = TODO
           | trvar (A.SubscriptVar (var, exp, pos)) = TODO
