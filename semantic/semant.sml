@@ -77,6 +77,13 @@ fun lookupTy tenv sym pos =
         tyOpt
     end
 
+fun lookupVar venv sym pos =
+  let
+    val varOpt = S.look (venv,sym)
+  in
+    varOpt
+  end
+
 fun actualTy (Ty.NAME (s, ty)) pos =
     Ty.ERROR (* TODO *)
   | actualTy t _ = t
@@ -104,7 +111,7 @@ fun checkAssignable (declared: Ty.ty, assigned: Ty.ty, pos, msg) =
 (* Helper functions to make life easier *)
 fun makePair (expDesc, ty) =
     { exp = expDesc, 
-      ty = ty} : Tabs.exp
+      ty = ty} : TAbs.exp
 
 fun makeVar (varDesc, ty) =
   makePair(
@@ -126,7 +133,7 @@ fun transExp (venv, tenv, extra : extra) =
           | trexp (A.StringExp(s,_)) = makePair (TAbs.StringExp(s), Ty.STRING)
           | trexp _ = (print("sry, got nothing\n"); TODO)
 
-        and trvar (A.SimpleVar (id, pos)) = let val ty = lookupTy venv id pos in
+        and trvar (A.SimpleVar (id, pos)) = let val ty = lookupVar venv id pos in
                                               case ty of
                                               SOME(t) => makeVar(TAbs.SimpleVar(id), t)
                                               |_ => (errorVar(pos, id); TAbs.ErrorExp)
