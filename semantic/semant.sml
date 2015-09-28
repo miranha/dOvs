@@ -48,6 +48,9 @@ fun errorUnit (pos, ty) =
 fun errorNil (pos, id) =
     err pos ("need to give " ^ S.name id ^ " a type when assigning the value nil")
 
+fun errorVar (pos, id)
+  err pos ((S.name id) ^ " is undefined")
+
 (* Write additional error messages here *)
 
 
@@ -71,7 +74,7 @@ fun lookupTy tenv sym pos =
     let
         val tyOpt = S.look (tenv, sym)
     in
-        Ty.ERROR (* TODO *)
+        tyOpt
     end
 
 fun actualTy (Ty.NAME (s, ty)) pos =
@@ -100,7 +103,14 @@ fun checkAssignable (declared: Ty.ty, assigned: Ty.ty, pos, msg) =
 
 (* Helper functions to make life easier *)
 fun makePair (exp, ty) =
-  {exp = exp, ty = ty}
+  TAbsyn.exp {exp = exp, 
+    ty = ty}
+
+fun makeVar (varDesc, ty) =
+  TAbsyn.VarExp {
+    var_desc = varDesc,
+    ty = ty
+  }
 
 fun transTy (tenv, t) = Ty.ERROR (* TODO *)
 
@@ -115,7 +125,9 @@ fun transExp (venv, tenv, extra : extra) =
           | trexp (A.StringExp(s,_)) = makePair (TAbs.StringExp(s), Ty.STRING)
           | trexp _ = (print("sry, got nothing\n"); TODO)
 
-        and trvar (A.SimpleVar (id, pos)) = TODO
+        and trvar (A.SimpleVar (id, pos)) = let val ty = lookupTy(tenv, id, pos)
+                                              if ty then makeVar(T.SimpleVar(id), ty = ty)
+                                              else errorVar(pos, id)
           | trvar (A.FieldVar (var, id, pos)) = TODO
           | trvar (A.SubscriptVar (var, exp, pos)) = TODO
     in
