@@ -109,7 +109,7 @@ fun transExp (venv, tenv, extra : extra) =
           | trexp (A.VarExp var) = TODO
           | trexp (A.IntExp value) = {exp = TAbs.IntExp(value), ty = Ty.INT}
           | trexp (A.StringExp(s,_)) = {exp = TAbs.StringExp(s), ty = Ty.STRING}
-          | trexp _ = TODO
+          | trexp _ = (print("sry, got nothing\n"); TODO)
 
         and trvar (A.SimpleVar (id, pos)) = TODO
           | trvar (A.FieldVar (var, id, pos)) = TODO
