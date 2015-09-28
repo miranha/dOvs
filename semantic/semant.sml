@@ -135,9 +135,9 @@ fun convertOper (oper) =
     | A.ExponentOp => TAbs.ExponentOp
 
 fun makeBinop(exp1, opt, exp2) =
-  TAbs.OpExp {left = exp1,
+  makePair( TAbs.OpExp {left = exp1,
     oper = convertOper(opt),
-    right = exp2}
+    right = exp2}, TY.INT )
 
 fun transTy (tenv, t) = Ty.ERROR (* TODO *)
 
