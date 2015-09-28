@@ -155,6 +155,7 @@ fun transExp (venv, tenv, extra : extra) =
                                                       in if res1 and res2 then
                                                         makeBinop(#exp texp1, opt, #exp texp2)
                                                       else MakePair(TAbs.ErrorExp, Ty.ERROR)
+                                                      end
 
             makeBinop(exp1,opt,exp2)
           | trexp _ = (print("sry, got nothing\n"); TODO)
