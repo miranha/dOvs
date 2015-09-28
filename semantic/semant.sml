@@ -108,7 +108,7 @@ fun makePair (exp, ty) =
 
 fun makeVar (varDesc, ty) =
   TAbsyn.VarExp {
-    var_desc = varDesc,
+    var = varDesc,
     ty = ty
   }
 
