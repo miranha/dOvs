@@ -159,6 +159,10 @@ fun transExp (venv, tenv, extra : extra) =
                                     end
           | trexp _ = (print("sry, got nothing\n"); TODO)
 
+          (*
+            * When we are making a let expression, we have to use the transExp to interpt with the extended enviorment
+            *)
+
           (* It should be possible to reuse this in other functions *)
         and trvar (A.SimpleVar (id, pos)) = let val ty = lookupVar venv id pos in
                                               case ty of
