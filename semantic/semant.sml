@@ -157,13 +157,7 @@ fun makeIfElse({exp = test, ty = ty1}: TAbs.exp, { exp = thn, ty = ty2} : TAbs.e
               thn = thn,
               els = elsexp
             }, ty2)
-    | SOME({ exp = e, ty = ty3}) =>
-        if ty2 <> ty3 then (errorIfThen (pos, ty2, ty3); ERRORPAIR)
-        else makePair( TAbs.IfExp {
-              test = test,
-              thn = thn,
-              els = elsexp
-            }, ty2)
+    | _ => ERRORPAIR
 
 fun transTy (tenv, t) = Ty.ERROR (* TODO *)
 
@@ -177,7 +171,7 @@ fun transExp (venv, tenv, extra : extra) =
           | trexp (A.VarExp var) = trvar(var)
           | trexp (A.IntExp value) = makePair (TAbs.IntExp(value), Ty.INT)
           | trexp (A.StringExp(s,_)) = makePair (TAbs.StringExp(s), Ty.STRING)
-          | trexp (A.OpExp(data {left = left, oper = oper, right = right})) = let val texp1 = trexp(left)
+          | trexp (A.OpExp({left = left, oper = oper, right = right})) = let val texp1 = trexp(left)
                                         val texp2 = trexp(right)
                                         in
                                           if checkInt(#ty texp1, #pos data) andalso checkInt(#ty texp2, #pos data) then
