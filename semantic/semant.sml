@@ -42,6 +42,13 @@ fun out msg pos = err pos msg
 fun errorInt (pos, ty) =
     err pos ("INT required, " ^ PT.asString ty ^ " provided")
 
+fun errorIfTest(pos, ty) =
+    err pos ("INT required in test, " ^ PT.asString ty ^ " provided")
+
+fun errorIfThen(pos, ty1, ty2) =
+    err pos ("then and else exp must be same type, then exp is type " 
+        ^ PT.asString ty1 ^ " and else exp is type " ^ PT.asString ty2)
+
 fun errorUnit (pos, ty) =
     err pos ("UNIT required, " ^ PT.asString ty ^ " provided")
 
@@ -139,12 +146,20 @@ fun makeBinop(texp1, opt, texp2) =
     oper = convertOper(opt),
     right = texp2}, Ty.INT )
 
+fun makeIfElse(testexp, thnexp, elsexp, ty) =
+  makePair( TAbs.IfExp {
+            test = testexp
+            thn = thnexp
+            els = elsexp
+    }, ty)
+
 fun transTy (tenv, t) = Ty.ERROR (* TODO *)
 
 fun transExp (venv, tenv, extra : extra) =
     let
         (* this is a placeholder value to get started *)
         val TODO = {exp = TAbs.ErrorExp, ty = Ty.ERROR}
+        val ERRORPAIR = {exp = TAbs.ErrorExp, ty = Ty.ERROR}
         val NILPAIR = {exp = TAbs.NilExp, ty = Ty.UNIT}
 
         fun trexp (A.NilExp) = TODO
@@ -159,6 +174,7 @@ fun transExp (venv, tenv, extra : extra) =
                                           else makePair(TAbs.ErrorExp, Ty.ERROR)
                                     end
           | trexp(A.SeqExp(explist)) = trseqexp(explist) (* *)
+          | trexp(A.IfExp(ifdata)) trifexp(ifdata)
           | trexp _ = (print("sry, got nothing\n"); TODO)
 
           (*
@@ -180,6 +196,26 @@ fun transExp (venv, tenv, extra : extra) =
           | trseqexpaux ((exp, pos)::xs, ty, acc) = let val res = trexp(exp)
                                                         in trseqexpaux (xs, #ty res, acc @ [res]) 
                                                         end
+
+        and trifexp (ifdata) = let val testexp = trexp(#test ifdata)
+                                    val thnexp = trexp(#thn ifdata)
+                                    val elsexp = case (#elseexp ifdata) of
+                                                    NONE => NONE
+                                                    | SOME(exp) = SOME(trexp exp)
+                                                  end
+                                    (* In case things went well, we return this *)
+                                    val potRes = MakeIfElse( testexp, thnexp, elsexp, #ty thnexp) (* thenexp is always defined*)
+                                    in if (#ty testexp) != Ty.INT then
+                                        (errorIfTest #pos ifdata; ERRORPAIR)
+                                      else 
+                                        case elsexp of
+                                            NONE => potRes
+                                          | SOME(exp) =>  if (#ty thnexp) = (#ty exp) then
+                                                            potRes
+                                                          else 
+                                                            (errorIfThen(pos, (#ty thnexp), (#ty exp)); ERRORPAIR)
+                                      end
+                                    end
     in
         trexp
     end
