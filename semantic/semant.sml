@@ -151,7 +151,7 @@ fun makeBinop(texp1, opt, texp2) =
 fun makeIfElse(testexp{exp = test, ty = ty1}, thnexp{ exp = thn, ty = ty2}, elsexp, pos) =
   if ty1 <> Ty.Int then
     (errorIfTest (pos, ty1); ERRORPAIR)
-  else if elsexp = SOME(Ty.Exp{_, ty = ty3}) andalso ty2 <> ty3 then
+  else if elsexp = SOME(Ty.Exp{exp = _, ty = ty3}) andalso ty2 <> ty3 then
     (errorIfThen(pos, ty2, ty3); ERRORPAIR)
   else
     makePair( TAbs.IfExp {
