@@ -199,20 +199,20 @@ fun transExp (venv, tenv, extra : extra) =
 
         and trifexp (data) = let val testexp = trexp(#test data)
                                     val thnexp = trexp(#thn data)
-                                    val elsexp = case (#elseexp data) of
+                                    val elsexp = case (#elsexp data) of
                                                     NONE => NONE
                                                     | SOME(exp) => SOME(trexp exp)
                                     (* In case things went well, we return this *)
                                     val potRes = makeIfElse( testexp, thnexp, elsexp, (#ty thnexp)) (* thenexp is always defined*)
                                     in if (#ty testexp) <> Ty.INT then
-                                        (errorIfTest #pos ifdata; ERRORPAIR)
+                                        (errorIfTest #pos data; ERRORPAIR)
                                       else 
                                         case elsexp of
                                             NONE => potRes
                                           | SOME(exp) =>  if (#ty thnexp) = (#ty exp) then
                                                             potRes
                                                           else 
-                                                            (errorIfThen(#pos ifdata, (#ty thnexp), (#ty exp)); ERRORPAIR)
+                                                            (errorIfThen(#pos data, (#ty thnexp), (#ty exp)); ERRORPAIR)
                                     end
     in
         trexp
