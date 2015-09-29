@@ -145,6 +145,7 @@ fun transExp (venv, tenv, extra : extra) =
     let
         (* this is a placeholder value to get started *)
         val TODO = {exp = TAbs.ErrorExp, ty = Ty.ERROR}
+        val NILPAIR = {exp = TAbs.NilExp, ty = Ty.UNIT}
 
         fun trexp (A.NilExp) = TODO
           | trexp (A.VarExp var) = trvar(var)
@@ -157,6 +158,7 @@ fun transExp (venv, tenv, extra : extra) =
                                             makeBinop(texp1, #oper data, texp2)
                                           else makePair(TAbs.ErrorExp, Ty.ERROR)
                                     end
+          | trexp(A.SeqExp(explist)) = trseqexp(explist) (* *)
           | trexp _ = (print("sry, got nothing\n"); TODO)
 
           (*
@@ -171,6 +173,11 @@ fun transExp (venv, tenv, extra : extra) =
                                               end
           | trvar (A.FieldVar (var, id, pos)) = TODO
           | trvar (A.SubscriptVar (var, exp, pos)) = TODO
+        
+        and trseqexp(explist) = trseqexpaux(explist, NILPAIR) (* The empty sequence has nothing, so its type is unit and the exp is nil *)
+        
+        and trseqexpaux ([], pair) = pair
+          | trseqexpaxu (h::xs, pair) = trseqexp (xs, trexp(h))
     in
         trexp
     end
