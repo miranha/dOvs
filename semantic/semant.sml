@@ -178,7 +178,8 @@ fun transExp (venv, tenv, extra : extra) =
         
         and trseqexpaux ([], ty,acc) = MakePair(TAbs.SeqExp(acc), ty = ty)
           | trseqexpaux ((exp, pos)::xs, ty, acc) = let val res = trexp(exp)
-                                                        in trseqexpaux (xs, #ty res, acc @ [res]) end
+                                                        in trseqexpaux (xs, #ty res, acc @ [res]) 
+                                                        end
     in
         trexp
     end
