@@ -149,7 +149,7 @@ fun makeBinop(texp1, opt, texp2) =
     right = texp2}, Ty.INT )
 
 fun makeIfElse({exp = test, ty = ty1}: TAbs.exp, { exp = thn, ty = ty2} : TAbs.exp, elsexp, pos) =
-  if ty1 <> Ty.Int then
+  if ty1 <> Ty.INT then
     (errorIfTest (pos, ty1); ERRORPAIR)
   else if elsexp = SOME({exp = e, ty = ty3} : TAbs.exp) andalso ty2 <> ty3 then
     (errorIfThen(pos, ty2, ty3); ERRORPAIR)
