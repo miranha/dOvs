@@ -197,10 +197,10 @@ fun transExp (venv, tenv, extra : extra) =
                                                         in trseqexpaux (xs, #ty res, acc @ [res]) 
                                                         end
 
-        and trifexp (data {test = te, 
+        and trifexp (A.ifdata ({test = te, 
                           thn = thn, 
                           els = els, 
-                          pos = pos}) =  let val test = trexp (test)
+                          pos = pos})) =  let val test = trexp (test)
                                                         val thn = trexp (thn)
                                                         val els = case (els) of
                                                                     NONE => NONE
