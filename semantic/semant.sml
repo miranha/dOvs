@@ -174,10 +174,11 @@ fun transExp (venv, tenv, extra : extra) =
           | trvar (A.FieldVar (var, id, pos)) = TODO
           | trvar (A.SubscriptVar (var, exp, pos)) = TODO
         
-        and trseqexp(explist) = trseqexpaux(explist, NILPAIR) (* The empty sequence has nothing, so its type is unit and the exp is nil *)
+        and trseqexp(explist) = trseqexpaux(explist, TY.UNIT, []) (* The empty sequence has nothing, so its type is unit and the exp is nil *)
         
-        and trseqexpaux ([], pair) = pair
-          | trseqexpaux ((exp, pos)::xs, pair) = trseqexpaux (xs, trexp(exp))
+        and trseqexpaux ([], ty,acc) = MakePair(TAbs.SeqExp(acc), ty = ty)
+          | trseqexpaux ((exp, pos)::xs, ty, acc) = let val res = trexp(exp)
+                                                        in trseqexpaux (xs, #ty res, acc @ [res])
     in
         trexp
     end
