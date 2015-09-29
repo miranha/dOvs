@@ -148,8 +148,8 @@ fun makeBinop(texp1, opt, texp2) =
 
 fun makeIfElse(testexp, thnexp, elsexp, ty) =
   makePair( TAbs.IfExp {
-            test = testexp
-            thn = thnexp
+            test = testexp,
+            thn = thnexp,
             els = elsexp
     }, ty)
 
