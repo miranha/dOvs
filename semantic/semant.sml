@@ -174,7 +174,7 @@ fun transExp (venv, tenv, extra : extra) =
                                           else makePair(TAbs.ErrorExp, Ty.ERROR)
                                     end
           | trexp(A.SeqExp(explist)) = trseqexp(explist) (* *)
-          | trexp(A.IfExp(ifdata)) = trifexp(ifdata)
+          | trexp(A.IfExp(ifdata(record))) = trifexp(record)
           | trexp _ = (print("sry, got nothing\n"); TODO)
 
           (*
@@ -212,7 +212,7 @@ fun transExp (venv, tenv, extra : extra) =
                                           | SOME(exp) =>  if (#ty thnexp) = (#ty exp) then
                                                             potRes
                                                           else 
-                                                            (errorIfThen(pos, (#ty thnexp), (#ty exp)); ERRORPAIR)
+                                                            (errorIfThen(#pos ifdata, (#ty thnexp), (#ty exp)); ERRORPAIR)
                                     end
     in
         trexp
