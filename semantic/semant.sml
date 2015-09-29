@@ -197,22 +197,22 @@ fun transExp (venv, tenv, extra : extra) =
                                                         in trseqexpaux (xs, #ty res, acc @ [res]) 
                                                         end
 
-        and trifexp (data) = let val testexp = trexp(#test data)
-                                    val thnexp = trexp(#thn data)
-                                    val elsexp = case (#elsexp data) of
+        and trifexp (data) = let val test = trexp(#test data)
+                                    val thn = trexp(#thn data)
+                                    val els = case (#els data) of
                                                     NONE => NONE
                                                     | SOME(exp) => SOME(trexp exp)
                                     (* In case things went well, we return this *)
-                                    val potRes = makeIfElse( testexp, thnexp, elsexp, (#ty thnexp)) (* thenexp is always defined*)
-                                    in if (#ty testexp) <> Ty.INT then
+                                    val potRes = makeIfElse( test, thn, els, (#ty thnexp)) (* thenexp is always defined*)
+                                    in if (#ty test) <> Ty.INT then
                                         (errorIfTest #pos data; ERRORPAIR)
                                       else 
-                                        case elsexp of
+                                        case els of
                                             NONE => potRes
-                                          | SOME(exp) =>  if (#ty thnexp) = (#ty exp) then
+                                          | SOME(exp) =>  if (#ty thn) = (#ty exp) then
                                                             potRes
                                                           else 
-                                                            (errorIfThen(#pos data, (#ty thnexp), (#ty exp)); ERRORPAIR)
+                                                            (errorIfThen(#pos data, (#ty thn), (#ty exp)); ERRORPAIR)
                                     end
     in
         trexp
