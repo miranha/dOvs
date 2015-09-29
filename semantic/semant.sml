@@ -197,23 +197,13 @@ fun transExp (venv, tenv, extra : extra) =
                                                         in trseqexpaux (xs, #ty res, acc @ [res]) 
                                                         end
 
-        and trifexp (data) = let val test = trexp(#test data)
-                                    val thn = trexp(#thn data)
-                                    val els = case (#els data) of
-                                                    NONE => NONE
-                                                    | SOME(exp) => SOME(trexp exp)
-                                    (* In case things went well, we return this *)
-                                    val potRes = makeIfElse( test, thn, els, (#ty thn)) (* thenexp is always defined *)
-                                    in if (#ty test) <> Ty.INT then
-                                        (errorIfTest #pos data; ERRORPAIR)
-                                      else 
-                                        case els of
-                                            NONE => potRes
-                                          | SOME(exp) =>  if (#ty thn) = (#ty exp) then
-                                                            potRes
-                                                          else 
-                                                            (errorIfThen((#pos data), (#ty thn), (#ty exp)); ERRORPAIR)
-                                    end
+        and trifexp (data) =  let val test = trexp (#test data)
+                              let val thn = trexp (#thn data)
+                              let val els = case (#els data) of
+                                              NONE => NONE
+                                            | SOME(exp) => SOME( treexp( exp ) )
+                              in ERRORPAIR
+                              end
     in
         trexp
     end
