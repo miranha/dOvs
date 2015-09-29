@@ -176,7 +176,7 @@ fun transExp (venv, tenv, extra : extra) =
         
         and trseqexp(explist) = trseqexpaux(explist, Ty.UNIT, []) (* The empty sequence has nothing, so its type is unit and the exp is nil *)
         
-        and trseqexpaux ([], ty,acc) = makePair(TAbs.SeqExp(acc), ty = ty)
+        and trseqexpaux ([], ty,acc) = makePair(TAbs.SeqExp(acc), ty)
           | trseqexpaux ((exp, pos)::xs, ty, acc) = let val res = trexp(exp)
                                                         in trseqexpaux (xs, #ty res, acc @ [res]) 
                                                         end
