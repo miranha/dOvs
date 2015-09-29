@@ -212,7 +212,7 @@ fun transExp (venv, tenv, extra : extra) =
                                           | SOME(exp) =>  if (#ty thnexp) = (#ty exp) then
                                                             potRes
                                                           else 
-                                                            (errorIfThen(pos, (#ty thnexp), (#ty exp)); ERRORPAIR
+                                                            (errorIfThen(pos, (#ty thnexp), (#ty exp)); ERRORPAIR)
                                     end
     in
         trexp
