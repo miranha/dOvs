@@ -204,7 +204,7 @@ fun transExp (venv, tenv, extra : extra) =
                                                         val thn = trexp (thn)
                                                         val els = case (els) of
                                                                     NONE => NONE
-                                                                  | SOME(exp) => SOME( treexp( exp ) )
+                                                                  | SOME(exp) => SOME( trexp( exp ) )
                                                     in ERRORPAIR
                                                     end
     in
