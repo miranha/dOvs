@@ -177,7 +177,7 @@ fun transExp (venv, tenv, extra : extra) =
         and trseqexp(explist) = trseqexpaux(explist, NILPAIR) (* The empty sequence has nothing, so its type is unit and the exp is nil *)
         
         and trseqexpaux ([], pair) = pair
-          | trseqexpaux (h::xs, pair) = trseqexpaux (xs, trexp(h))
+          | trseqexpaux ((exp, pos)::xs, pair) = trseqexpaux (xs, trexp(exp))
     in
         trexp
     end
