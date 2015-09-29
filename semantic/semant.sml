@@ -171,8 +171,8 @@ fun transExp (venv, tenv, extra : extra) =
           | trexp (A.VarExp var) = trvar(var)
           | trexp (A.IntExp value) = makePair (TAbs.IntExp(value), Ty.INT)
           | trexp (A.StringExp(s,_)) = makePair (TAbs.StringExp(s), Ty.STRING)
-          | trexp (A.OpExp({left = left, oper = oper, right = right, pos = pos})) = let val texp1(exp1, ty1) = trexp(left)
-                                        val texp2(exp2, ty2) = trexp(right)
+          | trexp (A.OpExp({left = left, oper = oper, right = right, pos = pos})) = let val texp1{exp1, ty1} = trexp(left)
+                                        val texp2{exp2, ty2} = trexp(right)
                                         in
                                           if checkInt(#ty texp1, pos) andalso checkInt(#ty texp2, pos) then
                                             makeBinop(texp1, oper, texp2)
