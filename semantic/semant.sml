@@ -197,7 +197,7 @@ fun transExp (venv, tenv, extra : extra) =
                                                         in trseqexpaux (xs, #ty res, acc @ [res]) 
                                                         end
 
-        and trifexp ( {test = te, 
+        and trifexp ( { test = test, 
                           thn = thn, 
                           els = els, 
                           pos = pos} : A.ifdata ) =  let val test = trexp (test)
