@@ -174,7 +174,7 @@ fun transExp (venv, tenv, extra : extra) =
                                           else makePair(TAbs.ErrorExp, Ty.ERROR)
                                     end
           | trexp(A.SeqExp(explist)) = trseqexp(explist) (* *)
-          | trexp(A.IfExp(ifdata)) trifexp(ifdata)
+          | trexp(A.IfExp(ifdata)) = trifexp(ifdata)
           | trexp _ = (print("sry, got nothing\n"); TODO)
 
           (*
@@ -202,7 +202,6 @@ fun transExp (venv, tenv, extra : extra) =
                                     val elsexp = case (#elseexp ifdata) of
                                                     NONE => NONE
                                                     | SOME(exp) = SOME(trexp exp)
-                                                  end
                                     (* In case things went well, we return this *)
                                     val potRes = MakeIfElse( testexp, thnexp, elsexp, #ty thnexp) (* thenexp is always defined*)
                                     in if (#ty testexp) != Ty.INT then
@@ -214,7 +213,6 @@ fun transExp (venv, tenv, extra : extra) =
                                                             potRes
                                                           else 
                                                             (errorIfThen(pos, (#ty thnexp), (#ty exp)); ERRORPAIR)
-                                      end
                                     end
     in
         trexp
