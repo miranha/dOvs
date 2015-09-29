@@ -197,13 +197,13 @@ fun transExp (venv, tenv, extra : extra) =
                                                         in trseqexpaux (xs, #ty res, acc @ [res]) 
                                                         end
 
-        and trifexp (data) =  let val test = trexp (#test data)
-                              let val thn = trexp (#thn data)
-                              let val els = case (#els data) of
-                                              NONE => NONE
-                                            | SOME(exp) => SOME( treexp( exp ) )
-                              in ERRORPAIR
-                              end
+        and trifexp (datac{test, thn, els, pos}) =  let val test = trexp (test)
+                                                        val thn = trexp (thn)
+                                                        val els = case (els) of
+                                                                    NONE => NONE
+                                                                  | SOME(exp) => SOME( treexp( exp ) )
+                                                    in ERRORPAIR
+                                                    end
     in
         trexp
     end
