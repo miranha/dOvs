@@ -203,7 +203,7 @@ fun transExp (venv, tenv, extra : extra) =
                                                     NONE => NONE
                                                     | SOME(exp) => SOME(trexp exp)
                                     (* In case things went well, we return this *)
-                                    val potRes = makeIfElse( test, thn, els, (#ty thnexp)) (* thenexp is always defined*)
+                                    val potRes = makeIfElse( test, thn, els, (#ty thn)) (* thenexp is always defined *)
                                     in if (#ty test) <> Ty.INT then
                                         (errorIfTest #pos data; ERRORPAIR)
                                       else 
@@ -212,7 +212,7 @@ fun transExp (venv, tenv, extra : extra) =
                                           | SOME(exp) =>  if (#ty thn) = (#ty exp) then
                                                             potRes
                                                           else 
-                                                            (errorIfThen(#pos data, (#ty thn), (#ty exp)); ERRORPAIR)
+                                                            (errorIfThen((#pos data), (#ty thn), (#ty exp)); ERRORPAIR)
                                     end
     in
         trexp
