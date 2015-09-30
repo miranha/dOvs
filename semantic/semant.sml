@@ -193,6 +193,8 @@ fun makeIfElse( {exp = te, ty = tety} : TAbs.exp,
     else (errorIfElse(pos, thty, elty); ERRORPAIR)
   else (errorIfTest(pos, tety); ERRORPAIR)
 
+
+
 fun transTy (tenv, t) = Ty.ERROR (* TODO *)
 
 fun transExp (venv, tenv, extra : extra) =
@@ -217,6 +219,9 @@ fun transExp (venv, tenv, extra : extra) =
                                     end
           | trexp(A.SeqExp(explist)) = trseqexp(explist) (* *)
           | trexp(A.IfExp(ifdata)) = trifexp(ifdata)
+
+          | trexp(A.LetExp(letdata)) = trletexp(letdata) (* *)
+
           | trexp _ = (print("sry, got nothing\n"); TODO)
 
           (*
@@ -261,6 +266,8 @@ and transDec ( venv, tenv
 
   | transDec (venv, tenv, A.FunctionDec fundecls, extra) =
     {decl = TODO_DECL, tenv = tenv, venv = venv} (* TODO *)
+
+
 
 and transDecs (venv, tenv, decls, extra : extra) =
     let fun visit venv tenv decls result =
