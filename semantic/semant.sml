@@ -35,6 +35,12 @@ val TODO_DECL = TAbs.TypeDec [] (* Delete when possible *)
 
 (* Error messages *)
 
+
+val Equality = [A.EqOp, A.NeqOp]
+
+val Ordering = [ A.LtOp , A.LeOp 
+                    , A.GtOp , A.GeOp ]
+
 val err = ErrorMsg.error
 
 fun out msg pos = err pos msg
@@ -146,12 +152,6 @@ fun convertOper (oper) =
     | A.DivideOp => TAbs.DivideOp
     | A.ExponentOp => TAbs.ExponentOp
 
-fun makeBinop(texp1, opt, texp2) =
-  makePair( TAbs.OpExp {left = texp1,
-    oper = convertOper(opt),
-    right = texp2}, Ty.INT )
-
-
 
 fun makeIfThen( {exp = te, ty = tety} : TAbs.exp, 
   {exp = th, ty = thty} : TAbs.exp, pos) =
@@ -203,20 +203,16 @@ fun transExp (venv, tenv, extra : extra) =
         val TODO = {exp = TAbs.ErrorExp, ty = Ty.ERROR}
         val NILPAIR = {exp = TAbs.NilExp, ty = Ty.UNIT}
 
+        (*
+        val OrderTypes : Ty.ty list = [Ty.INT, Ty.STRING ]
+        val EqTypes : Ty.ty list  = [Ty.INT : Ty.ty , Ty.RECORD : Ty.ty, Ty.ARRAY : Ty.ty, Ty.STRING : Ty.ty]
+        *)
+
         fun trexp (A.NilExp) = TODO
           | trexp (A.VarExp var) = trvar(var)
           | trexp (A.IntExp value) = makePair (TAbs.IntExp(value), Ty.INT)
           | trexp (A.StringExp(s,_)) = makePair (TAbs.StringExp(s), Ty.STRING)
-          | trexp (A.OpExp({left = left, oper = oper, right = right, pos = pos})) = 
-                                  let val {exp = exp1, ty = ty1} : TAbs.exp = trexp(left)
-                                      val {exp = exp2, ty = ty2} : TAbs.exp= trexp(right)
-                                      val texp1 = makePair(exp1, ty1)
-                                      val texp2 = makePair(exp2, ty2)
-                                        in
-                                          if checkInt(ty1, pos) andalso checkInt(ty2, pos) then
-                                            makeBinop(texp1, oper, texp2)
-                                          else makePair(TAbs.ErrorExp, Ty.ERROR)
-                                    end
+          | trexp (A.OpExp({left = left, oper = oper, right = right, pos = pos})) = trBinop(left, oper, right, pos)
           | trexp(A.SeqExp(explist)) = trseqexp(explist) (* *)
           | trexp(A.IfExp(ifdata)) = trifexp(ifdata)
 
@@ -249,6 +245,62 @@ fun transExp (venv, tenv, extra : extra) =
           case els of
               NONE => makeIfThen(trexp(test), trexp(thn), pos)
             | SOME(e) => makeIfElse(trexp(test), trexp(thn), trexp(e), pos)
+
+        and trBinop(exp1, opr, exp2, pos) =
+          if List.exists (eql opr) Equality  
+              then makeEqExp(trexp(exp1), convertOper(opr), trexp(exp2), pos)
+          else if List.exists (eql opr) Ordering  
+            then makeOrdExp(trexp(exp1), convertOper(opr), trexp(exp2), pos)
+          else makeStdOpExp(trexp(exp1), convertOper(opr), trexp(exp2), pos)
+            (* Hackey way to check if an element is in a list *)
+        and eql opt1 opt2 = (opt1 = opt2)
+
+        and makeEqExp({exp = exp1, ty = ty1} : TAbs.exp, 
+          opr, {exp = exp2, ty = ty2} : TAbs.exp, pos) = 
+          case ty1 of
+             Ty.STRING => makeAux(exp1, ty1, exp2, ty2, pos, opr)
+            | Ty.INT => makeAux(exp1, ty1, exp2, ty2, pos, opr)
+            | Ty.RECORD(_) => makeAux(exp1, ty1, exp2, ty2, pos, opr)
+            | Ty.ARRAY(_) => makeAux(exp1, ty1, exp2, ty2, pos, opr)
+            |_ => (err pos (" LHS is type" ^ (PT.asString ty1) ^ " must be of INT, STRING, RECORD or ARRAY"); ERRORPAIR)
+
+        and makeAux(exp1, ty1, exp2, ty2, pos, opr) =
+          if ty1 = ty2 then
+            makeBinop( makePair(exp1, ty1), opr, makePair(exp2, ty2), ty1)
+          else
+            (err pos ("LHS has type " ^ (PT.asString ty1) ^ " RHS has type " ^ (PT.asString ty2) ^ ". They must be equal"); ERRORPAIR)
+        (*
+        if ty1 = Ty.STRING orelse ty1 = Ty.INT orelse ty1 = (Ty.ARRAY) : Ty.ty orelse
+            ty1 = Ty.RECORD then
+          if ty1 = ty2 then
+            makeBinop(makePair(exp1, ty1), opr, makePair(exp2, ty2), ty2)
+          else
+            err pos " LHS is type " ^ (PT.asString ty1) ^ " RHS is type " 
+              ^ (PT.asString ty2) ". They must be the same"
+        else err pos " LHS must be of type INT, STRING, RECORD or ARRAY"
+        *)
+
+        and makeOrdExp({exp = exp1, ty = ty1} : TAbs.exp, 
+          opr, {exp = exp2, ty = ty2} : TAbs.exp, pos) = 
+          case ty1 of
+             Ty.STRING => makeAux(exp1, ty1, exp2, ty2, pos, opr)
+            | Ty.INT => makeAux(exp1, ty1, exp2, ty2, pos, opr)
+            |_ => (err pos (" LHS is type" ^ (PT.asString ty1) ^ " must be of INT, STRING"); ERRORPAIR)
+
+        and makeStdOpExp({exp = exp1, ty = ty1} : TAbs.exp, 
+          opr, {exp = exp2, ty = ty2} : TAbs.exp, pos) = 
+            if checkInt(ty1, pos) then
+              if checkInt(ty2, pos) then
+                makeBinop(makePair(exp1,ty1), opr,
+                  makePair(exp2,ty2), ty1)
+              else ERRORPAIR
+            else ERRORPAIR
+
+        and makeBinop(texp1, opr, texp2, ty) =
+          makePair( TAbs.OpExp {left = texp1,
+            oper = opr, right = texp2}, ty)
+
+        and trletexp(_) = ERRORPAIR
     in
         trexp
     end
