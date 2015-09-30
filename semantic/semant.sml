@@ -45,9 +45,12 @@ fun errorInt (pos, ty) =
 fun errorIfTest(pos, ty) =
     err pos ("INT required in test, " ^ PT.asString ty ^ " provided")
 
-fun errorIfThen(pos, ty1, ty2) =
+fun errorIfElse(pos, ty1, ty2) =
     err pos ("then and else exp must be same type, then exp is type " 
         ^ PT.asString ty1 ^ " and else exp is type " ^ PT.asString ty2)
+
+fun errorIfThen(pos, ty) =
+  err pos ("UNIT required in then clause, " ^ PT.asString ty ^ " provided")
 
 fun errorUnit (pos, ty) =
     err pos ("UNIT required, " ^ PT.asString ty ^ " provided")
@@ -151,14 +154,17 @@ fun makeBinop(texp1, opt, texp2) =
 fun makeIfElse() =
   ERRORPAIR
 
-fun makeIfThen({exp = te, ty = tety} : TAbs.exp, thn, pos) =
+fun makeIfThen({exp = te, ty = tety} : TAbs.exp, 
+  {exp = th, ty = thty} : TAbs.exp, pos) =
   if tety = Ty.INT then
     let val tst = makePair(te,tety)
-        in makePair( TAbs.IfExp {
+        val thn = makePair(th, thty)
+        in if thty <> Ty.UNIT then
+          (errorIfThen(pos, thty); ERRORPAIR)
+        else makePair( TAbs.IfExp {
                       test = tst,
                       thn = thn,
-                      els = NONE
-          }, Ty.UNIT)
+                      els = NONE }, Ty.UNIT)
       end
     else (errorIfTest(pos, tety); ERRORPAIR)
 
