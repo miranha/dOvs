@@ -49,6 +49,11 @@ fun errorIfThen(pos, ty1, ty2) =
     err pos ("then and else exp must be same type, then exp is type " 
         ^ PT.asString ty1 ^ " and else exp is type " ^ PT.asString ty2)
 
+fun errorIfElse(pos, ty1, ty2) =
+     err pos ("then and else exp must be same type, then exp is type " 
+        ^ PT.asString ty1 ^ " and else exp is type " ^ PT.asString ty2)
+
+
 fun errorUnit (pos, ty) =
     err pos ("UNIT required, " ^ PT.asString ty ^ " provided")
 
@@ -147,6 +152,24 @@ fun makeBinop(texp1, opt, texp2) =
   makePair( TAbs.OpExp {left = texp1,
     oper = convertOper(opt),
     right = texp2}, Ty.INT )
+
+fun makeIfThen( {exp = te, ty = tety} : TAbs.exp, 
+  {exp = th, ty = thty} : TAbs.exp, pos) =
+  if tety = Ty.INT then
+    (* construct the pairs we need *)
+    let val tst = makePair(te,tety)
+        val thn = makePair(th, thty)
+        (* Since no if, then clause must be a unit *)
+        in if thty <> Ty.UNIT then
+          (errorIfThen(pos, thty); ERRORPAIR)
+        (* Everything is kosher, make the relevant TAbs node *)
+        else makePair( TAbs.IfExp {
+                      test = tst,
+                      thn = thn,
+                      els = NONE }, Ty.UNIT)
+      end
+    else (errorIfTest(pos, tety); ERRORPAIR)
+
 
 fun makeIfElse( {exp = te, ty = tety} : TAbs.exp,
   {exp = th, ty = thty} : TAbs.exp,
