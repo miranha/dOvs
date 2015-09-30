@@ -217,6 +217,8 @@ fun transExp (venv, tenv, extra : extra) =
           | trexp(A.WhileExp(whiledata)) = trwhileexp(whiledata)
           | trexp _ = (print("sry, got nothing\n"); TODO)
 
+              (*The following takes as input the data from a while expression, and tries to pattern match first the test against
+                Ty.INT, if that succedes then it will try and match the body against Ty.UNIT. If correct, then we have a working Tiger While loop.*)
 
         and trwhileexp({test = tst, body = bdy, pos = ps} : A.whiledata) = let
                                                                             val {exp = test, ty = testty} : TAbs.exp = trexp(tst)
