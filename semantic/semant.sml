@@ -45,9 +45,8 @@ fun errorInt (pos, ty) =
 fun errorIfTest(pos, ty) =
     err pos ("INT required in test, " ^ PT.asString ty ^ " provided")
 
-fun errorIfThen(pos, ty1, ty2) =
-    err pos ("then and else exp must be same type, then exp is type " 
-        ^ PT.asString ty1 ^ " and else exp is type " ^ PT.asString ty2)
+fun errorIfThen(pos, ty) =
+  err pos ("UNIT required in then clause, " ^ PT.asString ty ^ " provided")
 
 fun errorIfElse(pos, ty1, ty2) =
      err pos ("then and else exp must be same type, then exp is type " 
