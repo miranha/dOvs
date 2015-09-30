@@ -185,8 +185,19 @@ fun transExp (venv, tenv, extra : extra) =
 
           (*
             * When we are making a let expression, we have to use the transExp to interpt with the extended enviorment
-            *)
 
+              Notes: Fieldvar: 1. Evalutate the var, if typechecked to be of T.RECORD
+                                                      | If record, search record for entry with ID
+                                                            If ID found, return that plus the type that matches that ID
+                                                            If not, Error
+                                                      | Else Error
+
+                      SubscriptVar Evalute the var, typecheck to see if of type T.ARRAY
+                                                      | if Array, check to see if ARRAY[exp1] if exp1 evaluates to type Ty.INT.
+                                                            If int, return ARRAY.ty
+                                                            If not int, Error
+                                                      | If not Array, Error.
+            *)
           (* It should be possible to reuse this in other functions *)
         and trvar (A.SimpleVar (id, pos)) = let val ty = lookupVar venv id pos in
                                               case ty of
