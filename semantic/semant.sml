@@ -148,16 +148,25 @@ fun makeBinop(texp1, opt, texp2) =
     oper = convertOper(opt),
     right = texp2}, Ty.INT )
 
-fun makeIfElse({exp = test, ty = ty1}: TAbs.exp, { exp = thn, ty = ty2} : TAbs.exp, elsexp, pos) =
-  if ty1 <> Ty.INT then
-    (errorIfTest (pos, ty1); ERRORPAIR)
-  else case elsexp of
-    NONE => makePair( TAbs.IfExp {
-              test = test,
-              thn = thn,
-              els = elsexp
-            }, ty2)
-    | _ => ERRORPAIR
+fun makeIfElse( {exp = te, ty = tety} : TAbs.exp,
+  {exp = th, ty = thty} : TAbs.exp,
+  {exp = el, ty = elty} : TAbs.exp , pos) =
+  if tety = Ty.INT then
+    if thty = elty then
+      (* everything went well, make the things needed *)
+      let val test = makePair(te, tety)
+          val thn = makePair(th, thty)
+          val els = SOME(makePair(el, elty))
+          in
+            makePair( TAbs.IfExp {
+                test = test,
+                thn = thn,
+                els = els
+              }, thty)
+          end 
+
+    else (errorIfElse(pos, thty, elty); ERRORPAIR)
+  else (errorIfTest(pos, tety); ERRORPAIR)
 
 fun transTy (tenv, t) = Ty.ERROR (* TODO *)
 
