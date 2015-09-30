@@ -257,12 +257,11 @@ fun transExp (venv, tenv, extra : extra) =
                                                       in trseqexpaux (xs, #ty res, acc @ [res]) 
                                                     end
 
-        (* Determine type of each part first, then offload work to helper function *)
+    (* Determine type of each part first, then offload work to helper function *)
         and trifexp ( { test = test, thn = thn, els = els, pos = pos} : A.ifdata ) =
-          let val elsvalue = case els of 
-                                NONE => NONE
-                              | SOME(exp) => SOME(trexp(exp))
-          in makeIfElse(trexp(test), trexp(thn), elsvalue, pos) end
+          case els of
+              NONE => makeIfThen(trexp(test), trexp(thn), pos)
+            | SOME(e) => makeIfElse(trexp(test), trexp(thn), trexp(e), pos)
     in
         trexp
     end
