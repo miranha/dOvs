@@ -215,6 +215,7 @@ fun transExp (venv, tenv, extra : extra) =
           | trexp(A.SeqExp(explist)) = trseqexp(explist) (* *)
           | trexp(A.IfExp(ifdata)) = trifexp(ifdata)
           | trexp(A.WhileExp(whiledata)) = trwhileexp(whiledata)
+          | trexp(A.ForExp(fordata)) = trforexp(fordata)
           | trexp _ = (print("sry, got nothing\n"); TODO)
 
               (*The following takes as input the data from a while expression, and tries to pattern match first the test against
@@ -230,6 +231,23 @@ fun transExp (venv, tenv, extra : extra) =
                                                                                     | _ => (print("Failed 2.nd"); TODO) )
                                                                               | _ => (print("Failed 1.st"); TODO)
                                                                           end
+
+        and trforexp({var = va, escape = esc, lo = l, hi = h, body = bdy, pos = ps}: A.fordata) = let
+          val {exp = lexp, ty = lty} = trexp(l)
+          val {exp = hexp, ty = hty} = trexp(h)
+          val {exp = bodyexp, ty = bodyty} = trexp(bdy)
+        in
+          case lty of
+              Ty.INT => ( case hty of
+                          Ty.INT => ( case bodyty of
+                                        Ty.UNIT => (print("Succes"); TODO)
+                                        | _ => (print("Failed"); TODO)
+                                    )
+                          |_ => (print("Failed");TODO) 
+                        )
+              |_ => (print("Failed"); TODO)
+        end
+
           (*
             * When we are making a let expression, we have to use the transExp to interpt with the extended enviorment
 
