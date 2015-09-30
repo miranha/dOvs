@@ -172,13 +172,15 @@ fun transExp (venv, tenv, extra : extra) =
           | trexp (A.IntExp value) = makePair (TAbs.IntExp(value), Ty.INT)
           | trexp (A.StringExp(s,_)) = makePair (TAbs.StringExp(s), Ty.STRING)
           | trexp (A.OpExp({left = left, oper = oper, right = right, pos = pos})) = 
-                                  let val texp1{exp1, ty1} : TAbs.exp= trexp(left)
-                                        val texp2{exp2, ty2} : TAbs.exp= trexp(right)
-                                        in
-                                          if checkInt(#ty texp1, pos) andalso checkInt(#ty texp2, pos) then
-                                            makeBinop(texp1, oper, texp2)
-                                          else makePair(TAbs.ErrorExp, Ty.ERROR)
-                                    end
+                                 let val {exp = exp1, ty = ty1} : TAbs.exp = trexp(left)
+                                     val {exp = exp2, ty = ty2} : TAbs.exp= trexp(right)
+                                     val texp1 = makePair(exp1, ty1)
+                                     val texp2 = makePair(exp2, ty2)
+                                       in
+                                         if checkInt(ty1, pos) andalso checkInt(ty2, pos) then
+                                           makeBinop(texp1, oper, texp2)
+                                         else makePair(TAbs.ErrorExp, Ty.ERROR)
+                                   end
           | trexp(A.SeqExp(explist)) = trseqexp(explist) (* *)
           | trexp(A.IfExp(ifdata)) = trifexp(ifdata)
           | trexp(A.WhileExp(whiledata)) = trwhileexp(whiledata)
@@ -190,7 +192,7 @@ fun transExp (venv, tenv, extra : extra) =
                                                                             val bdyty = trexp(bdy)
                                                                            in
                                                                             case testty of
-                                                                              T.INT => (print("Success"); TODO)
+                                                                              Ty.INT => (print("Success"); TODO)
                                                                             | _ => (print("Failed"); TODO)
                                                                           end
           (*
