@@ -220,7 +220,7 @@ fun transExp (venv, tenv, extra : extra) =
 
         and trwhileexp({test = tst, body = bdy, pos = ps} : A.whiledata) = let
                                                                             val {exp = test, ty = testty} : TAbs.exp = trexp(tst)
-                                                                            val bdyty = trexp(bdy)
+                                                                            val {exp = body, ty = bodyty} : TAbs.exp = trexp(bdy)
                                                                            in
                                                                             case testty of
                                                                               Ty.INT => (print("Success"); TODO)
