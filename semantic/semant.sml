@@ -190,6 +190,13 @@ fun makeIfElse( {exp = te, ty = tety} : TAbs.exp,
     else (errorIfElse(pos, thty, elty); ERRORPAIR)
   else (errorIfTest(pos, tety); ERRORPAIR)
 
+fun makeWhile({exp = tstexp, ty = tstty} : TAbs.exp,
+              {exp = bdyexp, ty = bdyty} : TAbs.exp ) = 
+                  makePair( TAbs.WhileExp {
+                            test = tstexp
+                            body = bdyexp
+                            }, Ty.UNIT)
+
 fun transTy (tenv, t) = Ty.ERROR (* TODO *)
 
 fun transExp (venv, tenv, extra : extra) =
@@ -224,10 +231,12 @@ fun transExp (venv, tenv, extra : extra) =
         and trwhileexp({test = tst, body = bdy, pos = ps} : A.whiledata) = let
                                                                             val {exp = test, ty = testty} : TAbs.exp = trexp(tst)
                                                                             val {exp = body, ty = bodyty} : TAbs.exp = trexp(bdy)
+                                                                            val testexp = makePair(test, testty)
+                                                                            val bodyexp = makePair(body, bodyty)
                                                                            in
                                                                             case testty of
                                                                               Ty.INT => ( case bodyty of 
-                                                                                    Ty.UNIT => (print("Succes"); TODO)
+                                                                                    Ty.UNIT => (makeWhile(testexp, bodyexp))
                                                                                     | _ => (print("Failed 2.nd"); TODO) )
                                                                               | _ => (print("Failed 1.st"); TODO)
                                                                           end
