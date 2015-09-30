@@ -181,8 +181,17 @@ fun transExp (venv, tenv, extra : extra) =
                                     end
           | trexp(A.SeqExp(explist)) = trseqexp(explist) (* *)
           | trexp(A.IfExp(ifdata)) = trifexp(ifdata)
+          | trexp(A.WhileExp(whiledata)) = trwhileexp(whiledata)
           | trexp _ = (print("sry, got nothing\n"); TODO)
 
+
+        and trwhileexp({test = tst, body = bdy, pos = ps} : A.whiledata) = let
+                                                                            val {exp = test, ty = testty} : TAbs.exp = trexp(tst)
+                                                                            val bdyty = trexp(bdy)
+                                                                           in
+                                                                            case testty of
+                                                                              T.INT => (print("Success"); TODO)
+                                                                            | _ => (print("Failed"); TODO)
           (*
             * When we are making a let expression, we have to use the transExp to interpt with the extended enviorment
 
