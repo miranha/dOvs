@@ -1,0 +1,9 @@
+decs: fundecs 
+	| vardec 
+	| typedecs 
+
+fundecs : fundec fundecs
+		| fundec
+
+fundec : (* procedure *)
+		| (* function with returntype *)		
