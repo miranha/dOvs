@@ -151,22 +151,47 @@ fun makeBinop(texp1, opt, texp2) =
     oper = convertOper(opt),
     right = texp2}, Ty.INT )
 
-fun makeIfElse() =
-  ERRORPAIR
 
-fun makeIfThen({exp = te, ty = tety} : TAbs.exp, 
+
+fun makeIfThen( {exp = te, ty = tety} : TAbs.exp, 
   {exp = th, ty = thty} : TAbs.exp, pos) =
   if tety = Ty.INT then
+    (* construct the pairs we need *)
     let val tst = makePair(te,tety)
         val thn = makePair(th, thty)
+        (* Since no if, then clause must be a unit *)
         in if thty <> Ty.UNIT then
           (errorIfThen(pos, thty); ERRORPAIR)
+        (* Everything is kosher, make the relevant TAbs node *)
         else makePair( TAbs.IfExp {
                       test = tst,
                       thn = thn,
                       els = NONE }, Ty.UNIT)
       end
     else (errorIfTest(pos, tety); ERRORPAIR)
+
+(*  Big clause.
+    The order is test, then, else, pos
+ *)
+fun makeIfElse( {exp = te, ty = tety} : TAbs.exp,
+  {exp = th, ty = thty} : TAbs.exp,
+  {exp = el, ty = elty} : TAbs.exp , pos) =
+  if tety = Ty.INT then
+    if thty = elty then
+      (* everything went well, make the things needed *)
+      let val test = makePair(te, tety)
+          val thn = makePair(th, thty)
+          val els = SOME(makePair(el, elty))
+          in
+            makePair( TAbs.IfExp {
+                test = test,
+                thn = thn,
+                els = els
+              }, thty)
+          end 
+
+    else (errorIfElse(pos, thty, elty); ERRORPAIR)
+  else (errorIfTest(pos, tety); ERRORPAIR)
 
 fun transTy (tenv, t) = Ty.ERROR (* TODO *)
 
@@ -218,7 +243,7 @@ fun transExp (venv, tenv, extra : extra) =
         and trifexp ( { test = test, thn = thn, els = els, pos = pos} : A.ifdata ) =
           case els of
               NONE => makeIfThen(trexp(test), trexp(thn), pos)
-            | _ => TODO
+            | SOME(e) => makeIfElse(trexp(test), trexp(thn), trexp(e), pos)
     in
         trexp
     end
