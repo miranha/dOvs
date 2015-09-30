@@ -148,16 +148,19 @@ fun makeBinop(texp1, opt, texp2) =
     oper = convertOper(opt),
     right = texp2}, Ty.INT )
 
-fun makeIfElse({exp = test, ty = ty1}: TAbs.exp, { exp = thn, ty = ty2} : TAbs.exp, elsexp, pos) =
-  if ty1 <> Ty.INT then
-    (errorIfTest (pos, ty1); ERRORPAIR)
-  else case elsexp of
-    NONE => makePair( TAbs.IfExp {
-              test = test,
-              thn = thn,
-              els = elsexp
-            }, ty2)
-    | _ => ERRORPAIR
+fun makeIfElse() =
+  ERRORPAIR
+
+fun makeIfThen({exp = te, ty = tety} : TAbs.exp, thn, pos) =
+  if tety = Ty.INT then
+    let val tst = makePair(te,tety)
+        in makePair( TAbs.IfExp {
+                      test = tst,
+                      thn = thn,
+                      els = NONE
+          }, Ty.UNIT)
+      end
+    else (errorIfTest(pos, tety); ERRORPAIR)
 
 fun transTy (tenv, t) = Ty.ERROR (* TODO *)
 
@@ -172,10 +175,12 @@ fun transExp (venv, tenv, extra : extra) =
           | trexp (A.IntExp value) = makePair (TAbs.IntExp(value), Ty.INT)
           | trexp (A.StringExp(s,_)) = makePair (TAbs.StringExp(s), Ty.STRING)
           | trexp (A.OpExp({left = left, oper = oper, right = right, pos = pos})) = 
-                                  let val texp1{exp1, ty1} : TAbs.exp= trexp(left)
-                                        val texp2{exp2, ty2} : TAbs.exp= trexp(right)
+                                  let val {exp = exp1, ty = ty1} : TAbs.exp = trexp(left)
+                                      val {exp = exp2, ty = ty2} : TAbs.exp= trexp(right)
+                                      val texp1 = makePair(exp1, ty1)
+                                      val texp2 = makePair(exp2, ty2)
                                         in
-                                          if checkInt(#ty texp1, pos) andalso checkInt(#ty texp2, pos) then
+                                          if checkInt(ty1, pos) andalso checkInt(ty2, pos) then
                                             makeBinop(texp1, oper, texp2)
                                           else makePair(TAbs.ErrorExp, Ty.ERROR)
                                     end
@@ -205,10 +210,9 @@ fun transExp (venv, tenv, extra : extra) =
 
         (* Determine type of each part first, then offload work to helper function *)
         and trifexp ( { test = test, thn = thn, els = els, pos = pos} : A.ifdata ) =
-          let val elsvalue = case els of 
-                                NONE => NONE
-                              | SOME(exp) => SOME(trexp(exp))
-          in makeIfElse(trexp(test), trexp(thn), elsvalue, pos) end
+          case els of
+              NONE => makeIfThen(trexp(test), trexp(thn), pos)
+            | _ => TODO
     in
         trexp
     end
