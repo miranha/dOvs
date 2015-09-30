@@ -193,8 +193,8 @@ fun makeIfElse( {exp = te, ty = tety} : TAbs.exp,
 fun makeWhile({exp = tstexp, ty = tstty} : TAbs.exp,
               {exp = bdyexp, ty = bdyty} : TAbs.exp ) = 
                   makePair( TAbs.WhileExp {
-                            test = tstexp,
-                            body = bdyexp
+                            test = makePair(tstexp, tstty),
+                            body = makePair(bdyexp,bdyty)
                             }, Ty.UNIT)
 
 fun transTy (tenv, t) = Ty.ERROR (* TODO *)
