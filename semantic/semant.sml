@@ -223,8 +223,11 @@ fun transExp (venv, tenv, extra : extra) =
                                                                             val {exp = body, ty = bodyty} : TAbs.exp = trexp(bdy)
                                                                            in
                                                                             case testty of
-                                                                              Ty.INT => (print("Success"); TODO)
-                                                                            | _ => (print("Failed"); TODO)
+                                                                              Ty.INT => 
+                                                                                  case bodyty of 
+                                                                                    Ty.UNIT => (print("Succes"); TODO)
+                                                                                    | _ => (print("Failed 2.nd"); TODO)
+                                                                              | _ => (print("Failed 1.st"); TODO)
                                                                           end
           (*
             * When we are making a let expression, we have to use the transExp to interpt with the extended enviorment
