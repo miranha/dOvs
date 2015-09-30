@@ -223,10 +223,9 @@ fun transExp (venv, tenv, extra : extra) =
                                                                             val {exp = body, ty = bodyty} : TAbs.exp = trexp(bdy)
                                                                            in
                                                                             case testty of
-                                                                              Ty.INT => 
-                                                                                  case bodyty of 
+                                                                              Ty.INT => ( case bodyty of 
                                                                                     Ty.UNIT => (print("Succes"); TODO)
-                                                                                    | _ => (print("Failed 2.nd"); TODO)
+                                                                                    | _ => (print("Failed 2.nd"); TODO) )
                                                                               | _ => (print("Failed 1.st"); TODO)
                                                                           end
           (*
