@@ -202,13 +202,14 @@ fun makeWhile({exp = tstexp, ty = tstty} : TAbs.exp,
                             body = makePair(bdyexp,bdyty)
                             }, Ty.UNIT)
 
-fun makeFor(vr, scp, l, h, bdy, venv) = (*TODO Still unfinished.*)
-        venv.enter(vr, {Ty.INT}:Env.VarEntry)
+fun makeFor(vr, scp, {exp = lexp, ty = lty} : TAbs.exp,
+                    {exp = hexp, ty = hty} : TAbs.exp,
+                    {exp = bdyexp, ty = bdyty} : TAbs.exp, venv) = (*TODO Still unfinished.*)
         makePair(TAbs.ForExp{var = vr,
                              escape = scp,
-                             lo = l,
-                             hi = h,
-                             body = bdy}, Ty.UNIT)
+                             lo = makePair(lexp,lty),
+                             hi = makePair(hexp,hty),
+                             body = makePair(bdyexp,bdyty)}, Ty.UNIT)
 
 fun transTy (tenv, t) = Ty.ERROR (* TODO *)
 
@@ -258,15 +259,18 @@ fun transExp (venv, tenv, extra : extra) =
               (* venv=S.enter(venv,name,E.VarEntry{ty=ty})} *)
 
         and trforexp({var = va, escape = esc, lo = l, hi = h, body = bdy, pos = ps}: A.fordata, venv) = let
-          val 'venv = S.enter(venv,va,E.VarEntry{ty=Ty.INT})
-          val {exp = lexp, ty = lty} = trexp(l)
-          val {exp = hexp, ty = hty} = trexp(h)
-          val {exp = bodyexp, ty = bodyty} = transExp('venv, tenv, {}) bdy
+          val subvenv = S.enter(venv,va,E.VarEntry{ty=Ty.INT})
+          val {exp = lexp, ty = lty} : TAbs.exp = trexp(l)
+          val {exp = hexp, ty = hty} : TAbs.exp = trexp(h)
+          val {exp = bodyexp, ty = bodyty} : TAbs.exp = transExp(subvenv, tenv, {}) bdy
+          val lpair = makePair(lexp,lty)
+          val hpair = makePair(hexp, hty)
+          val bdypair = makePair(bodyexp,bodyty)
         in
           case lty of
               Ty.INT => ( case hty of
                           Ty.INT => ( case bodyty of
-                                        Ty.UNIT => (makeFor(va, esc, l, h, bdy, venv)) (*TODO: add symbol to env, and make it decoupled from standard env.*)
+                                        Ty.UNIT => (makeFor(va, esc, lpair, hpair, bdypair, venv)) (*TODO: add symbol to env, and make it decoupled from standard env.*)
                                         | _ => (print("FailedbodyTY"); TODO)
                                     )
                           |_ => (print("FailedHighTY");TODO) 
@@ -375,14 +379,16 @@ and transDec ( venv, tenv
              , A.VarDec {name, escape, typ = SOME (s, pos), init, pos=pos1}, extra) =
     {decl = TODO_DECL, tenv = tenv, venv = venv} (* TODO *)
 
-  | transDec (venv, tenv, (*A.TypeDec tydecls*) A.TypeDec[{name,ty}], extra) =
+
+
+  | transDec (venv, tenv, (*A.TypeDec tydecls*) A.TypeDec([{name,ty}]), extra) =
     (*{decl = TODO_DECL, tenv = tenv, venv = venv}*) (* TODO *)
     {venv,tenv = S.enter(tenv,name,transTy(tenv,ty))}
 
   | transDec (venv, tenv, A.FunctionDec fundecls, extra) =
     {decl = TODO_DECL, tenv = tenv, venv = venv} (* TODO *)
 
-
+*)
 
 and transDecs (venv, tenv, decls, extra : extra) =
     let fun visit venv tenv decls result =
