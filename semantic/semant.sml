@@ -258,7 +258,7 @@ fun transExp (venv, tenv, extra : extra) =
               (* venv=S.enter(venv,name,E.VarEntry{ty=ty})} *)
 
         and trforexp({var = va, escape = esc, lo = l, hi = h, body = bdy, pos = ps}: A.fordata, venv) = let
-          val {venv = 'venv} = venv= S.enter(venv,va,E.VarEntry{ty=Ty.INT})
+          val 'venv = S.enter(venv,va,E.VarEntry{ty=Ty.INT})
           val {exp = lexp, ty = lty} = trexp(l)
           val {exp = hexp, ty = hty} = trexp(h)
           val {exp = bodyexp, ty = bodyty} = transExp('venv, tenv, {}) bdy
@@ -267,11 +267,11 @@ fun transExp (venv, tenv, extra : extra) =
               Ty.INT => ( case hty of
                           Ty.INT => ( case bodyty of
                                         Ty.UNIT => (makeFor(va, esc, l, h, bdy, venv)) (*TODO: add symbol to env, and make it decoupled from standard env.*)
-                                        | _ => (print("Failed"); TODO)
+                                        | _ => (print("FailedbodyTY"); TODO)
                                     )
-                          |_ => (print("Failed");TODO) 
+                          |_ => (print("FailedHighTY");TODO) 
                         )
-              |_ => (print("Failed"); TODO)
+              |_ => (print("FailedLowTY"); TODO)
         end
 
           (*
