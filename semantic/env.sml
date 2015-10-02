@@ -23,7 +23,31 @@ val baseVenv = foldl enter Sy.empty [
                                      , result = Ty.UNIT}),
 
   (Sy.symbol "flush",       FunEntry { formals = []
-                                     , result = Ty.UNIT})
+                                     , result = Ty.UNIT}),
+
+  (Sy.symbol "getchar",		FunEntry { formals = []
+  									 , result = Ty.STRING}),
+
+  (Sy.symbol "ord",			FunEntry { formals = [Ty.STRING]
+  									 , result = Ty.INT}),
+
+  (Sy.symbol "chr", 		FunEntry { formals = [Ty.INT]
+  									 , result = Ty.STRING}),
+
+  (Sy.symbol "size", 		FunEntry { formals = [Ty.STRING]
+  									 , result = Ty.INT}),
+
+  (Sy.symbol "substring", 	FunEntry { formals = [Ty.STRING, Ty.INT, Ty.INT]
+  									 , result = Ty.STRING}),
+
+  (Sy.symbol "concat", 			FunEntry { formals = [Ty.STRING, Ty.STRING]
+  									 , result = Ty.STRING}),
+
+  (Sy.symbol "not", 			FunEntry { formals = [Ty.INT]
+  									 , result = Ty.INT}),
+
+  (Sy.symbol "exit", 			FunEntry { formals = [Ty.INT]
+  									 , result = Ty.UNIT})
 
   (* TODO: remaining entries *)
 ]
