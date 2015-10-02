@@ -1,0 +1,6 @@
+*.DS_Store
+*.lex.sml
+*.grm.sml
+*.grm.sig
+*.grm.desc
+*hello.tig
