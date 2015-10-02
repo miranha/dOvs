@@ -255,11 +255,13 @@ fun transExp (venv, tenv, extra : extra) =
                                                                               | _ => (print("Failed 1.st"); TODO)
                                                                           end
 
+              (* venv=S.enter(venv,name,E.VarEntry{ty=ty})} *)
+
         and trforexp({var = va, escape = esc, lo = l, hi = h, body = bdy, pos = ps}: A.fordata, venv) = let
-          val {venv = 'venv}
+          val {venv = 'venv} = venv= S.enter(venv,va,E.VarEntry{ty=Ty.INT})
           val {exp = lexp, ty = lty} = trexp(l)
           val {exp = hexp, ty = hty} = trexp(h)
-          val {exp = bodyexp, ty = bodyty} = trexp(bdy)
+          val {exp = bodyexp, ty = bodyty} = transExp('venv, tenv, {}) bdy
         in
           case lty of
               Ty.INT => ( case hty of
