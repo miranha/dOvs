@@ -202,8 +202,8 @@ fun makeWhile({exp = tstexp, ty = tstty} : TAbs.exp,
                             body = makePair(bdyexp,bdyty)
                             }, Ty.UNIT)
 
-fun makeFor(vr, scp, l, h, bdy, venv) = (*TODO Still unfinished.*)
-        venv.enter(vr, {Ty.INT}:Env.VarEntry)
+fun makeFor(vr, scp, l, h, bdy, venv) = (*  TODO Still unfinished.*)
+        (* venv.enter(vr, {Ty.INT}:Env.VarEntry) *)
         makePair(TAbs.ForExp{var = vr,
                              escape = scp,
                              lo = l,
@@ -255,8 +255,8 @@ fun transExp (venv, tenv, extra : extra) =
                                                                               | _ => (print("Failed 1.st"); TODO)
                                                                           end
 
-        and trforexp({var = va, escape = esc, lo = l, hi = h, body = bdy, pos = ps}: A.fordata, venv) = let
-          val {venv = 'venv}
+        and trforexp({var = va, escape = esc, lo = l, hi = h, body = bdy, pos = ps}: A.fordata, venv) = 
+          let
           val {exp = lexp, ty = lty} = trexp(l)
           val {exp = hexp, ty = hty} = trexp(h)
           val {exp = bodyexp, ty = bodyty} = trexp(bdy)
@@ -264,7 +264,7 @@ fun transExp (venv, tenv, extra : extra) =
           case lty of
               Ty.INT => ( case hty of
                           Ty.INT => ( case bodyty of
-                                        Ty.UNIT => (makeFor(va, esc, l, h, bdy, venv)) (*TODO: add symbol to env, and make it decoupled from standard env.*)
+                                        Ty.UNIT => (makeFor(va, esc, makePair(lexp, lty), makePair(hexp, hty), makePair(bodyexp, bodyty), venv)) (*TODO: add symbol to env, and make it decoupled from standard env.*)
                                         | _ => (print("Failed"); TODO)
                                     )
                           |_ => (print("Failed");TODO) 
@@ -354,8 +354,9 @@ fun transExp (venv, tenv, extra : extra) =
           makePair( TAbs.OpExp {left = texp1,
             oper = opr, right = texp2}, ty)
 
-        and trletexp({decs=decs, body=body, pos}) = let val {venv=venv', tenv=tenv'} =
-          transDec(venv,tenv, decs) in transExp(venv',tenv') body
+        and trletexp({decls=decls, body=body, pos = pos} : A.letdata) = let val {decls = delcs', venv=venv', tenv=tenv'} =
+          transDecs(venv,tenv, decls, extra) 
+        in {exp = TAbs.LetExp { decls = delcs', body =  (transExp(venv',tenv',extra) body)}, ty = Ty.UNIT}
           end
     in
         trexp
@@ -363,19 +364,17 @@ fun transExp (venv, tenv, extra : extra) =
 
 and transDec ( venv, tenv
              , A.VarDec {name, escape, typ = NONE, init, pos}, extra : extra) =
-    (*{decl = TODO_DECL, tenv = tenv, venv = venv}*) (* TODO *)
-    let val {exp,ty} = transExp(venv,tenv,init) 
-      in {tenv=tenv,venv=S.enter(venv,name,E.VarEntry{ty=ty})}
-      end
+    {decl = TODO_DECL, tenv = tenv, venv = venv} (* TODO *)
 
 
   | transDec ( venv, tenv
              , A.VarDec {name, escape, typ = SOME (s, pos), init, pos=pos1}, extra) =
-    {decl = TODO_DECL, tenv = tenv, venv = venv} (* TODO *)
+    {decl = TODO_DECL, tenv = tenv, venv = venv}  (* TODO *)
 
-  | transDec (venv, tenv, (*A.TypeDec tydecls*) A.TypeDec[{name,ty}], extra) =
+  | transDec (venv, tenv, A.TypeDec typdecs, extra) =
     (*{decl = TODO_DECL, tenv = tenv, venv = venv}*) (* TODO *)
-    {venv,tenv = S.enter(tenv,name,transTy(tenv,ty))}
+    {decl = TODO_DECL, venv = venv,tenv = tenv
+    (* S.enter(tenv,name,transTy(tenv,ty)) *)}
 
   | transDec (venv, tenv, A.FunctionDec fundecls, extra) =
     {decl = TODO_DECL, tenv = tenv, venv = venv} (* TODO *)
