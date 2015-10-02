@@ -243,18 +243,19 @@ fun transExp (venv, tenv, extra : extra) =
               (*The following takes as input the data from a while expression, and tries to pattern match first the test against
                 Ty.INT, if that succedes then it will try and match the body against Ty.UNIT. If correct, then we have a working Tiger While loop.*)
 
-        and trwhileexp({test = tst, body = bdy, pos = ps} : A.whiledata) = let
-                                                                            val {exp = test, ty = testty} : TAbs.exp = trexp(tst)
-                                                                            val {exp = body, ty = bodyty} : TAbs.exp = trexp(bdy)
-                                                                            val testexp = makePair(test, testty)
-                                                                            val bodyexp = makePair(body, bodyty)
-                                                                           in
-                                                                            case testty of
-                                                                              Ty.INT => ( case bodyty of 
-                                                                                    Ty.UNIT => (makeWhile(testexp, bodyexp))
-                                                                                    | _ => (print("Failed 2.nd"); TODO) )
-                                                                              | _ => (print("Failed 1.st"); TODO)
-                                                                          end
+        and trwhileexp({test = tst, body = bdy, pos = ps} : A.whiledata) = 
+                let
+                  val {exp = test, ty = testty} : TAbs.exp = trexp(tst)
+                  val {exp = body, ty = bodyty} : TAbs.exp = trexp(bdy)
+                  val testexp = makePair(test, testty)
+                  val bodyexp = makePair(body, bodyty)
+                in
+                  case testty of
+                    Ty.INT => ( case bodyty of 
+                    Ty.UNIT => (makeWhile(testexp, bodyexp))
+                    | _ => (print("Failed 2.nd"); TODO) )
+                    | _ => (print("Failed 1.st"); TODO)
+                end
 
               (* venv=S.enter(venv,name,E.VarEntry{ty=ty})} *)
 
