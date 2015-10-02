@@ -218,11 +218,20 @@ fun transExp (venv, tenv, extra : extra) =
 
           | trexp(A.LetExp(letdata)) = trletexp(letdata) (* *)
 
+          | trexp(A.ForExp(fordata)) = trforexp(fordata)
+
           | trexp _ = (print("sry, got nothing\n"); TODO)
 
           (*
             * When we are making a let expression, we have to use the transExp to interpt with the extended enviorment
             *)
+
+        and trforexp({  var = s,
+                        escape = e,
+                        lo = low,
+                        hi = high,
+                        body = exp,
+                        pos = pos} : A.fordata) = TODO
 
           (* It should be possible to reuse this in other functions *)
         and trvar (A.SimpleVar (id, pos)) = let val ty = lookupVar venv id pos in
@@ -269,16 +278,7 @@ fun transExp (venv, tenv, extra : extra) =
             makeBinop( makePair(exp1, ty1), opr, makePair(exp2, ty2), ty1)
           else
             (err pos ("LHS has type " ^ (PT.asString ty1) ^ " RHS has type " ^ (PT.asString ty2) ^ ". They must be equal"); ERRORPAIR)
-        (*
-        if ty1 = Ty.STRING orelse ty1 = Ty.INT orelse ty1 = (Ty.ARRAY) : Ty.ty orelse
-            ty1 = Ty.RECORD then
-          if ty1 = ty2 then
-            makeBinop(makePair(exp1, ty1), opr, makePair(exp2, ty2), ty2)
-          else
-            err pos " LHS is type " ^ (PT.asString ty1) ^ " RHS is type " 
-              ^ (PT.asString ty2) ". They must be the same"
-        else err pos " LHS must be of type INT, STRING, RECORD or ARRAY"
-        *)
+
 
         and makeOrdExp({exp = exp1, ty = ty1} : TAbs.exp, 
           opr, {exp = exp2, ty = ty2} : TAbs.exp, pos) = 
