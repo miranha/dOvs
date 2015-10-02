@@ -218,11 +218,20 @@ fun transExp (venv, tenv, extra : extra) =
 
           | trexp(A.LetExp(letdata)) = trletexp(letdata) (* *)
 
+          | trexp(A.ForExp(fordata)) = trforexp(fordata)
+
           | trexp _ = (print("sry, got nothing\n"); TODO)
 
           (*
             * When we are making a let expression, we have to use the transExp to interpt with the extended enviorment
             *)
+
+        and trforexp({  var = s,
+                        escape = e,
+                        lo = low,
+                        hi = high,
+                        body = exp,
+                        pos = pos} : A.fordata) = TODO
 
           (* It should be possible to reuse this in other functions *)
         and trvar (A.SimpleVar (id, pos)) = let val ty = lookupVar venv id pos in
@@ -269,6 +278,7 @@ fun transExp (venv, tenv, extra : extra) =
             makeBinop( makePair(exp1, ty1), opr, makePair(exp2, ty2), ty1)
           else
             (err pos ("LHS has type " ^ (PT.asString ty1) ^ " RHS has type " ^ (PT.asString ty2) ^ ". They must be equal"); ERRORPAIR)
+
 
         and makeOrdExp({exp = exp1, ty = ty1} : TAbs.exp, 
           opr, {exp = exp2, ty = ty2} : TAbs.exp, pos) = 
