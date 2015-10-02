@@ -356,7 +356,8 @@ fun transExp (venv, tenv, extra : extra) =
 
         and trletexp({decls=decls, body=body, pos = pos} : A.letdata) = let val {decls = delcs', venv=venv', tenv=tenv'} =
           transDecs(venv,tenv, decls, extra) 
-        in {exp = TAbs.LetExp { decls = delcs', body =  (transExp(venv',tenv',extra) body)}, ty = Ty.UNIT}
+          val {exp, ty} = (transExp(venv',tenv',extra) body)
+        in {exp = TAbs.LetExp { decls = delcs', body = makePair(exp, ty)}, ty = ty}
           end
     in
         trexp
@@ -364,7 +365,10 @@ fun transExp (venv, tenv, extra : extra) =
 
 and transDec ( venv, tenv
              , A.VarDec {name, escape, typ = NONE, init, pos}, extra : extra) =
-    {decl = TODO_DECL, tenv = tenv, venv = venv} (* TODO *)
+          let val {exp, ty} = transExp(venv, tenv, extra) init
+            val decl' = TAbs.VarDec{  name = name, escape = escape, ty = ty, init = makePair(exp, ty)} 
+          in {decl = decl', tenv = tenv, venv = S.enter(venv, name, E.VarEntry{ty = ty})} (* TODO *)
+          end
 
 
   | transDec ( venv, tenv
