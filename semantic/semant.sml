@@ -269,16 +269,6 @@ fun transExp (venv, tenv, extra : extra) =
             makeBinop( makePair(exp1, ty1), opr, makePair(exp2, ty2), ty1)
           else
             (err pos ("LHS has type " ^ (PT.asString ty1) ^ " RHS has type " ^ (PT.asString ty2) ^ ". They must be equal"); ERRORPAIR)
-        (*
-        if ty1 = Ty.STRING orelse ty1 = Ty.INT orelse ty1 = (Ty.ARRAY) : Ty.ty orelse
-            ty1 = Ty.RECORD then
-          if ty1 = ty2 then
-            makeBinop(makePair(exp1, ty1), opr, makePair(exp2, ty2), ty2)
-          else
-            err pos " LHS is type " ^ (PT.asString ty1) ^ " RHS is type " 
-              ^ (PT.asString ty2) ". They must be the same"
-        else err pos " LHS must be of type INT, STRING, RECORD or ARRAY"
-        *)
 
         and makeOrdExp({exp = exp1, ty = ty1} : TAbs.exp, 
           opr, {exp = exp2, ty = ty2} : TAbs.exp, pos) = 
@@ -300,21 +290,28 @@ fun transExp (venv, tenv, extra : extra) =
           makePair( TAbs.OpExp {left = texp1,
             oper = opr, right = texp2}, ty)
 
-        and trletexp(_) = ERRORPAIR
+        and trletexp({decs=decs, body=body, pos}) = let val {venv=venv', tenv=tenv'} =
+          transDec(venv,tenv, decs) in transExp(venv',tenv') body
+          end
     in
         trexp
     end
 
 and transDec ( venv, tenv
              , A.VarDec {name, escape, typ = NONE, init, pos}, extra : extra) =
-    {decl = TODO_DECL, tenv = tenv, venv = venv} (* TODO *)
+    (*{decl = TODO_DECL, tenv = tenv, venv = venv}*) (* TODO *)
+    let val {exp,ty} = transExp(venv,tenv,init) 
+      in {tenv=tenv,venv=S.enter(venv,name,E.VarEntry{ty=ty})}
+      end
+
 
   | transDec ( venv, tenv
              , A.VarDec {name, escape, typ = SOME (s, pos), init, pos=pos1}, extra) =
     {decl = TODO_DECL, tenv = tenv, venv = venv} (* TODO *)
 
-  | transDec (venv, tenv, A.TypeDec tydecls, extra) =
-    {decl = TODO_DECL, tenv = tenv, venv = venv} (* TODO *)
+  | transDec (venv, tenv, (*A.TypeDec tydecls*) A.TypeDec[{name,ty}], extra) =
+    (*{decl = TODO_DECL, tenv = tenv, venv = venv}*) (* TODO *)
+    {venv,tenv = S.enter(tenv,name,transTy(tenv,ty))}
 
   | transDec (venv, tenv, A.FunctionDec fundecls, extra) =
     {decl = TODO_DECL, tenv = tenv, venv = venv} (* TODO *)
