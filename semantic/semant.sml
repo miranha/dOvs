@@ -197,6 +197,14 @@ fun makeWhile({exp = tstexp, ty = tstty} : TAbs.exp,
                             body = makePair(bdyexp,bdyty)
                             }, Ty.UNIT)
 
+fun makeFor(vr, scp, l, h, bdy, venv) = (*TODO Still unfinished.*)
+        venv.enter(vr, {Ty.INT}:Env.VarEntry)
+        makePair(TAbs.ForExp{var = vr,
+                             escape = scp,
+                             lo = l,
+                             hi = h,
+                             body = bdy}, Ty.UNIT)
+
 fun transTy (tenv, t) = Ty.ERROR (* TODO *)
 
 fun transExp (venv, tenv, extra : extra) =
@@ -222,7 +230,7 @@ fun transExp (venv, tenv, extra : extra) =
           | trexp(A.SeqExp(explist)) = trseqexp(explist) (* *)
           | trexp(A.IfExp(ifdata)) = trifexp(ifdata)
           | trexp(A.WhileExp(whiledata)) = trwhileexp(whiledata)
-          | trexp(A.ForExp(fordata)) = trforexp(fordata)
+          | trexp(A.ForExp(fordata)) = trforexp(fordata, venv)
           | trexp _ = (print("sry, got nothing\n"); TODO)
 
               (*The following takes as input the data from a while expression, and tries to pattern match first the test against
@@ -241,7 +249,8 @@ fun transExp (venv, tenv, extra : extra) =
                                                                               | _ => (print("Failed 1.st"); TODO)
                                                                           end
 
-        and trforexp({var = va, escape = esc, lo = l, hi = h, body = bdy, pos = ps}: A.fordata) = let
+        and trforexp({var = va, escape = esc, lo = l, hi = h, body = bdy, pos = ps}: A.fordata, venv) = let
+          val {venv = 'venv}
           val {exp = lexp, ty = lty} = trexp(l)
           val {exp = hexp, ty = hty} = trexp(h)
           val {exp = bodyexp, ty = bodyty} = trexp(bdy)
@@ -249,7 +258,7 @@ fun transExp (venv, tenv, extra : extra) =
           case lty of
               Ty.INT => ( case hty of
                           Ty.INT => ( case bodyty of
-                                        Ty.UNIT => (print("Succes"); TODO)
+                                        Ty.UNIT => (makeFor(va, esc, l, h, bdy, venv)) (*TODO: add symbol to env, and make it decoupled from standard env.*)
                                         | _ => (print("Failed"); TODO)
                                     )
                           |_ => (print("Failed");TODO) 
