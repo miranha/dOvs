@@ -69,6 +69,9 @@ fun errorNil (pos, id) =
 fun errorVar (pos, id) =
   err pos ((S.name id) ^ " is undefined")
 
+fun errorNilNoneVar(pos, id) =
+  err pos ((S.name id) ^ " can't be declared as nil. " ^ (S.name id) ^" must explicitly declared of type RECORD") 
+
 (* Write additional error messages here *)
 
 
@@ -224,7 +227,7 @@ fun transExp (venv, tenv, extra : extra) =
         val EqTypes : Ty.ty list  = [Ty.INT : Ty.ty , Ty.RECORD : Ty.ty, Ty.ARRAY : Ty.ty, Ty.STRING : Ty.ty]
         *)
 
-        fun trexp (A.NilExp) = TODO
+        fun trexp (A.NilExp) = {exp = TAbs.NilExp, ty = Ty.NIL}
           | trexp (A.VarExp var) = trvar(var)
           | trexp (A.IntExp value) = makePair (TAbs.IntExp(value), Ty.INT)
           | trexp (A.StringExp(s,_)) = makePair (TAbs.StringExp(s), Ty.STRING)
@@ -363,7 +366,8 @@ fun transExp (venv, tenv, extra : extra) =
 
         and trletexp({decls=decls, body=body, pos = pos} : A.letdata) = let val {decls = delcs', venv=venv', tenv=tenv'} =
           transDecs(venv,tenv, decls, extra) 
-        in {exp = TAbs.LetExp { decls = delcs', body =  (transExp(venv',tenv',extra) body)}, ty = Ty.UNIT}
+          val {exp, ty} = (transExp(venv',tenv',extra) body)
+        in {exp = TAbs.LetExp { decls = delcs', body = makePair(exp, ty)}, ty = ty}
           end
     in
         trexp
@@ -371,12 +375,20 @@ fun transExp (venv, tenv, extra : extra) =
 
 and transDec ( venv, tenv
              , A.VarDec {name, escape, typ = NONE, init, pos}, extra : extra) =
-    {decl = TODO_DECL, tenv = tenv, venv = venv} (* TODO *)
+          let val {exp, ty} = transExp(venv, tenv, extra) init
+            val decl' = TAbs.VarDec{  name = name, escape = escape, ty = ty, init = makePair(exp, ty)}
+            val nildecl =  TAbs.VarDec{  name = name, escape = escape, ty = Ty.ERROR, init = makePair(exp, ty)}
+          in case (actualTy ty pos) of
+            Ty.NIL => (errorNilNoneVar (pos, name); {decl = nildecl, tenv = tenv, venv = S.enter(venv, name, E.VarEntry{ty = Ty.ERROR})}) (* TODO *)
+            | _ => {decl = decl', tenv = tenv, venv = S.enter(venv, name, E.VarEntry{ty = ty})}
+          end
 
 
   | transDec ( venv, tenv
              , A.VarDec {name, escape, typ = SOME (s, pos), init, pos=pos1}, extra) =
-    {decl = TODO_DECL, tenv = tenv, venv = venv}  (* TODO *)
+               {decl = TODO_DECL, venv = venv,tenv = tenv
+    (* S.enter(tenv,name,transTy(tenv,ty)) *)}
+      (* TODO *)
 
   | transDec (venv, tenv, A.TypeDec typdecs, extra) =
     (*{decl = TODO_DECL, tenv = tenv, venv = venv}*) (* TODO *)
