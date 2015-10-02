@@ -51,12 +51,14 @@ fun errorInt (pos, ty) =
 fun errorIfTest(pos, ty) =
     err pos ("INT required in test, " ^ PT.asString ty ^ " provided")
 
+
 fun errorIfElse(pos, ty1, ty2) =
     err pos ("then and else exp must be same type, then exp is type " 
         ^ PT.asString ty1 ^ " and else exp is type " ^ PT.asString ty2)
 
 fun errorIfThen(pos, ty) =
   err pos ("UNIT required in then clause, " ^ PT.asString ty ^ " provided")
+
 
 fun errorUnit (pos, ty) =
     err pos ("UNIT required, " ^ PT.asString ty ^ " provided")
@@ -193,7 +195,20 @@ fun makeIfElse( {exp = te, ty = tety} : TAbs.exp,
     else (errorIfElse(pos, thty, elty); ERRORPAIR)
   else (errorIfTest(pos, tety); ERRORPAIR)
 
+fun makeWhile({exp = tstexp, ty = tstty} : TAbs.exp,
+              {exp = bdyexp, ty = bdyty} : TAbs.exp ) = 
+                  makePair( TAbs.WhileExp {
+                            test = makePair(tstexp, tstty),
+                            body = makePair(bdyexp,bdyty)
+                            }, Ty.UNIT)
 
+fun makeFor(vr, scp, l, h, bdy, venv) = (*TODO Still unfinished.*)
+        venv.enter(vr, {Ty.INT}:Env.VarEntry)
+        makePair(TAbs.ForExp{var = vr,
+                             escape = scp,
+                             lo = l,
+                             hi = h,
+                             body = bdy}, Ty.UNIT)
 
 fun transTy (tenv, t) = Ty.ERROR (* TODO *)
 
@@ -212,27 +227,66 @@ fun transExp (venv, tenv, extra : extra) =
           | trexp (A.VarExp var) = trvar(var)
           | trexp (A.IntExp value) = makePair (TAbs.IntExp(value), Ty.INT)
           | trexp (A.StringExp(s,_)) = makePair (TAbs.StringExp(s), Ty.STRING)
+
           | trexp (A.OpExp({left = left, oper = oper, right = right, pos = pos})) = trBinop(left, oper, right, pos)
           | trexp(A.SeqExp(explist)) = trseqexp(explist) (* *)
           | trexp(A.IfExp(ifdata)) = trifexp(ifdata)
 
           | trexp(A.LetExp(letdata)) = trletexp(letdata) (* *)
 
-          | trexp(A.ForExp(fordata)) = trforexp(fordata)
+          | trexp(A.WhileExp(whiledata)) = trwhileexp(whiledata)
+          | trexp(A.ForExp(fordata)) = trforexp(fordata, venv)
 
           | trexp _ = (print("sry, got nothing\n"); TODO)
 
+              (*The following takes as input the data from a while expression, and tries to pattern match first the test against
+                Ty.INT, if that succedes then it will try and match the body against Ty.UNIT. If correct, then we have a working Tiger While loop.*)
+
+        and trwhileexp({test = tst, body = bdy, pos = ps} : A.whiledata) = let
+                                                                            val {exp = test, ty = testty} : TAbs.exp = trexp(tst)
+                                                                            val {exp = body, ty = bodyty} : TAbs.exp = trexp(bdy)
+                                                                            val testexp = makePair(test, testty)
+                                                                            val bodyexp = makePair(body, bodyty)
+                                                                           in
+                                                                            case testty of
+                                                                              Ty.INT => ( case bodyty of 
+                                                                                    Ty.UNIT => (makeWhile(testexp, bodyexp))
+                                                                                    | _ => (print("Failed 2.nd"); TODO) )
+                                                                              | _ => (print("Failed 1.st"); TODO)
+                                                                          end
+
+        and trforexp({var = va, escape = esc, lo = l, hi = h, body = bdy, pos = ps}: A.fordata, venv) = let
+          val {venv = 'venv}
+          val {exp = lexp, ty = lty} = trexp(l)
+          val {exp = hexp, ty = hty} = trexp(h)
+          val {exp = bodyexp, ty = bodyty} = trexp(bdy)
+        in
+          case lty of
+              Ty.INT => ( case hty of
+                          Ty.INT => ( case bodyty of
+                                        Ty.UNIT => (makeFor(va, esc, l, h, bdy, venv)) (*TODO: add symbol to env, and make it decoupled from standard env.*)
+                                        | _ => (print("Failed"); TODO)
+                                    )
+                          |_ => (print("Failed");TODO) 
+                        )
+              |_ => (print("Failed"); TODO)
+        end
+
           (*
             * When we are making a let expression, we have to use the transExp to interpt with the extended enviorment
+
+              Notes: Fieldvar: 1. Evalutate the var, if typechecked to be of T.RECORD
+                                                      | If record, search record for entry with ID
+                                                            If ID found, return that plus the type that matches that ID
+                                                            If not, Error
+                                                      | Else Error
+
+                      SubscriptVar Evalute the var, typecheck to see if of type T.ARRAY
+                                                      | if Array, check to see if ARRAY[exp1] if exp1 evaluates to type Ty.INT.
+                                                            If int, return ARRAY.ty
+                                                            If not int, Error
+                                                      | If not Array, Error.
             *)
-
-        and trforexp({  var = s,
-                        escape = e,
-                        lo = low,
-                        hi = high,
-                        body = exp,
-                        pos = pos} : A.fordata) = TODO
-
           (* It should be possible to reuse this in other functions *)
         and trvar (A.SimpleVar (id, pos)) = let val ty = lookupVar venv id pos in
                                               case ty of
@@ -249,7 +303,7 @@ fun transExp (venv, tenv, extra : extra) =
                                                       in trseqexpaux (xs, #ty res, acc @ [res]) 
                                                     end
 
-        (* Determine type of each part first, then offload work to helper function *)
+    (* Determine type of each part first, then offload work to helper function *)
         and trifexp ( { test = test, thn = thn, els = els, pos = pos} : A.ifdata ) =
           case els of
               NONE => makeIfThen(trexp(test), trexp(thn), pos)
