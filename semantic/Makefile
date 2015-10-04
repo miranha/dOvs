@@ -25,6 +25,10 @@ tigerc.x86-linux:
 
 # abbreviations
 
+it: 
+	make clean
+	make interact
+
 ia: interact
 
 sa: standalone
