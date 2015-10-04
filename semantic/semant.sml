@@ -409,18 +409,40 @@ and transDec ( venv, tenv
   and transFuncs ({name = name, params = params, result = result,  body = body, pos = pos}::xs, names, 
     venv, tenv, extra, functions) =
       let val {venv = venv', lst = lst, tylst = tylst} = transParams (params, venv, tenv, [], [])
-        val {exp, ty} = transExp(venv', tenv, extra) body
+        val {exp = exp, ty = bodyty} = transExp(venv', tenv, extra) body
       in
+        (* Determine if procedure or not *)
         case result of
-          NONE => if ty = Ty.UNIT then 
-                    let val fDecl = {name = name, params = lst, resultTy = Ty.UNIT, body = makePair(exp, ty)} : TAbs.fundecldata
+          NONE => (case (actualTy bodyty pos) of Ty.UNIT =>  (* Body of procedure must be of type UNIT *)
+                    let val fDecl = {name = name, params = lst, resultTy = Ty.UNIT, body = makePair(exp, bodyty)} : TAbs.fundecldata
                     in
                     transFuncs(xs, name::names, S.enter(venv,name, E.FunEntry{formals = tylst, result = Ty.UNIT}), 
                       tenv, extra, functions @ [fDecl])
                     end
-                  else
-                    transFuncs(xs, name::names, venv, tenv, extra, functions)
-      | _=> transFuncs(xs, name::names, venv, tenv, extra, functions)
+                  |_ =>
+                    let val fDecl = {name = name, params = lst, resultTy = Ty.ERROR, body = makePair(exp, bodyty)} : TAbs.fundecldata
+                    in
+                    (out (S.name name ^ " is a procedure, but the body has a non unit type " ^ PT.asString bodyty) pos;
+                      transFuncs(xs, name::names, S.enter(venv, name, E.FunEntry{formals = tylst, result = Ty.ERROR}), tenv, extra, functions @ [fDecl]))
+                    end)
+      | SOME((id, pos')) => (let val tOpt = lookupTy  tenv id pos' in
+                              case tOpt of 
+                                NONE => (let val fDecl = {name = name, params = lst, resultTy = Ty.ERROR, body = makePair(exp, bodyty)} : TAbs.fundecldata
+                                        in
+                                        (out (S.name name ^ " is a procedure, but the body has a non unit type " ^ PT.asString bodyty) pos;
+                                          transFuncs(xs, name::names, S.enter(venv, name, E.FunEntry{formals = tylst, result = Ty.ERROR}), tenv, extra, functions @ [fDecl]))
+                                        end)
+                              | SOME(t) =>
+                                  (if (actualTy t pos') = (actualTy bodyty pos) then
+                                      let val f = {name = name, params = lst, resultTy = t, body = makePair(exp, bodyty)}
+                                        in transFuncs(xs, name::names, S.enter(venv, name, E.FunEntry{formals = tylst, result = t}), tenv, extra, functions @ [f])
+                                      end
+                                    else let val fDecl = {name = name, params = lst, resultTy = Ty.ERROR, body = makePair(exp, bodyty)} : TAbs.fundecldata
+                                    in
+                                    (out (S.name name ^ " has return type " ^ PT.asString t ^ " but the body has a non compatabile type " ^ PT.asString bodyty) pos;
+                                      transFuncs(xs, name::names, S.enter(venv, name, E.FunEntry{formals = tylst, result = Ty.ERROR}), tenv, extra, functions @ [fDecl]))
+                                    end)
+                              end)
       end
       | transFuncs([], names, venv, tenv, extra, functions) = {venv = venv, funlst = functions}
 
