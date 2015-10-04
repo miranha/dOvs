@@ -402,9 +402,41 @@ and transDec ( venv, tenv
     (* S.enter(tenv,name,transTy(tenv,ty)) *)}
 
   | transDec (venv, tenv, A.FunctionDec fundecls, extra) =
-    {decl = TODO_DECL, tenv = tenv, venv = venv} (* TODO *)
+    let val {venv, funlst} = transFuncs(fundecls, [], venv, tenv, extra, [])
+    in
+    {decl = TAbs.FunctionDec(funlst), tenv = tenv, venv = venv} (* TODO *) end
 
+  and transFuncs ({name = name, params = params, result = result,  body = body, pos = pos}::xs, names, 
+    venv, tenv, extra, functions) =
+      let val {venv = venv', lst = lst, tylst = tylst} = transParams (params, venv, tenv, [], [])
+        val {exp, ty} = transExp(venv', tenv, extra) body
+      in
+        case result of
+          NONE => if ty = Ty.UNIT then 
+                    let val fDecl = {name = name, params = lst, resultTy = Ty.UNIT, body = makePair(exp, ty)} : TAbs.fundecldata
+                    in
+                    transFuncs(xs, name::names, S.enter(venv,name, E.FunEntry{formals = tylst, result = Ty.UNIT}), 
+                      tenv, extra, functions @ [fDecl])
+                    end
+                  else
+                    transFuncs(xs, name::names, venv, tenv, extra, functions)
+      | _=> transFuncs(xs, name::names, venv, tenv, extra, functions)
+      end
+      | transFuncs([], names, venv, tenv, extra, functions) = {venv = venv, funlst = functions}
 
+  and transParams({name = name, escape = escape, typ = (typ, pos1), pos = pos}::xs, venv, tenv, lst, tylst) =
+    let val ty = lookupTy tenv typ pos1 (* Check if we have a defined type *)
+    in case ty of NONE => 
+      let val fData = {name = name, escape = escape, ty = Ty.ERROR} : TAbs.fielddata
+      in
+      (out ("parameter " ^ S.name name ^ " is decalered as type " ^ S.name typ ^ ", as type that has yet to be declared") pos;
+                            transParams(xs, S.enter(venv, name, E.VarEntry{ty = Ty.ERROR}), tenv, lst@[fData], tylst @ [Ty.ERROR]))
+      end
+      | SOME(t) => 
+        let val fData = {name = name, escape = escape, ty = t} : TAbs.fielddata in
+      transParams(xs, S.enter(venv,name, E.VarEntry{ty = t}), tenv, lst@[fData], tylst @ [t]) end
+    end
+    | transParams([], venv, _, lst, tylst) = {venv = venv, lst = lst : TAbs.fielddata list, tylst = tylst}
 
 and transDecs (venv, tenv, decls, extra : extra) =
     let fun visit venv tenv decls result =
