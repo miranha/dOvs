@@ -398,8 +398,6 @@ and transDec ( venv, tenv
   | transDec (venv, tenv, A.FunctionDec fundecls, extra) =
     {decl = TODO_DECL, tenv = tenv, venv = venv} (* TODO *)
 
-*)
-
 and transDecs (venv, tenv, decls, extra : extra) =
     let fun visit venv tenv decls result =
             case decls
