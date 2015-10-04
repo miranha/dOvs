@@ -97,7 +97,9 @@ fun lookupTy tenv sym pos =
     let
         val tyOpt = S.look (tenv, sym)
     in
-        tyOpt
+        case tyOpt of
+          NONE => (out (" Type " ^ S.name sym ^ " has not been defined.") pos; NONE)
+          |_ => tyOpt
     end
 
 fun lookupVar venv sym pos =
@@ -379,8 +381,19 @@ and transDec ( venv, tenv
 
   | transDec ( venv, tenv
              , A.VarDec {name, escape, typ = SOME (s, pos), init, pos=pos1}, extra) =
-               {decl = TODO_DECL, venv = venv,tenv = tenv
-    (* S.enter(tenv,name,transTy(tenv,ty)) *)}
+                let val {exp, ty} = transExp(venv, tenv, extra) init
+                  val ty' = lookupTy tenv s pos
+                  val errDecl = TAbs.VarDec{  name = name, escape = escape, ty = Ty.ERROR, init = makePair(exp, ty)}
+                  val errReturn = {decl = errDecl, tenv = tenv, venv = S.enter(venv, name, E.VarEntry{ty = Ty.ERROR})}
+                  val decl' = TAbs.VarDec { name = name, escape = escape, ty = ty, init = makePair(exp, ty)}
+                in
+                  case ty' of
+                    NONE => errReturn
+                    |SOME(t) => if (actualTy t pos) = (actualTy ty pos1)
+                                    then {decl = decl', tenv = tenv, venv = S.enter(venv, name, E.VarEntry{ty = actualTy t pos})} 
+                                else (out ("Variable " ^ S.name name ^ " declared as type " ^ S.name s ^ " and RHS has type " ^ PT.asString ty ^ " which is non compatabile") pos1; 
+                                  errReturn)
+                end
       (* TODO *)
 
   | transDec (venv, tenv, A.TypeDec typdecs, extra) =
