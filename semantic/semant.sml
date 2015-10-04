@@ -97,7 +97,9 @@ fun lookupTy tenv sym pos =
     let
         val tyOpt = S.look (tenv, sym)
     in
-        tyOpt
+      case tyOpt of
+        SOME(ty)=>ty
+        | NONE => Ty.ERROR
     end
 
 fun lookupVar venv sym pos =
@@ -108,7 +110,10 @@ fun lookupVar venv sym pos =
   end
 
 fun actualTy (Ty.NAME (s, ty)) pos =
-    Ty.ERROR (* TODO *)
+    (
+      case ty of 
+        ref (SOME t) => actualTy t pos
+        | ref NONE => Ty.ERROR)
   | actualTy t _ = t
 
 fun checkInt (ty, pos) =
@@ -127,9 +132,18 @@ fun checkAssignable (declared: Ty.ty, assigned: Ty.ty, pos, msg) =
     let
         val aDeclared = actualTy declared pos
         val aAssigned = actualTy assigned pos
+        fun compareTy(Ty.INT: Ty.ty, Ty.INT: Ty.ty)= true
+        | compareTy(_,_) = false
     in
-        () (* TODO *)
+        if compareTy(declared,assigned)
+          then ()
+        else
+        ()      
+
     end
+
+(*fun compareTy(Ty.INT: Ty.ty, Ty.INT: Ty.ty)= true
+  | compareTy(_,_) = false*)
 
 (* Helper functions to make life easier *)
 fun makePair (expDesc, ty) =
@@ -300,7 +314,7 @@ fun transExp (venv, tenv, extra : extra) =
           (* It should be possible to reuse this in other functions *)
         and trvar (A.SimpleVar (id, pos)) = let val ty = lookupVar venv id pos in
                                               case ty of
-                                              SOME(Env.VarEntry({ty = t})) => makeVar(TAbs.SimpleVar(id), t)
+                                              SOME(E.VarEntry({ty = t})) => makeVar(TAbs.SimpleVar(id), t)
                                               |_ => (errorVar(pos, id); makePair(TAbs.ErrorExp,Ty.ERROR))
                                               end
           | trvar (A.FieldVar (var, id, pos)) = TODO
@@ -386,8 +400,18 @@ and transDec ( venv, tenv
 
   | transDec ( venv, tenv
              , A.VarDec {name, escape, typ = SOME (s, pos), init, pos=pos1}, extra) =
-               {decl = TODO_DECL, venv = venv,tenv = tenv
-    (* S.enter(tenv,name,transTy(tenv,ty)) *)}
+               (*{decl = TODO_DECL, venv = venv,tenv = tenv*)
+            let val {exp,ty} = transExp(venv,tenv,extra) init
+              val decl' = TAbs.VarDec{  name = name, escape = escape, ty = ty, init = makePair(exp, ty)}
+              val decltyp = lookupTy tenv s pos
+            in
+              (
+                checkAssignable(decltyp,ty,pos, " ");
+                {decl = decl', tenv = tenv, venv = S.enter(venv, name, E.VarEntry{ty = decltyp})}
+                )
+              (*{decl = decl', tenv = tenv, venv = S.enter(venv, name, E.VarEntry{ty = ty})}*)
+            end
+    (* S.enter(tenv,name,transTy(tenv,ty)) *)
       (* TODO *)
 
   | transDec (venv, tenv, A.TypeDec typdecs, extra) =
