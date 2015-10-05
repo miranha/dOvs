@@ -469,7 +469,7 @@ and transDec ( venv, tenv
                               case tOpt of 
                                 NONE => (let val fDecl = {name = name, params = lst, resultTy = Ty.ERROR, body = makePair(exp, bodyty)} : TAbs.fundecldata
                                         in
-                                        (out (S.name name ^ " is a procedure, but the body has a non unit type " ^ PT.asString bodyty) pos;
+                                        (out (S.name name ^ " has a return type that hasn't been declared") pos;
                                           transFuncs(xs, name::names, S.enter(venv, name, E.FunEntry{formals = tylst, result = Ty.ERROR}), tenv, extra, functions @ [fDecl]))
                                         end)
                               | SOME(t) =>
