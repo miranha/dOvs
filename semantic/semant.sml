@@ -97,9 +97,7 @@ fun lookupTy tenv sym pos =
     let
         val tyOpt = S.look (tenv, sym)
     in
-      case tyOpt of
-        SOME(ty)=>ty
-        | NONE => Ty.ERROR
+      tyOpt
     end
 
 fun lookupVar venv sym pos =
@@ -128,19 +126,22 @@ fun isUnit (ty) =
       | Ty.ERROR => true
       | _ => false
 
+fun compareTy(Ty.INT: Ty.ty, Ty.INT: Ty.ty)= true
+    | compareTy(_,_) = false
+
 fun checkAssignable (declared: Ty.ty, assigned: Ty.ty, pos, msg) =
     let
         val aDeclared = actualTy declared pos
         val aAssigned = actualTy assigned pos
-        fun compareTy(Ty.INT: Ty.ty, Ty.INT: Ty.ty)= true
-        | compareTy(_,_) = false
     in
         if compareTy(declared,assigned)
           then ()
         else
-        ()      
+        (print("No same types"))      
 
     end
+
+
 
 (*fun compareTy(Ty.INT: Ty.ty, Ty.INT: Ty.ty)= true
   | compareTy(_,_) = false*)
@@ -228,7 +229,21 @@ fun makeFor(vr, scp, {exp = lexp, ty = lty} : TAbs.exp,
                              hi = makePair(hexp,hty),
                              body = makePair(bdyexp,bdyty)}, Ty.UNIT)
 
-fun transTy (tenv, t) = Ty.ERROR (* TODO *)
+fun transTy (tenv, t) = (*Ty.ERROR*) (* TODO *)
+  let
+    (*Some defintions*)
+  in
+    case t of
+      A.NameTy(nt,pos) => let val res = lookupTy tenv nt pos 
+                                  in (case res of NONE => Ty.ERROR
+                                    | SOME(_) => Ty.NAME(nt, ref(res))
+                                    )
+                                  end
+
+        (*TODO: Add support for Records*)
+      (* | A.ArrayTy(at,pos) => Ty.ARRAY((lookupTy tenv at pos), ref()) *)
+      | _ =>  Ty.ERROR
+  end 
 
 fun transExp (venv, tenv, extra : extra) =
     let
@@ -254,11 +269,20 @@ fun transExp (venv, tenv, extra : extra) =
 
           | trexp(A.WhileExp(whiledata)) = trwhileexp(whiledata)
           | trexp(A.ForExp(fordata)) = trforexp(fordata, venv)
+          | trexp(A.CallExp(calldata)) = trcallexp(calldata)
 
           | trexp _ = (print("sry, got nothing\n"); TODO)
 
               (*The following takes as input the data from a while expression, and tries to pattern match first the test against
                 Ty.INT, if that succedes then it will try and match the body against Ty.UNIT. If correct, then we have a working Tiger While loop.*)
+
+        and
+          trcallexp({func=func, args=args, pos=pos}) = TODO
+              (*let val fundec = S.look(venv,func)
+              in
+                case fundec of
+                  SOME(E.FunEntry{formals,results})=> {exp=(),ty=result}TODO: Make additional checks
+                  NONE => {exp=(), ty=ERROR.Ty}*)
 
         and trwhileexp({test = tst, body = bdy, pos = ps} : A.whiledata) = 
                 let
@@ -388,19 +412,22 @@ fun transExp (venv, tenv, extra : extra) =
     end
 
 and transDec ( venv, tenv
-             , A.VarDec {name, escape, typ = NONE, init, pos}, extra : extra) =
+             , A.VarDec {name, escape, typ = NONE, init, pos}, extra : extra) = {decl = TODO_DECL, venv = venv,tenv = tenv}
+          (*
           let val {exp, ty} = transExp(venv, tenv, extra) init
             val decl' = TAbs.VarDec{  name = name, escape = escape, ty = ty, init = makePair(exp, ty)}
             val nildecl =  TAbs.VarDec{  name = name, escape = escape, ty = Ty.ERROR, init = makePair(exp, ty)}
           in case (actualTy ty pos) of
-            Ty.NIL => (errorNilNoneVar (pos, name); {decl = nildecl, tenv = tenv, venv = S.enter(venv, name, E.VarEntry{ty = Ty.ERROR})}) (* TODO *)
+            Ty.NIL => (errorNilNoneVar (pos, name); {decl = nildecl, tenv = tenv, venv = S.enter(venv, name, E.VarEntry{ty = Ty.ERROR})})
             | _ => {decl = decl', tenv = tenv, venv = S.enter(venv, name, E.VarEntry{ty = ty})}
           end
+          *)
 
 
   | transDec ( venv, tenv
              , A.VarDec {name, escape, typ = SOME (s, pos), init, pos=pos1}, extra) =
-               (*{decl = TODO_DECL, venv = venv,tenv = tenv*)
+               {decl = TODO_DECL, venv = venv,tenv = tenv}
+               (*
             let val {exp,ty} = transExp(venv,tenv,extra) init
               val decl' = TAbs.VarDec{  name = name, escape = escape, ty = ty, init = makePair(exp, ty)}
               val decltyp = lookupTy tenv s pos
@@ -409,15 +436,28 @@ and transDec ( venv, tenv
                 checkAssignable(decltyp,ty,pos, " ");
                 {decl = decl', tenv = tenv, venv = S.enter(venv, name, E.VarEntry{ty = decltyp})}
                 )
-              (*{decl = decl', tenv = tenv, venv = S.enter(venv, name, E.VarEntry{ty = ty})}*)
             end
-    (* S.enter(tenv,name,transTy(tenv,ty)) *)
+            *)
       (* TODO *)
-
   | transDec (venv, tenv, A.TypeDec typdecs, extra) =
+    let 
+      fun enterTydec([] , tyDecls, tenv, venv) = {decl = TAbs.TypeDec(tyDecls), tenv = tenv, venv = venv}
+        | enterTydec({name,ty,pos}::tl,tyDecls, tenv, venv)=
+          let val resTy = transTy(tenv, ty)
+            val decl = {name = name, ty = resTy}
+          in
+            enterTydec(tl,tyDecls @ [decl]
+              , S.enter(tenv,name,transTy(tenv,ty)), venv)
+          end
+
+    in
+      enterTydec(typdecs,[], tenv, venv)
+    end
+
+
     (*{decl = TODO_DECL, tenv = tenv, venv = venv}*) (* TODO *)
-    {decl = TODO_DECL, venv = venv,tenv = tenv
-    (* S.enter(tenv,name,transTy(tenv,ty)) *)}
+    (*{decl = TODO_DECL, venv = venv,tenv = tenv*)
+    (* S.enter(tenv,name,transTy(tenv,ty)) *)
 
   | transDec (venv, tenv, A.FunctionDec fundecls, extra) =
     {decl = TODO_DECL, tenv = tenv, venv = venv} (* TODO *)
