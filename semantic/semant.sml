@@ -442,18 +442,69 @@ and transDec ( venv, tenv
     end
 
   | transDec (venv, tenv, A.FunctionDec fundecls, extra) =
-    let val {venv, funlst} = transFuncs(fundecls, [], venv, tenv, extra, [])
+    let (*val {venv, funlst, ventries} = transFuncs(fundecls, [], venv, tenv, extra, [])
+    *) val venv' = getFunctionHeaders(fundecls, [], venv,tenv,extra)
+      val funlst = checkFunctions (venv', tenv, fundecls, extra, [], [])
     in
-    {decl = TAbs.FunctionDec(funlst), tenv = tenv, venv = venv} (* TODO *) end
+    {decl = TAbs.FunctionDec(funlst), tenv = tenv, venv = venv'} (* TODO *) end
 
+  and getFunctionHeaders({name, params,result,body,pos}::xs,names,venv,tenv,extra) =
+    let
+     val tOpt = (case result of SOME((id, pos')) => lookupTy tenv id pos'
+      | NONE => SOME(Ty.UNIT))
+     val {venv = v', lst =l', tylst = tylst, ventries = ventries} = transParams(params, venv, tenv, [], [], [], [])
+    in
+      if List.exists (fn x => x = name) names 
+        then (out (S.name name ^ " has already been declared, skipping it") pos; getFunctionHeaders(xs,names,venv,tenv,extra))
+      else
+        let
+            fun validtype topt = (case topt of
+                         NONE =>(out (" Function " ^ S.name name ^ " return type is undeclared"); Ty.ERROR)
+                       | SOME(t) => t) 
+        in 
+          getFunctionHeaders(xs, name::names,S.enter(venv, name, E.FunEntry{formals = tylst, result = (validtype tOpt)}),tenv,extra)
+        end
+    end
+    | getFunctionHeaders([],_,venv,tenv,extra) = venv
+
+  and checkFunctions(venv, tenv, {name, params, result, body, pos}::fundecls, extra, functions, names) =
+    if (List.exists (fn x => x = name) names) then
+      (out ("Function " ^ S.name name ^ " is already declared, will keep old definition") pos;
+        checkFunctions(venv, tenv, fundecls, extra, functions, names))
+    else
+    let val varOpt = lookupVar venv name pos
+      val typeLst = (case varOpt of 
+                            SOME(E.FunEntry{formals = formals, result =_}) => formals
+                          | _ => [])
+      val res = (case varOpt of 
+                            SOME(E.FunEntry{formals = _, result = resultty}) => resultty
+                          | _ => Ty.ERROR)
+      val {venv = v, lst = lst, tylst = tylst, ventries = ventries} = transParams(params, venv, tenv, [], [], [], [])
+      fun enterInVenv (venv, (name, ventry)::xs) = enterInVenv(S.enter(venv, name, ventry), xs)
+        | enterInVenv (venv, []) = venv
+      val venv' = enterInVenv (venv, ventries)
+      val {exp, ty} = transExp (venv', tenv, extra) body
+      val f = {name = name, params = lst, resultTy = res, body = makePair(exp, ty)}
+      val errf = {name = name, params = lst, resultTy = Ty.ERROR, body = makePair(exp, ty)} : TAbs.fundecldata
+    in
+      if (actualTy res pos) = (actualTy ty pos) then
+        checkFunctions(venv, tenv, fundecls, extra, functions  @ [ f ], name::names)
+      else
+      (out ("The result type " ^ PT.asString res ^ " is not compatible with body type" ^ PT.asString ty) pos;
+              checkFunctions(venv, tenv, fundecls, extra, functions  @ [ errf ], name::names)
+              )
+    end
+    | checkFunctions(venv, tenv, [], extra, functions, names) = functions
+
+(*
   and transFuncs ({name = name, params = params, result = result,  body = body, pos = pos}::xs, names, 
     venv, tenv, extra, functions) =
-      let val {venv = venv', lst = lst, tylst = tylst} = transParams (params, venv, tenv, [], [])
+      let val {venv = venv', lst = lst, tylst = tylst, ventries} = transParams (params, venv, tenv, [], [], [], [])
         val {exp = exp, ty = bodyty} = transExp(venv', tenv, extra) body
       in
-        (* Determine if procedure or not *)
+        Determine if procedure or not 
         case result of
-          NONE => (case (actualTy bodyty pos) of Ty.UNIT =>  (* Body of procedure must be of type UNIT *)
+          NONE => (case (actualTy bodyty pos) of Ty.UNIT =>  
                     let val fDecl = {name = name, params = lst, resultTy = Ty.UNIT, body = makePair(exp, bodyty)} : TAbs.fundecldata
                     in
                     transFuncs(xs, name::names, S.enter(venv,name, E.FunEntry{formals = tylst, result = Ty.UNIT}), 
@@ -485,20 +536,25 @@ and transDec ( venv, tenv
                               end)
       end
       | transFuncs([], names, venv, tenv, extra, functions) = {venv = venv, funlst = functions}
+      *)
 
-  and transParams({name = name, escape = escape, typ = (typ, pos1), pos = pos}::xs, venv, tenv, lst, tylst) =
-    let val ty = lookupTy tenv typ pos1 (* Check if we have a defined type *)
-    in case ty of NONE => 
-      let val fData = {name = name, escape = escape, ty = Ty.ERROR} : TAbs.fielddata
-      in
-      (out ("parameter " ^ S.name name ^ " is decalered as type " ^ S.name typ ^ ", as type that has yet to be declared") pos;
-                            transParams(xs, S.enter(venv, name, E.VarEntry{ty = Ty.ERROR}), tenv, lst@[fData], tylst @ [Ty.ERROR]))
+  and transParams({name = name, escape = escape, typ = (typ, pos1), pos = pos}::xs, venv, tenv, lst, tylst, names, ventries) =
+    if List.exists (fn x => x = name) names
+      then (out (" parameter " ^ S.name name ^ " already declared, will keep old definition") pos1; transParams(xs, venv, tenv, lst, tylst, names, ventries))
+    else
+      let val ty = lookupTy tenv typ pos1 (* Check if we have a defined type *)
+      in case ty of NONE => 
+        let val fData = {name = name, escape = escape, ty = Ty.ERROR} : TAbs.fielddata
+        in
+        (out ("parameter " ^ S.name name ^ " is decalered as type " ^ S.name typ ^ ", as type that has yet to be declared") pos;
+                              transParams(xs, S.enter(venv, name, E.VarEntry{ty = Ty.ERROR}), tenv, lst@[fData], tylst @ [Ty.ERROR], name::names, 
+                                ventries @ [(name, E.VarEntry{ty = Ty.ERROR})]))
+        end
+        | SOME(t) => 
+          let val fData = {name = name, escape = escape, ty = t} : TAbs.fielddata in
+        transParams(xs, S.enter(venv,name, E.VarEntry{ty = t}), tenv, lst@[fData], tylst @ [t], name::names, ventries @ [(name, E.VarEntry{ty = t})]) end
       end
-      | SOME(t) => 
-        let val fData = {name = name, escape = escape, ty = t} : TAbs.fielddata in
-      transParams(xs, S.enter(venv,name, E.VarEntry{ty = t}), tenv, lst@[fData], tylst @ [t]) end
-    end
-    | transParams([], venv, _, lst, tylst) = {venv = venv, lst = lst : TAbs.fielddata list, tylst = tylst}
+    | transParams([], venv, _, lst, tylst, _, ventries) = {venv = venv, lst = lst : TAbs.fielddata list, tylst = tylst : Ty.ty list, ventries = ventries}
 
 and transDecs (venv, tenv, decls, extra : extra) =
     let fun visit venv tenv decls result =
