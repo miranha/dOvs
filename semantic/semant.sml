@@ -237,6 +237,7 @@ fun transExp (venv, tenv, extra : extra) =
 
           | trexp(A.WhileExp(whiledata)) = trwhileexp(whiledata)
           | trexp(A.ForExp(fordata)) = trforexp(fordata, venv)
+          | trexp(A.CallExp(calldata)) = trcallexp(calldata)
 
           | trexp _ = (print("sry, got nothing\n"); TODO)
 
@@ -278,22 +279,6 @@ fun transExp (venv, tenv, extra : extra) =
                         )
               |_ => (print("FailedLowTY"); TODO)
         end
-
-          (*
-            * When we are making a let expression, we have to use the transExp to interpt with the extended enviorment
-
-              Notes: Fieldvar: 1. Evalutate the var, if typechecked to be of T.RECORD
-                                                      | If record, search record for entry with ID
-                                                            If ID found, return that plus the type that matches that ID
-                                                            If not, Error
-                                                      | Else Error
-
-                      SubscriptVar Evalute the var, typecheck to see if of type T.ARRAY
-                                                      | if Array, check to see if ARRAY[exp1] if exp1 evaluates to type Ty.INT.
-                                                            If int, return ARRAY.ty
-                                                            If not int, Error
-                                                      | If not Array, Error.
-            *)
           (* It should be possible to reuse this in other functions *)
         and trvar (A.SimpleVar (id, pos)) = let val ty = lookupVar venv id pos in
                                               case ty of
@@ -365,6 +350,34 @@ fun transExp (venv, tenv, extra : extra) =
           transDecs(venv,tenv, decls, extra) 
         in {exp = TAbs.LetExp { decls = delcs', body =  (transExp(venv',tenv',extra) body)}, ty = Ty.UNIT}
           end
+
+        and trcallexp({func = name, args = args, pos = pos}) =
+          let val f = lookupVar venv name pos
+          in case f of
+            SOME(E.FunEntry{formals = formals, result = resultTy}) => 
+                      let val {tylst, explst, poslst} = makeArgsList(args,[], [], [])
+                      in
+                          if checkParam(tylst, formals, poslst, pos, true) then
+                            makePair(TAbs.CallExp {func = name, args = explst}, resultTy)
+                          else (out ("args in function call to " ^ S.name name ^ " did not match formal parameters") pos; ERRORPAIR)
+                        end
+            | SOME(E.VarEntry(_)) => (out (S.name name ^ " is a variable in this scope. Did you override your function? ") pos; ERRORPAIR)
+            | NONE => (out ("Function " ^ S.name name ^ " is not defined") pos; ERRORPAIR)
+          end
+
+        and makeArgsList([], tyLst, expLst, posLst) = {tylst = tyLst, explst = expLst, poslst = posLst}
+          | makeArgsList((exp, pos)::xs, tyLst, expLst, posLst) =
+              let val {exp, ty} = trexp exp
+              in makeArgsList (xs, tyLst @ [ty], expLst @ [makePair(exp, ty)], posLst @ [pos])
+              end
+
+        and checkParam([], [], _, _, noErrs) = noErrs
+          | checkParam(callTy::xs1, formalTy::xs2, pos::xs3, callPos, noErrs) =
+                if (actualTy callTy pos) = (actualTy formalTy pos) then
+                  checkParam(xs1, xs2, xs3, callPos, noErrs)
+                else (out "type of the expression did not match the formal declaration" pos; checkParam(xs1, xs2, xs3, callPos, false))
+          | checkParam(_, _, _ , callPos, noErrs) = (out "there is not the exact same amount of args in call as there are formal declarations" callPos; false)
+
     in
         trexp
     end
