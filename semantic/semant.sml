@@ -220,7 +220,14 @@ fun makeFor(vr, scp, l, h, bdy, venv) = (*  TODO Still unfinished.*)
 
 fun transTy (tenv, t) = (*Ty.ERROR*) (* TODO *)
   let
-    (*Some defintions*)
+    fun fdatafun([] , acc) = acc
+      | fdatafun({name, escape, typ=(sym,pos1), pos}::xs,acc)=
+          let val ty= lookupTy tenv sym pos1
+          in
+            case ty of
+              SOME(t)=>fdatafun(xs,acc@[(name,t)])
+              | NONE => acc
+            end
   in
     case t of
       A.NameTy(nt,pos) => let val res = lookupTy tenv nt pos 
@@ -233,9 +240,13 @@ fun transTy (tenv, t) = (*Ty.ERROR*) (* TODO *)
                                     | SOME(t) => Ty.ARRAY(t, ref())
                                     )
                                   end
+      | A.RecordTy(data) => let val recdata = fdatafun(data, []) 
+                              in
+                                Ty.RECORD(recdata, ref())
+                              end
         (*TODO: Add support for Records*)
       (* | A.ArrayTy(at,pos) => Ty.ARRAY((lookupTy tenv at pos), ref()) *)
-      | _ =>  Ty.ERROR
+      (*| _ =>  Ty.ERROR*)
   end 
 
 fun transExp (venv, tenv, extra : extra) =
@@ -266,10 +277,14 @@ fun transExp (venv, tenv, extra : extra) =
 
           | trexp(A.ArrayExp(arxdata)) = trarray(arxdata)
 
+          |trexp(A.RecordExp(rcxdata)) = TODO(*trrecord(rcxdata)*)
+
           | trexp _ = (print("sry, got nothing\n"); TODO)
 
               (*The following takes as input the data from a while expression, and tries to pattern match first the test against
                 Ty.INT, if that succedes then it will try and match the body against Ty.UNIT. If correct, then we have a working Tiger While loop.*)
+
+        (*and trrecord({fields=fields, typ=typ, pos = pos}) = let *)
 
         and trarray({typ=typ, size=size, init=init, pos=pos}: A.arxdata) = let  
                                                                               val {exp= sizeexp, ty = sizety} = trexp(size)
