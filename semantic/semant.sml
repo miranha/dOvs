@@ -105,11 +105,14 @@ fun lookupVar venv sym pos =
   end
 
 fun actualTy (Ty.NAME (s, ty)) pos =
-    Ty.ERROR (* TODO *)
+    (
+      case ty of 
+        ref (SOME t) => actualTy t pos
+        | ref NONE => Ty.ERROR)
   | actualTy t _ = t
 
 fun checkInt (ty, pos) =
-    case ty
+    case (actualTy ty pos)
      of Ty.INT => true
       | Ty.ERROR => false      
       | _ => (errorInt (pos, ty); false)
@@ -211,7 +214,21 @@ fun makeFor(vr, scp, {exp = lexp, ty = lty} : TAbs.exp,
                              hi = makePair(hexp,hty),
                              body = makePair(bdyexp,bdyty)}, Ty.UNIT)
 
-fun transTy (tenv, t) = Ty.ERROR (* TODO *)
+fun transTy (tenv, t) = (*Ty.ERROR*) (* TODO *)
+  let
+    (*Some defintions*)
+  in
+    case t of
+      A.NameTy(nt,pos) => let val res = lookupTy tenv nt pos 
+                                  in (case res of NONE => Ty.ERROR
+                                    | SOME(_) => Ty.NAME(nt, ref(res))
+                                    )
+                                  end
+
+        (*TODO: Add support for Records*)
+      (* | A.ArrayTy(at,pos) => Ty.ARRAY((lookupTy tenv at pos), ref()) *)
+      | _ =>  Ty.ERROR
+  end 
 
 fun transExp (venv, tenv, extra : extra) =
     let
@@ -320,7 +337,7 @@ fun transExp (venv, tenv, extra : extra) =
             |_ => (err pos (" LHS is type" ^ (PT.asString ty1) ^ " must be of INT, STRING, RECORD or ARRAY"); ERRORPAIR)
 
         and makeAux(exp1, ty1, exp2, ty2, pos, opr) =
-          if ty1 = ty2 then
+          if (actualTy ty1 pos) = (actualTy ty2 pos) then
             makeBinop( makePair(exp1, ty1), opr, makePair(exp2, ty2), ty1)
           else
             (err pos ("LHS has type " ^ (PT.asString ty1) ^ " RHS has type " ^ (PT.asString ty2) ^ ". They must be equal"); ERRORPAIR)
@@ -392,9 +409,19 @@ and transDec ( venv, tenv
     {decl = TODO_DECL, tenv = tenv, venv = venv}  (* TODO *)
 
   | transDec (venv, tenv, A.TypeDec typdecs, extra) =
-    (*{decl = TODO_DECL, tenv = tenv, venv = venv}*) (* TODO *)
-    {decl = TODO_DECL, venv = venv,tenv = tenv
-    (* S.enter(tenv,name,transTy(tenv,ty)) *)}
+    let 
+      fun enterTydec([] , tyDecls, tenv, venv) = {decl = TAbs.TypeDec(tyDecls), tenv = tenv, venv = venv}
+        | enterTydec({name,ty,pos}::tl,tyDecls, tenv, venv)=
+          let val resTy = transTy(tenv, ty)
+            val decl = {name = name, ty = resTy}
+          in
+            enterTydec(tl,tyDecls @ [decl]
+              , S.enter(tenv,name,transTy(tenv,ty)), venv)
+          end
+
+    in
+      enterTydec(typdecs,[], tenv, venv)
+    end
 
   | transDec (venv, tenv, A.FunctionDec fundecls, extra) =
     {decl = TODO_DECL, tenv = tenv, venv = venv} (* TODO *)
