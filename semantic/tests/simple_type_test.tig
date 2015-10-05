@@ -1,0 +1,5 @@
+let
+type A = int
+var a: A := 23
+in a
+end

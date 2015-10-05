@@ -228,7 +228,11 @@ fun transTy (tenv, t) = (*Ty.ERROR*) (* TODO *)
                                     | SOME(_) => Ty.NAME(nt, ref(res))
                                     )
                                   end
-
+     | A.ArrayTy(at, pos) => let val res = lookupTy tenv at pos 
+                                  in (case res of NONE => Ty.ERROR
+                                    | SOME(t) => Ty.ARRAY(t, ref())
+                                    )
+                                  end
         (*TODO: Add support for Records*)
       (* | A.ArrayTy(at,pos) => Ty.ARRAY((lookupTy tenv at pos), ref()) *)
       | _ =>  Ty.ERROR
@@ -260,11 +264,30 @@ fun transExp (venv, tenv, extra : extra) =
           | trexp(A.ForExp(fordata)) = trforexp(fordata, venv)
           | trexp(A.CallExp(calldata)) = trcallexp(calldata)
 
+          | trexp(A.ArrayExp(arxdata)) = trarray(arxdata)
+
           | trexp _ = (print("sry, got nothing\n"); TODO)
 
               (*The following takes as input the data from a while expression, and tries to pattern match first the test against
                 Ty.INT, if that succedes then it will try and match the body against Ty.UNIT. If correct, then we have a working Tiger While loop.*)
 
+        and trarray({typ=typ, size=size, init=init, pos=pos}: A.arxdata) = let  
+                                                                              val {exp= sizeexp, ty = sizety} = trexp(size)
+                                                                              val {exp = initexp, ty = initty} = trexp(init)
+                                                                              val sizepair = makePair(sizeexp, sizety)
+                                                                              val initpair = makePair(initexp, initty)
+                                                                              val arryty = lookupTy tenv typ pos
+                                                                            in
+                                                                              case arryty of
+                                                                                SOME(Ty.ARRAY(t,_)) => 
+                                                                                  if (checkInt(sizety, pos)) then
+                                                                                    (*Check Init Ty matches Array Ty*)
+                                                                                      if (actualTy initty pos) = (actualTy t pos) then
+                                                                                          makePair(TAbs.ArrayExp{size=sizepair,init=initpair},t)
+                                                                                        else (out "Not maching type in Array" pos; TODO)
+                                                                                  else (out "Failed to match size to INT" pos; TODO)
+                                                                                    | _ => (out "Not a array type" pos; TODO)
+                                                                            end
         and trwhileexp({test = tst, body = bdy, pos = ps} : A.whiledata) = let
                                                                             val {exp = test, ty = testty} : TAbs.exp = trexp(tst)
                                                                             val {exp = body, ty = bodyty} : TAbs.exp = trexp(bdy)
