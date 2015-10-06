@@ -261,6 +261,35 @@ fun transTy (tenv, t, callName, pos') = (*Ty.ERROR*) (* TODO *)
           | _ => (out ("couldn't find typename " ^ S.name callName) pos'); returnName)
   end 
 
+(* Calls floyds algorithm on all type names that could lead to
+  a cycle.
+  Sets it up so that one pointer is one step ahead of the other.
+  If not possible to do so, there can't be a cycle
+ *)
+fun checkCycles( tenv, (name,pos)::xs ) =
+  let val tyOpt = lookupTy tenv name pos
+  in
+    (case tyOpt of
+          SOME(t) =>
+            (case t of
+                Ty.NAME(_,ref(SOME(t'))) => (checkFloyd(t,t', name, pos); checkCycles(tenv, xs))
+                | _ => checkCycles( tenv, xs)
+              )
+          | _=> checkCycles(tenv, xs)
+          )
+    end
+  | checkCycles( _, []) = ()
+
+(* Uses floyds algorithm for detecting cycles, i.e. one pointer jumps length 1, the other length 2 *)
+and checkFloyd(Ty.NAME(name1,ref(SOME(t))),Ty.NAME(name2,ref(SOME(t'))), name, pos) =
+        if name1 = name2 then
+          (out ("Cycle found at type " ^ S.name name) pos)
+        else
+          ( case t' of
+            Ty.NAME(_,ref(SOME(t''))) => checkFloyd(t,t'', name, pos)
+            | _=> ()
+            )
+    | checkFloyd(_,_,_,_) = ()
 
 fun transExp (venv, tenv, extra : extra) =
     let
@@ -469,16 +498,9 @@ and transDec ( venv, tenv
 
   | transDec (venv, tenv, A.TypeDec typdecs, extra) =
     let 
-      fun enterTydec([] , tyDecls, tenv, venv, cycle) = {decl = TAbs.TypeDec(tyDecls), tenv = tenv, venv = venv}
-        | enterTydec({name,ty,pos}::tl,tyDecls, tenv, venv, cycle)=
+      fun enterTydec([] , tyDecls, tenv, venv, nameposlst) = (checkCycles(tenv, nameposlst); {decl = TAbs.TypeDec(tyDecls), tenv = tenv, venv = venv})
+        | enterTydec({name,ty,pos}::tl,tyDecls, tenv, venv, nameposlst)=
           let val lst = transTy(tenv, ty, name, pos)
-            fun checkCycle (name'::lstname, cycle) = (
-                            if List.exists (fn x => x = name') cycle then
-                              (out ("There is a cycle, found at type " ^ S.name name) pos; checkCycle(lstname, name::cycle))
-                            else checkCycle(lstname, name::cycle)
-                          )
-                |checkCycle ([], cycle) = cycle
-            val cycle' = checkCycle(lst,cycle)
             val resty = lookupTy tenv name pos
             val decl = (case resty of
                           SOME(t) => {name = name, ty = t}
@@ -486,14 +508,14 @@ and transDec ( venv, tenv
                         )
           in
             enterTydec(tl,tyDecls @ [decl]
-              , tenv, venv, cycle')
+              , tenv, venv, (name,pos)::nameposlst)
           end
       fun prepareEnv([], tenv) = tenv
         | prepareEnv({name,ty,pos}::tl, tenv) =
             prepareEnv(tl, S.enter(tenv, name, Ty.NAME((name,ref(NONE)))))
       val tenv' = prepareEnv(typdecs, tenv)
     in
-      enterTydec(typdecs,[], tenv', venv, [])
+      enterTydec(typdecs,[], tenv', venv,[])
     end
 
   | transDec (venv, tenv, A.FunctionDec fundecls, extra) =
@@ -584,6 +606,7 @@ and transDecs (venv, tenv, decls, extra : extra) =
     in
         visit venv tenv decls []
     end
+
 
 fun transProg absyn =
     transExp (Env.baseVenv, Env.baseTenv, {inloop = false}) absyn
