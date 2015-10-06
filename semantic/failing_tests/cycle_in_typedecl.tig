@@ -2,6 +2,11 @@
 let
 	type A = B
 	type B = D
+	type D = A
+	type t1 = t2
+	type t2 = t3
+	type t4 = t2
+	type t3 = int
 	type C = int
 	type tree = {value: int, children:treelist}
 	type treelist = {hd:tree, tl:treelist}
