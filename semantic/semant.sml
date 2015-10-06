@@ -28,7 +28,9 @@ structure TAbs = TAbsyn
    It should become obvious when you actually need it, what to do.
    Alternatively, you have to add extra parameters to your functions *)
 
-type extra = {}
+type extra = {inloop : bool}
+
+fun inLoop({inloop = b}: extra):bool = b
 
 (* placehloder for declarations, the final code should compile without this *)
 val TODO_DECL = TAbs.TypeDec [] (* Delete when possible *)
@@ -270,6 +272,11 @@ fun transExp (venv, tenv, extra : extra) =
         *)
 
         fun trexp (A.NilExp) = {exp = TAbs.NilExp, ty = Ty.NIL}
+          | trexp (A.BreakExp(pos)) = (
+                if inLoop(extra) then
+                  {exp = TAbsyn.BreakExp, ty = Ty.UNIT}
+                else (out "ILLEGAL EXPRESSION: Not in loop" pos; {exp = TAbsyn.BreakExp, ty = Ty.UNIT})
+            )
           | trexp (A.VarExp var) = trvar(var)
           | trexp (A.IntExp value) = makePair (TAbs.IntExp(value), Ty.INT)
           | trexp (A.StringExp(s,_)) = makePair (TAbs.StringExp(s), Ty.STRING)
@@ -291,7 +298,7 @@ fun transExp (venv, tenv, extra : extra) =
 
         and trwhileexp({test = tst, body = bdy, pos = ps} : A.whiledata) = let
                                                                             val {exp = test, ty = testty} : TAbs.exp = trexp(tst)
-                                                                            val {exp = body, ty = bodyty} : TAbs.exp = trexp(bdy)
+                                                                            val {exp = body, ty = bodyty} : TAbs.exp = transExp(venv, tenv, {inloop = true}) bdy
                                                                             val testexp = makePair(test, testty)
                                                                             val bodyexp = makePair(body, bodyty)
                                                                            in
@@ -567,6 +574,6 @@ and transDecs (venv, tenv, decls, extra : extra) =
     end
 
 fun transProg absyn =
-    transExp (Env.baseVenv, Env.baseTenv, {}) absyn
+    transExp (Env.baseVenv, Env.baseTenv, {inloop = false}) absyn
 
 end (* Semant *)
