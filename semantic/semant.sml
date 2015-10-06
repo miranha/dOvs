@@ -28,9 +28,15 @@ structure TAbs = TAbsyn
    It should become obvious when you actually need it, what to do.
    Alternatively, you have to add extra parameters to your functions *)
 
-type extra = {inloop : bool}
+type extra = {inloop : bool, unassignable: S.symbol list}
 
-fun inLoop({inloop = b}: extra):bool = b
+fun addUnassignable(id:S.symbol,{inloop = b, unassignable = lst}: extra) = {inloop=b,unassignable=id::lst}
+
+fun isUnassignable(id:S.symbol,{inloop = b, unassignable = lst}: extra) = List.exists (fn x => x=id) lst
+
+fun inLoop({inloop = b, unassignable = lst}: extra) : bool = b
+
+fun setInLoop({inloop = b, unassignable = lst}: extra, inLoop: bool) = {inloop=inLoop, unassignable=lst} 
 
 (* placehloder for declarations, the final code should compile without this *)
 val TODO_DECL = TAbs.TypeDec [] (* Delete when possible *)
@@ -336,13 +342,18 @@ fun transExp (venv, tenv, extra : extra) =
               (*The following takes as input the data from a while expression, and tries to pattern match first the test against
                 Ty.INT, if that succedes then it will try and match the body against Ty.UNIT. If correct, then we have a working Tiger While loop.*)
 
-        and trassign({var=var,exp=exp,pos=pos}) = let val {var=var', ty=tyv} = trvar var (*TODO: Allow assignable*)
+        and trassign({var=var,exp=exp,pos=pos}) = let val {var=var', ty=tyv} = trvar var
                                                           val {exp=exp', ty=tye} = trexp exp
+                                                           val (unassign,s) = case var' of
+                                                            TAbs.SimpleVar(s) => if isUnassignable(s,extra) then (true,s) else (false,s)
+                                                              | _ => (false,S.symbol "s")
                                                         in
-                                                          if (actualTy tyv pos) = (actualTy tye pos)
-                                                          then makePair(TAbs.AssignExp{var=makeVar(var',tyv),
+                                                          if unassign then (out (S.name s ^ " is unassignable") pos; ERRORPAIR)
+                                                          else
+                                                            if (actualTy tyv pos) = (actualTy tye pos)
+                                                            then makePair(TAbs.AssignExp{var=makeVar(var',tyv),
                                                                 exp=makePair(exp',tye)},Ty.UNIT)
-                                                          else (out ("Can not assign value of type: " ^ PT.asString tye ^ "to variable of type: "
+                                                            else (out ("Can not assign value of type: " ^ PT.asString tye ^ "to variable of type: "
                                                                 ^ PT.asString tyv) pos ; ERRORPAIR)
                                                         end 
 
@@ -392,7 +403,7 @@ fun transExp (venv, tenv, extra : extra) =
                                                                             end
         and trwhileexp({test = tst, body = bdy, pos = ps} : A.whiledata) = let
                                                                             val {exp = test, ty = testty} : TAbs.exp = trexp(tst)
-                                                                            val {exp = body, ty = bodyty} : TAbs.exp = transExp(venv, tenv, {inloop = true}) bdy
+                                                                            val {exp = body, ty = bodyty} : TAbs.exp = transExp(venv, tenv, setInLoop(extra, true)) bdy
                                                                             val testexp = makePair(test, testty)
                                                                             val bodyexp = makePair(body, bodyty)
                                                                            in
@@ -409,7 +420,7 @@ fun transExp (venv, tenv, extra : extra) =
           val subvenv = S.enter(venv,va,E.VarEntry{ty=Ty.INT})
           val {exp = lexp, ty = lty} : TAbs.exp = trexp(l)
           val {exp = hexp, ty = hty} : TAbs.exp = trexp(h)
-          val {exp = bodyexp, ty = bodyty} : TAbs.exp = transExp(subvenv, tenv, {inloop=true}) bdy
+          val {exp = bodyexp, ty = bodyty} : TAbs.exp = transExp(subvenv, tenv, addUnassignable(va, (setInLoop(extra, true) )) ) bdy
           val lpair = makePair(lexp,lty)
           val hpair = makePair(hexp, hty)
           val bdypair = makePair(bodyexp,bodyty)
@@ -696,6 +707,6 @@ and transDecs (venv, tenv, decls, extra : extra) =
 
 
 fun transProg absyn =
-    transExp (Env.baseVenv, Env.baseTenv, {inloop = false}) absyn
+    transExp (Env.baseVenv, Env.baseTenv, {inloop = false, unassignable=[]}) absyn
 
 end (* Semant *)
