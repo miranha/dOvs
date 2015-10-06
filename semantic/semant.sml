@@ -219,21 +219,44 @@ fun makeFor(vr, scp, {exp = lexp, ty = lty} : TAbs.exp,
                              hi = makePair(hexp,hty),
                              body = makePair(bdyexp,bdyty)}, Ty.UNIT)
 
-fun transTy (tenv, t) = (*Ty.ERROR*) (* TODO *)
+fun transTy (tenv, t, callName, pos') = (*Ty.ERROR*) (* TODO *)
   let
-    (*Some defintions*)
+    fun fdatafun([] , acc) = acc
+      | fdatafun({name, escape, typ=(sym,pos1), pos}::xs,acc)=
+          let val ty= lookupTy tenv sym pos1
+          in
+            case ty of
+              SOME(t)=>fdatafun(xs,acc@[(name,t)])
+              | NONE => acc
+            end
+    val name = lookupTy tenv callName pos'
   in
-    case t of
-      A.NameTy(nt,pos) => let val res = lookupTy tenv nt pos 
-                                  in (case res of NONE => Ty.ERROR
-                                    | SOME(_) => Ty.NAME(nt, ref(res))
+    case name of
+    SOME(Ty.NAME((_,reference))) =>
+      reference :=
+    (case t of
+          A.NameTy(nt,pos) => let val res = lookupTy tenv nt pos
+                                  in
+                                  (case res of NONE => SOME(Ty.ERROR)
+                                              | SOME(_) => res
                                     )
-                                  end
 
+                                      end
+         | A.ArrayTy(at, pos) => let val res = lookupTy tenv at pos 
+                                      in (case res of NONE => SOME(Ty.ERROR)
+                                        | SOME(t) => SOME(Ty.ARRAY(t, ref()))
+                                        )
+                                      end
+          | A.RecordTy(data) => let val recdata = fdatafun(data, []) 
+                                  in
+                                    SOME(Ty.RECORD(recdata, ref()))
+                                  end)
         (*TODO: Add support for Records*)
       (* | A.ArrayTy(at,pos) => Ty.ARRAY((lookupTy tenv at pos), ref()) *)
-      | _ =>  Ty.ERROR
+      (*| _ =>  Ty.ERROR*)
+      | _ => (out ("couldn't find typename " ^ S.name callName) pos')
   end 
+
 
 fun transExp (venv, tenv, extra : extra) =
     let
@@ -436,15 +459,22 @@ and transDec ( venv, tenv
     let 
       fun enterTydec([] , tyDecls, tenv, venv) = {decl = TAbs.TypeDec(tyDecls), tenv = tenv, venv = venv}
         | enterTydec({name,ty,pos}::tl,tyDecls, tenv, venv)=
-          let val resTy = transTy(tenv, ty)
-            val decl = {name = name, ty = resTy}
+          let val _ = transTy(tenv, ty,name, pos)
+            val resty = lookupTy tenv name pos
+            val decl = (case resty of
+                          SOME(t) => {name = name, ty = t}
+                          |NONE => {name = name, ty = Ty.ERROR}
+                        )
           in
             enterTydec(tl,tyDecls @ [decl]
-              , S.enter(tenv,name,transTy(tenv,ty)), venv)
+              , tenv, venv)
           end
-
+      fun prepareEnv([], tenv) = tenv
+        | prepareEnv({name,ty,pos}::tl, tenv) =
+            prepareEnv(tl, S.enter(tenv, name, Ty.NAME((name,ref(NONE)))))
+      val tenv' = prepareEnv(typdecs, tenv)
     in
-      enterTydec(typdecs,[], tenv, venv)
+      enterTydec(typdecs,[], tenv', venv)
     end
 
   | transDec (venv, tenv, A.FunctionDec fundecls, extra) =
@@ -501,48 +531,6 @@ and transDec ( venv, tenv
               )
     end
     | checkFunctions(venv, tenv, [], extra, functions, names) = functions
-
-(*
-  and transFuncs ({name = name, params = params, result = result,  body = body, pos = pos}::xs, names, 
-    venv, tenv, extra, functions) =
-      let val {venv = venv', lst = lst, tylst = tylst, ventries} = transParams (params, venv, tenv, [], [], [], [])
-        val {exp = exp, ty = bodyty} = transExp(venv', tenv, extra) body
-      in
-        Determine if procedure or not 
-        case result of
-          NONE => (case (actualTy bodyty pos) of Ty.UNIT =>  
-                    let val fDecl = {name = name, params = lst, resultTy = Ty.UNIT, body = makePair(exp, bodyty)} : TAbs.fundecldata
-                    in
-                    transFuncs(xs, name::names, S.enter(venv,name, E.FunEntry{formals = tylst, result = Ty.UNIT}), 
-                      tenv, extra, functions @ [fDecl])
-                    end
-                  |_ =>
-                    let val fDecl = {name = name, params = lst, resultTy = Ty.ERROR, body = makePair(exp, bodyty)} : TAbs.fundecldata
-                    in
-                    (out (S.name name ^ " is a procedure, but the body has a non unit type " ^ PT.asString bodyty) pos;
-                      transFuncs(xs, name::names, S.enter(venv, name, E.FunEntry{formals = tylst, result = Ty.ERROR}), tenv, extra, functions @ [fDecl]))
-                    end)
-      | SOME((id, pos')) => (let val tOpt = lookupTy  tenv id pos' in
-                              case tOpt of 
-                                NONE => (let val fDecl = {name = name, params = lst, resultTy = Ty.ERROR, body = makePair(exp, bodyty)} : TAbs.fundecldata
-                                        in
-                                        (out (S.name name ^ " has a return type that hasn't been declared") pos;
-                                          transFuncs(xs, name::names, S.enter(venv, name, E.FunEntry{formals = tylst, result = Ty.ERROR}), tenv, extra, functions @ [fDecl]))
-                                        end)
-                              | SOME(t) =>
-                                  (if (actualTy t pos') = (actualTy bodyty pos) then
-                                      let val f = {name = name, params = lst, resultTy = t, body = makePair(exp, bodyty)}
-                                        in transFuncs(xs, name::names, S.enter(venv, name, E.FunEntry{formals = tylst, result = t}), tenv, extra, functions @ [f])
-                                      end
-                                    else let val fDecl = {name = name, params = lst, resultTy = Ty.ERROR, body = makePair(exp, bodyty)} : TAbs.fundecldata
-                                    in
-                                    (out (S.name name ^ " has return type " ^ PT.asString t ^ " but the body has a non compatabile type " ^ PT.asString bodyty) pos;
-                                      transFuncs(xs, name::names, S.enter(venv, name, E.FunEntry{formals = tylst, result = Ty.ERROR}), tenv, extra, functions @ [fDecl]))
-                                    end)
-                              end)
-      end
-      | transFuncs([], names, venv, tenv, extra, functions) = {venv = venv, funlst = functions}
-      *)
 
   and transParams({name = name, escape = escape, typ = (typ, pos1), pos = pos}::xs, venv, tenv, lst, tylst, names, ventries) =
     if List.exists (fn x => x = name) names
