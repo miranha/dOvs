@@ -353,10 +353,10 @@ fun transExp (venv, tenv, extra : extra) =
                                                                   SOME(t) => t
                                                                   | NONE => Ty.ERROR)
                                                               in
-                                                                case recty of
-                                                                          SOME(Ty.RECORD(t,_)) => 
+                                                                case actualTy resty pos of
+                                                                          Ty.RECORD(t,_) => 
                                                                                           makePair(TAbs.RecordExp{fields=travRec(fields,t, [])},resty)
-                                                                                    | _ => (out "Not a array type" pos; TODO)
+                                                                                    | _ => (out "Not a record type" pos; TODO)
                                                                             end
 
 
@@ -370,8 +370,8 @@ fun transExp (venv, tenv, extra : extra) =
                                                                                 SOME(t) => t
                                                                                 | _ => Ty.ERROR
                                                                             in
-                                                                              case arryty of
-                                                                                SOME(Ty.ARRAY(t,_)) => 
+                                                                              case actualTy ty' pos of
+                                                                                Ty.ARRAY(t,_) => 
                                                                                   if (checkInt(sizety, pos)) then
                                                                                     (*Check Init Ty matches Array Ty*)
                                                                                       if (actualTy initty pos) = (actualTy t pos) then
@@ -399,7 +399,7 @@ fun transExp (venv, tenv, extra : extra) =
           val subvenv = S.enter(venv,va,E.VarEntry{ty=Ty.INT})
           val {exp = lexp, ty = lty} : TAbs.exp = trexp(l)
           val {exp = hexp, ty = hty} : TAbs.exp = trexp(h)
-          val {exp = bodyexp, ty = bodyty} : TAbs.exp = transExp(subvenv, tenv, {}) bdy
+          val {exp = bodyexp, ty = bodyty} : TAbs.exp = transExp(subvenv, tenv, {inloop=true}) bdy
           val lpair = makePair(lexp,lty)
           val hpair = makePair(hexp, hty)
           val bdypair = makePair(bodyexp,bodyty)
@@ -423,12 +423,12 @@ fun transExp (venv, tenv, extra : extra) =
           | trvar (A.FieldVar (var, id, pos)) = (*makeVar(TAbs.SimpleVar(S.symbol "TODO"),Ty.ERROR)*)
                                                   let val {var=varv,ty=tyv} = trvar var
                                                   in
-                                                  (case tyv of
+                                                  (case actualTy tyv pos of
                                                     Ty.RECORD(fi, _) => (
                                                                           case List.find (fn x=> #1(x) = id) fi
                                                                             of SOME(sym,tyv') => makeVar(TAbs.FieldVar((makeVar(varv,tyv),
                                                                                       id)), tyv')
-                                                                            | NONE => makeVar(TAbs.SimpleVar(S.symbol "TODO2"),Ty.ERROR)
+                                                                            | NONE => makeVar(TAbs.SimpleVar(S.symbol "TODO1"),Ty.ERROR)
                                                                             )
 
                                                     | _ => makeVar(TAbs.SimpleVar(S.symbol "TODO2"),Ty.ERROR)
@@ -438,12 +438,12 @@ fun transExp (venv, tenv, extra : extra) =
                                                         let val {var=expv, ty=tyv} = trvar var
                                                           val {exp=expe, ty=tye} = trexp exp
                                                         in
-                                                          (case tyv of
+                                                          (case actualTy tyv pos of
                                                             Ty.ARRAY(tyv',_) => (if checkInt(tye,pos) then 
                                                                                     makeVar(TAbs.SubscriptVar((makeVar(expv,tyv),
                                                                                       makePair(expe,tye))), tye)
-                                                                                  else makeVar(TAbs.SimpleVar(S.symbol "TODO1"),Ty.ERROR)) 
-                                                            | _ => makeVar(TAbs.SimpleVar(S.symbol "TODO2"),Ty.ERROR)
+                                                                                  else makeVar(TAbs.SimpleVar(S.symbol "TODO3"),Ty.ERROR)) 
+                                                            | _ => makeVar(TAbs.SimpleVar(S.symbol "TODO4"),Ty.ERROR)
                                                             )
                                                         end
         
