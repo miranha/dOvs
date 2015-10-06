@@ -142,11 +142,10 @@ fun makePair (expDesc, ty) =
       ty = ty} : TAbs.exp
 
 fun makeVar (varDesc, ty) =
-  makePair(
-    TAbs.VarExp {
+     {
     var = varDesc,
     ty = ty
-  }, ty)
+  }:TAbs.var
 
 fun convertOper (oper) =
   case oper of
@@ -261,7 +260,9 @@ fun transExp (venv, tenv, extra : extra) =
         *)
 
         fun trexp (A.NilExp) = {exp = TAbs.NilExp, ty = Ty.NIL}
-          | trexp (A.VarExp var) = trvar(var)
+          | trexp (A.VarExp var) = let val {var=var', ty=ty} = trvar var
+                                        val v = TAbs.VarExp(makeVar(var',ty))
+                                     in makePair(v,ty) end
           | trexp (A.IntExp value) = makePair (TAbs.IntExp(value), Ty.INT)
           | trexp (A.StringExp(s,_)) = makePair (TAbs.StringExp(s), Ty.STRING)
 
@@ -314,13 +315,16 @@ fun transExp (venv, tenv, extra : extra) =
                                                                               val sizepair = makePair(sizeexp, sizety)
                                                                               val initpair = makePair(initexp, initty)
                                                                               val arryty = lookupTy tenv typ pos
+                                                                              val ty' = case arryty of 
+                                                                                SOME(t) => t
+                                                                                | _ => Ty.ERROR
                                                                             in
                                                                               case arryty of
                                                                                 SOME(Ty.ARRAY(t,_)) => 
                                                                                   if (checkInt(sizety, pos)) then
                                                                                     (*Check Init Ty matches Array Ty*)
                                                                                       if (actualTy initty pos) = (actualTy t pos) then
-                                                                                          makePair(TAbs.ArrayExp{size=sizepair,init=initpair},t)
+                                                                                          makePair(TAbs.ArrayExp{size=sizepair,init=initpair},ty')
                                                                                         else (out "Not maching type in Array" pos; TODO)
                                                                                   else (out "Failed to match size to INT" pos; TODO)
                                                                                     | _ => (out "Not a array type" pos; TODO)
@@ -358,10 +362,34 @@ fun transExp (venv, tenv, extra : extra) =
         and trvar (A.SimpleVar (id, pos)) = let val ty = lookupVar venv id pos in
                                               case ty of
                                               SOME(Env.VarEntry({ty = t})) => makeVar(TAbs.SimpleVar(id), t)
-                                              |_ => (errorVar(pos, id); makePair(TAbs.ErrorExp,Ty.ERROR))
+                                              |_ => (errorVar(pos, id); makeVar(TAbs.SimpleVar(id),Ty.ERROR))
                                               end
-          | trvar (A.FieldVar (var, id, pos)) = TODO
-          | trvar (A.SubscriptVar (var, exp, pos)) = TODO
+          | trvar (A.FieldVar (var, id, pos)) = (*makeVar(TAbs.SimpleVar(S.symbol "TODO"),Ty.ERROR)*)
+                                                  let val {var=varv,ty=tyv} = trvar var
+                                                  in
+                                                  (case tyv of
+                                                    Ty.RECORD(fi, _) => (
+                                                                          case List.find (fn x=> #1(x) = id) fi
+                                                                            of SOME(sym,tyv') => makeVar(TAbs.FieldVar((makeVar(varv,tyv),
+                                                                                      id)), tyv')
+                                                                            | NONE => makeVar(TAbs.SimpleVar(S.symbol "TODO2"),Ty.ERROR)
+                                                                            )
+
+                                                    | _ => makeVar(TAbs.SimpleVar(S.symbol "TODO2"),Ty.ERROR)
+                                                    )
+                                                end
+          | trvar (A.SubscriptVar (var, exp, pos)) = (*makeVar(TAbs.SimpleVar(S.symbol "TODO"),Ty.ERROR)*)
+                                                        let val {var=expv, ty=tyv} = trvar var
+                                                          val {exp=expe, ty=tye} = trexp exp
+                                                        in
+                                                          (case tyv of
+                                                            Ty.ARRAY(tyv',_) => (if checkInt(tye,pos) then 
+                                                                                    makeVar(TAbs.SubscriptVar((makeVar(expv,tyv),
+                                                                                      makePair(expe,tye))), tye)
+                                                                                  else makeVar(TAbs.SimpleVar(S.symbol "TODO1"),Ty.ERROR)) 
+                                                            | _ => makeVar(TAbs.SimpleVar(S.symbol "TODO2"),Ty.ERROR)
+                                                            )
+                                                        end
         
         and trseqexp(explist) = trseqexpaux(explist, Ty.UNIT, []) (* The empty sequence has nothing, so its type is unit and the exp is nil *)
         
