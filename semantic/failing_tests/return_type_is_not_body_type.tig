@@ -1,0 +1,6 @@
+/* checks if the declared return type is the same as the result type */
+let
+	function f(a:int, b:string):string = (a;b;a^2)
+	function g():int = 34
+in 42
+end
