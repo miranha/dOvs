@@ -317,6 +317,8 @@ fun transExp (venv, tenv, extra : extra) =
           | trexp (A.IntExp value) = makePair (TAbs.IntExp(value), Ty.INT)
           | trexp (A.StringExp(s,_)) = makePair (TAbs.StringExp(s), Ty.STRING)
 
+          | trexp(A.AssignExp asxdata) = trassign(asxdata)
+
           | trexp (A.OpExp({left = left, oper = oper, right = right, pos = pos})) = trBinop(left, oper, right, pos)
           | trexp(A.SeqExp(explist)) = trseqexp(explist) (* *)
           | trexp(A.IfExp(ifdata)) = trifexp(ifdata)
@@ -331,10 +333,18 @@ fun transExp (venv, tenv, extra : extra) =
 
           |trexp(A.RecordExp(rcxdata)) = trrecord(rcxdata)
 
-          | trexp _ = (print("sry, got nothing\n"); TODO)
-
               (*The following takes as input the data from a while expression, and tries to pattern match first the test against
                 Ty.INT, if that succedes then it will try and match the body against Ty.UNIT. If correct, then we have a working Tiger While loop.*)
+
+        and trassign({var=var,exp=exp,pos=pos}) = let val {var=var', ty=tyv} = trvar var (*TODO: Allow assignable*)
+                                                          val {exp=exp', ty=tye} = trexp exp
+                                                        in
+                                                          if (actualTy tyv pos) = (actualTy tye pos)
+                                                          then makePair(TAbs.AssignExp{var=makeVar(var',tyv),
+                                                                exp=makePair(exp',tye)},Ty.UNIT)
+                                                          else (out ("Can not assign value of type: " ^ PT.asString tye ^ "to variable of type: "
+                                                                ^ PT.asString tyv) pos ; ERRORPAIR)
+                                                        end 
 
         and trrecord({fields=fields, typ=typ, pos = pos}) = let fun travRec([], [], acc) = acc
                                                                   | travRec((name,exp, pos)::xs, (tname,tty)::xl, acc) = 

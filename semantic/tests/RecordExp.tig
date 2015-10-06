@@ -1,0 +1,5 @@
+let
+type A = {a:int, b:int}
+in 
+ A{a=3,b=4}
+end
