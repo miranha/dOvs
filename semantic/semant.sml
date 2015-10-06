@@ -232,31 +232,33 @@ fun transTy (tenv, t, callName, pos') = (*Ty.ERROR*) (* TODO *)
               | NONE => acc
             end
     val name = lookupTy tenv callName pos'
+    val returnName = (case t of A.NameTy(nt,_) => [nt]
+                          |_  => [])
   in
-    case name of
-    SOME(Ty.NAME((_,reference))) =>
-      reference :=
-    (case t of
-          A.NameTy(nt,pos) => let val res = lookupTy tenv nt pos
-                                  in
-                                  (case res of NONE => SOME(Ty.ERROR)
-                                              | SOME(_) => res
-                                    )
-
-                                      end
-         | A.ArrayTy(at, pos) => let val res = lookupTy tenv at pos 
-                                      in (case res of NONE => SOME(Ty.ERROR)
-                                        | SOME(t) => SOME(Ty.ARRAY(t, ref()))
+    (case name of
+        SOME(Ty.NAME((_,reference))) =>
+          reference :=
+        (case t of
+              A.NameTy(nt,pos) => let val res = lookupTy tenv nt pos
+                                      in
+                                      (case res of NONE => SOME(Ty.ERROR)
+                                                  | SOME(_) => res
                                         )
-                                      end
-          | A.RecordTy(data) => let val recdata = fdatafun(data, []) 
-                                  in
-                                    SOME(Ty.RECORD(recdata, ref()))
-                                  end)
-        (*TODO: Add support for Records*)
-      (* | A.ArrayTy(at,pos) => Ty.ARRAY((lookupTy tenv at pos), ref()) *)
-      (*| _ =>  Ty.ERROR*)
-      | _ => (out ("couldn't find typename " ^ S.name callName) pos')
+    
+                                          end
+             | A.ArrayTy(at, pos) => let val res = lookupTy tenv at pos 
+                                          in (case res of NONE => SOME(Ty.ERROR)
+                                            | SOME(t) => SOME(Ty.ARRAY(t, ref()))
+                                            )
+                                          end
+              | A.RecordTy(data) => let val recdata = fdatafun(data, []) 
+                                      in
+                                        SOME(Ty.RECORD(recdata, ref()))
+                                      end)
+            (*TODO: Add support for Records*)
+          (* | A.ArrayTy(at,pos) => Ty.ARRAY((lookupTy tenv at pos), ref()) *)
+          (*| _ =>  Ty.ERROR*)
+          | _ => (out ("couldn't find typename " ^ S.name callName) pos'); returnName)
   end 
 
 
@@ -434,6 +436,8 @@ fun transExp (venv, tenv, extra : extra) =
         trexp
     end
 
+
+
 and transDec ( venv, tenv
              , A.VarDec {name, escape, typ = NONE, init, pos}, extra : extra) =
           let val {exp, ty} = transExp(venv, tenv, extra) init
@@ -462,11 +466,19 @@ and transDec ( venv, tenv
                 end
       (* TODO *)
 
+
   | transDec (venv, tenv, A.TypeDec typdecs, extra) =
     let 
-      fun enterTydec([] , tyDecls, tenv, venv) = {decl = TAbs.TypeDec(tyDecls), tenv = tenv, venv = venv}
-        | enterTydec({name,ty,pos}::tl,tyDecls, tenv, venv)=
-          let val _ = transTy(tenv, ty,name, pos)
+      fun enterTydec([] , tyDecls, tenv, venv, cycle) = {decl = TAbs.TypeDec(tyDecls), tenv = tenv, venv = venv}
+        | enterTydec({name,ty,pos}::tl,tyDecls, tenv, venv, cycle)=
+          let val lst = transTy(tenv, ty, name, pos)
+            fun checkCycle (name'::lstname, cycle) = (
+                            if List.exists (fn x => x = name') cycle then
+                              (out ("There is a cycle, found at type " ^ S.name name) pos; checkCycle(lstname, name::cycle))
+                            else checkCycle(lstname, name::cycle)
+                          )
+                |checkCycle ([], cycle) = cycle
+            val cycle' = checkCycle(lst,cycle)
             val resty = lookupTy tenv name pos
             val decl = (case resty of
                           SOME(t) => {name = name, ty = t}
@@ -474,14 +486,14 @@ and transDec ( venv, tenv
                         )
           in
             enterTydec(tl,tyDecls @ [decl]
-              , tenv, venv)
+              , tenv, venv, cycle')
           end
       fun prepareEnv([], tenv) = tenv
         | prepareEnv({name,ty,pos}::tl, tenv) =
             prepareEnv(tl, S.enter(tenv, name, Ty.NAME((name,ref(NONE)))))
       val tenv' = prepareEnv(typdecs, tenv)
     in
-      enterTydec(typdecs,[], tenv', venv)
+      enterTydec(typdecs,[], tenv', venv, [])
     end
 
   | transDec (venv, tenv, A.FunctionDec fundecls, extra) =
