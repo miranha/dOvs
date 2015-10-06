@@ -1,0 +1,9 @@
+/* test recursive typedefintion */
+let
+	type A = B
+	type B = C
+	type C = int
+	type tree = {value: int, children:treelist}
+	type treelist = {hd:tree, tl:treelist}
+in 
+end
