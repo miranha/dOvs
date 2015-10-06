@@ -277,14 +277,36 @@ fun transExp (venv, tenv, extra : extra) =
 
           | trexp(A.ArrayExp(arxdata)) = trarray(arxdata)
 
-          |trexp(A.RecordExp(rcxdata)) = TODO(*trrecord(rcxdata)*)
+          |trexp(A.RecordExp(rcxdata)) = trrecord(rcxdata)
 
           | trexp _ = (print("sry, got nothing\n"); TODO)
 
               (*The following takes as input the data from a while expression, and tries to pattern match first the test against
                 Ty.INT, if that succedes then it will try and match the body against Ty.UNIT. If correct, then we have a working Tiger While loop.*)
 
-        (*and trrecord({fields=fields, typ=typ, pos = pos}) = let *)
+        and trrecord({fields=fields, typ=typ, pos = pos}) = let fun travRec([], [], acc) = acc
+                                                                  | travRec((name,exp, pos)::xs, (tname,tty)::xl, acc) = 
+                                                                    if name=tname then 
+                                                                      let val {exp=exp', ty=ty'} = trexp exp
+                                                                        in
+                                                                          if (actualTy ty' pos) = (actualTy tty pos) 
+                                                                            then travRec(xs,xl,acc@[(name,makePair(exp', ty'))])
+                                                                          else acc
+                                                                      end
+                                                                    else acc
+                                                                      
+
+                                                                val recty = lookupTy tenv typ pos
+                                                                val resty = (case recty of
+                                                                  SOME(t) => t
+                                                                  | NONE => Ty.ERROR)
+                                                              in
+                                                                case recty of
+                                                                          SOME(Ty.RECORD(t,_)) => 
+                                                                                          makePair(TAbs.RecordExp{fields=travRec(fields,t, [])},resty)
+                                                                                    | _ => (out "Not a array type" pos; TODO)
+                                                                            end
+
 
         and trarray({typ=typ, size=size, init=init, pos=pos}: A.arxdata) = let  
                                                                               val {exp= sizeexp, ty = sizety} = trexp(size)
