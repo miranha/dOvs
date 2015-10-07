@@ -368,7 +368,7 @@ fun transExp (venv, tenv, extra : extra) =
                                                                     if name=tname then 
                                                                       let val {exp=exp', ty=ty'} = trexp exp
                                                                         in
-                                                                          if (actualTy ty' pos) = (actualTy tty pos) 
+                                                                          if equalTy(ty',tty ,pos) 
                                                                             then travRec(xs,xl,acc@[(name,makePair(exp', ty'))])
                                                                           else (out ("Incorrect Record assignment, Types doesn't match in order") pos; acc)
                                                                       end
