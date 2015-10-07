@@ -87,25 +87,27 @@ val ERRORPAIR = {exp = TAbs.ErrorExp, ty = Ty.ERROR} (* In case of major errors 
 (* Use the below three funs like:
    throw errorUnit (pos,ty) ifFalse isUnit(_) *)
 
-fun ifTrue test err args = if test
-                           then err args
-                           else ()
+fun ifTrue test err args = 
+  if test
+    then err args
+  else ()
 
-fun ifFalse test err args = if test
-                            then ()
-                            else err args
+fun ifFalse test err args = 
+  if test
+    then ()
+  else err args
 
-fun throw err args testFun test  = testFun test err args
+fun throw err args testFun test = testFun test err args
 
 
 fun lookupTy tenv sym pos =
-    let
-        val tyOpt = S.look (tenv, sym)
-    in
-        case tyOpt of
-          NONE => (out (" Type " ^ S.name sym ^ " has not been defined.") pos; NONE)
-          |_ => tyOpt
-    end
+  let
+    val tyOpt = S.look (tenv, sym)
+  in
+    case tyOpt of
+      NONE => (out (" Type " ^ S.name sym ^ " has not been defined.") pos; NONE)
+      |_ => tyOpt
+  end
 
 fun lookupVar venv sym pos =
   let
@@ -115,31 +117,32 @@ fun lookupVar venv sym pos =
   end
 
 fun actualTy (Ty.NAME (s, ty)) pos =
-    (
-      case ty of 
-        ref (SOME t) => actualTy t pos
-        | ref NONE => Ty.ERROR)
+  (
+    case ty of 
+      ref (SOME t) => actualTy t pos
+      | ref NONE => Ty.ERROR)
   | actualTy t _ = t
 
 fun checkInt (ty, pos) =
-    case (actualTy ty pos)
-     of Ty.INT => true
-      | Ty.ERROR => false      
-      | _ => (errorInt (pos, ty); false)
+  case (actualTy ty pos) of 
+    Ty.INT => true
+    | Ty.ERROR => false      
+    | _ => (errorInt (pos, ty); false)
 
 fun isUnit (ty) =
-    case ty
-     of Ty.UNIT => true
-      | Ty.ERROR => true
-      | _ => false
+  case ty of 
+    Ty.UNIT => true
+    | Ty.ERROR => true
+    | _ => false
 
 (* Helper functions to make life easier *)
 fun makePair (expDesc, ty) =
-    { exp = expDesc, 
-      ty = ty} : TAbs.exp
+  { exp = expDesc, 
+    ty = ty
+  } : TAbs.exp
 
 fun makeVar (varDesc, ty) =
-     {
+  {
     var = varDesc,
     ty = ty
   }:TAbs.var
@@ -166,21 +169,23 @@ fun equalTy (t1, t2, pos) =
                 | Ty.NIL => (out (" two nil expression of type " ^ 
                   PT.asString Ty.NIL ^ " is not equal, one must be of type RECORD") pos; false)
                 | _=> false)
-  | Ty.RECORD(_) => (case actualTy t2 pos of
-                  Ty.NIL => true
-                  | _ => (actualTy t1 pos = actualTy t2 pos))
-  |_ => actualTy t1 pos = actualTy t2 pos
+    |Ty.RECORD(_) => (case actualTy t2 pos of
+                        Ty.NIL => true
+                        | _ => (actualTy t1 pos = actualTy t2 pos))
+    |_ => actualTy t1 pos = actualTy t2 pos
 
 
 fun makeIfThen( {exp = te, ty = tety} : TAbs.exp, 
   {exp = th, ty = thty} : TAbs.exp, pos) =
-  if actualTy tety pos = Ty.INT then
-    (* construct the pairs we need *)
-    let val tst = makePair(te,tety)
+    if actualTy tety pos = Ty.INT 
+    then (* construct the pairs we need *)
+      let 
+        val tst = makePair(te,tety)
         val thn = makePair(th, thty)
         (* Since no if, then clause must be a unit *)
-        in if actualTy thty pos <> Ty.UNIT then
-          (errorIfThen(pos, thty); ERRORPAIR)
+      in 
+        if actualTy thty pos <> Ty.UNIT 
+        then (errorIfThen(pos, thty); ERRORPAIR)
         (* Everything is kosher, make the relevant TAbs node *)
         else makePair( TAbs.IfExp {
                       test = tst,
@@ -195,52 +200,56 @@ fun makeIfThen( {exp = te, ty = tety} : TAbs.exp,
 fun makeIfElse( {exp = te, ty = tety} : TAbs.exp,
   {exp = th, ty = thty} : TAbs.exp,
   {exp = el, ty = elty} : TAbs.exp , pos) =
-  if actualTy tety pos = Ty.INT then
-    if equalTy(actualTy thty pos, actualTy elty pos, pos) then
-      (* everything went well, make the things needed *)
-      let val test = makePair(te, tety)
-          val thn = makePair(th, thty)
-          val els = SOME(makePair(el, elty))
-          in
-            makePair( TAbs.IfExp {
+  if actualTy tety pos = Ty.INT 
+  then
+    if equalTy(actualTy thty pos, actualTy elty pos, pos) 
+    then (* everything went well, make the things needed *)
+      let 
+        val test = makePair(te, tety)
+        val thn = makePair(th, thty)
+        val els = SOME(makePair(el, elty))
+      in
+        makePair( TAbs.IfExp {
                 test = test,
                 thn = thn,
                 els = els
               }, thty)
-          end 
-
+      end 
     else (errorIfElse(pos, thty, elty); ERRORPAIR)
   else (errorIfTest(pos, tety); ERRORPAIR)
 
 fun makeWhile({exp = tstexp, ty = tstty} : TAbs.exp,
               {exp = bdyexp, ty = bdyty} : TAbs.exp ) = 
-                  makePair( TAbs.WhileExp {
-                            test = makePair(tstexp, tstty),
-                            body = makePair(bdyexp,bdyty)
-                            }, Ty.UNIT)
+  makePair( TAbs.WhileExp {
+                           test = makePair(tstexp, tstty),
+                           body = makePair(bdyexp,bdyty)
+                           }, Ty.UNIT)
 
 fun makeFor(vr, scp, {exp = lexp, ty = lty} : TAbs.exp,
-                    {exp = hexp, ty = hty} : TAbs.exp,
-                    {exp = bdyexp, ty = bdyty} : TAbs.exp, venv) =
-        makePair(TAbs.ForExp{var = vr,
-                             escape = scp,
-                             lo = makePair(lexp,lty),
-                             hi = makePair(hexp,hty),
-                             body = makePair(bdyexp,bdyty)}, Ty.UNIT)
+                     {exp = hexp, ty = hty} : TAbs.exp,
+                     {exp = bdyexp, ty = bdyty} : TAbs.exp, venv) =
+  makePair(TAbs.ForExp{var = vr,
+                       escape = scp,
+                       lo = makePair(lexp,lty),
+                       hi = makePair(hexp,hty),
+                       body = makePair(bdyexp,bdyty)
+                       }, Ty.UNIT)
 
 fun transTy (tenv, t, callName, pos') =
   let
     fun fdatafun([] , acc) = acc
-      | fdatafun({name, escape, typ=(sym,pos1), pos}::xs,acc)=
-          let val ty= lookupTy tenv sym pos1
-          in
-            case ty of
-              SOME(t)=>fdatafun(xs,acc@[(name,t)])
-              | NONE => acc
-            end
+      | fdatafun({name, escape, typ=(sym,pos1), pos}::xs,acc) =
+        let 
+          val ty= lookupTy tenv sym pos1
+        in
+          case ty of
+            SOME(t)=>fdatafun(xs,acc@[(name,t)])
+            | NONE => acc
+        end
     val name = lookupTy tenv callName pos'
-    val returnName = (case t of A.NameTy(nt,_) => [nt]
-                          |_  => [])
+    val returnName = (case t of 
+                        A.NameTy(nt,_) => [nt]
+                        |_  => [])
   in
     (case name of
         SOME(Ty.NAME((_,reference))) =>
@@ -361,10 +370,11 @@ fun transExp (venv, tenv, extra : extra) =
                                                                         in
                                                                           if (actualTy ty' pos) = (actualTy tty pos) 
                                                                             then travRec(xs,xl,acc@[(name,makePair(exp', ty'))])
-                                                                          else acc
+                                                                          else out ("Incorrect Record assignment, Types doesn't match in order") pos; acc
                                                                       end
-                                                                    else acc
-                                                                      
+                                                                    else out ("Incorrect Record assignment, names doesn't match in order") pos; acc
+                                                                  | travRec((name,exp,pos):xs, [], acc) = out ("Incorrect Record assignment, Type doesn't match right side") pos; acc
+                                                                  | travRec([], (tname,tty)::xl, acc) = out ("Incorrect Record assignment, Fields doesn't match left side") pos; acc
 
                                                                 val recty = lookupTy tenv typ pos
                                                                 val resty = (case recty of
