@@ -14,22 +14,22 @@
 \maketitle
 
 \section{Introduction}
-This report describes how the semantic analysis was developed. The semantic analysis is the third component of the compiler. This component takes the Abstract Syntax Tree (AST) from the parser and makes a semantics analysis. 
+This report describes how the semantic analysis module was developed. The semantic analysis is the third component of the compiler. This component takes the Abstract Syntax Tree (AST) from the parser and makes a semantics analysis, also known as type-checking. 
 
-First it is described how the missing cases where implemented in the provided file \texttt{semant.sml} and which other files had to be extended in order to developed the semantic analysis component. Afterwards, the problems encountered and experience gain are described. Then 5 tiger program are presented, which test different cases of the semantics analysis. Finally, the work carried out and the experience gained are summarised. 
+First it is described how the missing cases where implemented in the provided file \texttt{semant.sml} and which other files had to be extended in order to developed the semantic analysis component. Afterwards, the problems encountered and experience gain are described. Then 5 tiger program are presented, which tests different cases of the semantics analysis. Finally, the work carried out and the experience gained are summarised. 
 
 \section{The semantic analysis}
 %How did you implement the missing cases in the semant.sml. Describe how the file works as a whole and explain a few interesting cases.
-The main working of the semantics analysis is that it takes the AST provided by the parser and applies the function \texttt{transExp}. This function is able to transvers a AST, and created a Type AST (TAST), based on the file \texttt{tabsyn.sml}. This new TAST, which is the output of the semantic analysis module, is a AST which has be decorated with type information. This was a high level description of how the semantic module is working. Below more low-level parts are highlighted.
+The main task of the semantics analysis is that it takes the AST provided by the parser and applies the function \texttt{transExp}. This function is able to transvers a AST, and created a Typed AST (TAST), based on the file \texttt{tabsyn.sml}. This new TAST, which is the output of the semantic analysis module, is a AST which has be decorated with type information. This was a high level description of how the semantic module is working. Below more low-level parts are highlighted.
 
-The main development in order to create the semantics analysis done, was made inside the file \texttt{semant.sml}. Basically the approach from the book together with the adjustments from dOvs was followed during the development. For example the nested function \texttt{trexp} inside the function \texttt{transExp}, is used on all expressions which do not change the environment. Then \texttt{transExp} is only used when an expression has to be evaluated with an new environment. As an example this is the case when the body of let expression has to be evaluated with possibly new declarations. Also the \texttt{extra} is used in order to send additional needed information with the relevant functions.
+The main development in order to create the semantics analysis module, was made inside the file \texttt{semant.sml}. Basically the approach from the book together with the adjustments from dOvs was followed during the development. For example the nested function \texttt{trexp} inside the function \texttt{transExp}, is used on all expressions which do not change the environment. Then \texttt{transExp} is only used when an expression has to be evaluated with an new, and altered, environment. As an example this is the case when the body of let expression has to be evaluated with possibly new declarations. Also the \texttt{extra} record is used in order to send additional needed information with the relevant functions.
 
-Also a key part of this semantic analysis is the handling of the declarations, especially the recursive declarations of types and functions. In this case first the non-recursive version (part a) was developed. Afterwards, it was extended to handle recursive declarations. The recursive declarations are handled by going through them two times. For types, first all the headers of each type declaration are stored. In the next evaluation actual type declaration is identified. TODO: Explain the cycle identifier. The recursive function where handled in a similar way by analysing through two runs, by first going through the headers, and afterwards the body.  
+Also a key part of this semantic analysis is the handling of the declarations, especially the recursive declarations of types and functions. In this case first the non-recursive version (part a) was developed. Afterwards, it was extended to handle recursive declarations. The recursive declarations are handled by evaluating them two times. For types, first all the headers of each type declaration are stored, along with a reference to their type, set to NONE in the first evaluation. In the next evaluation actual type declaration is identified, and the reference updated with the correct reference. TODO: Explain the cycle identifier. The recursive function where handled in a similar way by analysing through two runs, by first going through the headers, and afterwards the body.  
 
 \section{The support modules}
 %Write what changes you made to other files and how the play a part in the compiler.
 
-The support module \texttt{ENV} was extended with the information about the standard library functions as described in Appendix A in the course book. TODO: Make examples.. This \texttt{ENV} module also was used as part of creating the environment for typs and values during the semantical analysis. 
+The support module \texttt{ENV} was extended with the information about the standard library functions as described in Appendix A in the course book. This \texttt{ENV} module also was used as part of creating the environment for typs and values during the semantical analysis. 
 
 
 \section{Problems encountered \& experience gained}
@@ -37,7 +37,7 @@ The support module \texttt{ENV} was extended with the information about the stan
 
 I key experience is how to create the semantic analysis in order to detect which parts are not working correctly during development. For this reason Test Driven Development was used, like in our work in the warm up assignment. During the development small unit test where created in order to test single aspects of the module isolated. This helped in order to identify the source of the error.
 
-Additionally, it led to discussions about how to handle type error in order not to let an error propagate. The main principle in this approach is to ensure that the semantic analysis can continue even though an error was encountered. Such things can be handled in different ways, and here we had to make a compromise and decision.
+Additionally, it led to discussions about how to handle type error in order not to let an error propagate. The main principle in this approach is to ensure that the semantic analysis can continue even though an error was encountered. Such things can be handled in different ways, and here we had to make a compromise and decision, which are mainly based on the severity of the error.
 
 \section{5 tiger programs}
 %5 interesting tiger programs that you find test your semantic analysis in a good way.
@@ -60,7 +60,8 @@ These five tiger programs presented here are created simple in order to focus on
 \subsection{cycle\_in\_typedecl.tig}
 
 \begin{lstlisting}[frame=single]
-/* test recursive typedefintion */
+/* test recursive typedefintion.
+	ERROR: Cycle will be detected with A,B,D */
 let
 	type A = B
 	type B = D
@@ -79,12 +80,16 @@ end
 \subsection{unassignable.tig}
 
 \begin{lstlisting}[frame=single]
+/* test for immutable for ID.
+	ERROR: i is immutable, and can not be assigned to.*/
 (for i := 1 to 3 do i:=2)
 \end{lstlisting}
 
 \subsection{recursive\_type\_usage.tig}
 
 \begin{lstlisting}[frame=single]
+ /* test recursive type usage.
+	PASS: No Errors should be produced */
 let
   type tree = {value:int, children:treelist}
   type treelist = {hd: tree, tl:treelist}
