@@ -363,10 +363,10 @@ fun transExp (venv, tenv, extra : extra) =
                                                         in
                                                           if unassign then (out (S.name s ^ " is unassignable") pos; ERRORPAIR)
                                                           else
-                                                            if (actualTy tyv pos) = (actualTy tye pos)
+                                                            if equalTy(tyv, tye, pos)
                                                             then makePair(TAbs.AssignExp{var=makeVar(var',tyv),
                                                                 exp=makePair(exp',tye)},Ty.UNIT)
-                                                            else (out ("Can not assign value of type: " ^ PT.asString tye ^ "to variable of type: "
+                                                            else (out ("Can not assign value of type: " ^ PT.asString tye ^ " to variable of type: "
                                                                 ^ PT.asString tyv) pos ; ERRORPAIR)
                                                         end 
 
@@ -528,7 +528,7 @@ fun transExp (venv, tenv, extra : extra) =
 
         and makeOrdExp({exp = exp1, ty = ty1} : TAbs.exp, 
           opr, {exp = exp2, ty = ty2} : TAbs.exp, pos) = 
-          case ty1 of
+          case actualTy ty1 pos of
              Ty.STRING => makeAux(exp1, ty1, exp2, ty2, pos, opr)
             | Ty.INT => makeAux(exp1, ty1, exp2, ty2, pos, opr)
             |_ => (err pos (" LHS is type" ^ (PT.asString ty1) ^ " must be of INT, STRING"); ERRORPAIR)
@@ -574,7 +574,7 @@ fun transExp (venv, tenv, extra : extra) =
 
         and checkParam([], [], _, _, noErrs) = noErrs
           | checkParam(callTy::xs1, formalTy::xs2, pos::xs3, callPos, noErrs) =
-                if (actualTy callTy pos) = (actualTy formalTy pos) then
+                if equalTy(callTy,formalTy, pos) then
                   checkParam(xs1, xs2, xs3, callPos, noErrs)
                 else (out "type of the expression did not match the formal declaration" pos; checkParam(xs1, xs2, xs3, callPos, false))
           | checkParam(_, _, _ , callPos, noErrs) = (out "there is not the exact same amount of args in call as there are formal declarations" callPos; false)
