@@ -26,6 +26,40 @@ The main development in order to create the semantics analysis module, was made 
 
 Also a key part of this semantic analysis is the handling of the declarations, especially the recursive declarations of types and functions. In this case first the non-recursive version (part a) was developed. Afterwards, it was extended to handle recursive declarations. The recursive declarations are handled by evaluating them two times. For types, first all the headers of each type declaration are stored, along with a reference to their type, set to NONE in the first evaluation. In the next evaluation actual type declaration is identified, and the reference updated with the correct reference. TODO: Explain the cycle identifier. The recursive function where handled in a similar way by analysing through two runs, by first going through the headers, and afterwards the body.  
 
+\subsection{Types and Mutual Recursive Types}
+They way we handle recursive types is by processing type declarations twice. 
+First time through, we put the types into the type enviorment. More concretly
+we add the entry (name, TY.NAME(name,ref(NONE))) to the type enviorment.
+
+Second time through, we use the name to lookup our type in the type enviorment.
+Then we call transTy on the returned type with our updated type enviorment and the abstract syntax trees type declaration.
+Trans ty then creates the relevant type if the user wanted to create a record or array type, or fetches a named type if the user wanted his or her type
+to refer to an already named type. In all cases, it updates the named types reference to point to the a newly created or fetched type.
+
+While we are in the proccess of creating the types we maintain a list of the names of the new type declarations. After
+we are done creating, we use this list to check of a cyclic type declaration.
+
+The way we detect cycles is simple: We use Floyds cycle detection algorithm. If A has a reference to named type B, we start the algorithm
+with these at inputs. We then check if B has a reference to a named type C and if so, if it has a reference to a named type D. 
+Then, we allow the pointer to A to jump to B. IF there is a cycle, we will find it once the pointers point to the same names.
+
+
+The only time there won't be a cycle is if we in a long sequence of named types end up at a record or array type. If so, we do stop, since we then can't have a jump
+step of size 2.
+
+We also check if one wants to declare a named Type twice, e.g. type A = string, type A = int. If so, we report an error.
+
+\subsection{Functions and Mutual Recursive Functions}
+
+The way we handle functions is a bit simpler, conceptually at least.
+
+Once again, a two phase proccess is used. Firstly, function headers are gathered up and entered in the variable enviorment. Then in the second phase,
+we go through each function body separately. Firstly, the arguments are added as simple variables of their declared type to the 
+variable enviorment, then we proccess the bodies with the newly updated variable enviorment, containing functions headers as
+well as the arguments.
+
+After passing, the arguments will drop from the variable enviorment, so only the function headers remain.
+
 \section{The support modules}
 %Write what changes you made to other files and how the play a part in the compiler.
 
@@ -100,10 +134,20 @@ in tree
 end
 \end{lstlisting}
 
-\subsection{Test1}
+\subsection{using\_a\_record\_create\_in\_a\_record.tig}
 
 \begin{lstlisting}[frame=single]
-Just a test..
+/* Testing to allow to create a
+* inside a record,
+* if the field name is a record */
+let
+	type A = {c:int}
+	type C = A
+	type B = {d:A}
+	var a := B{d = C{c = 2}}
+in
+	a
+end
 \end{lstlisting}
 
 \section{Conclusion}
