@@ -609,7 +609,7 @@ and transDec ( venv, tenv
                 in
                   case ty' of
                     NONE => errReturn
-                    |SOME(t) => if (actualTy t pos) = (actualTy ty pos1)
+                    |SOME(t) => if equalTy( t, ty, pos1)
                                     then {decl = decl', tenv = tenv, venv = S.enter(venv, name, E.VarEntry{ty = actualTy t pos})} 
                                 else (out ("Variable " ^ S.name name ^ " declared as type " ^ S.name s ^ " and RHS has type " ^ PT.asString ty ^ " which is non compatabile") pos1; 
                                   errReturn)
