@@ -1,0 +1,5 @@
+/* Check the three possible states for break.
+	in for loop, in while loop, outside loop
+	EXPECTION: an error at last break statement
+ */
+(for i := 1 to 3 do break; while 2 do break;break)

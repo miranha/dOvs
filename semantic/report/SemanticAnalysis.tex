@@ -47,28 +47,52 @@ These five tiger programs presented here are created simple in order to focus on
 %Additionally, some intersting experiments where made in order to test some of the more challenging aspects of this parser. This includes creating test for the \texttt{lvalue}, test that exponent binds tighter then unary minus\footnote{This is changed according to Aslan's new requirement} and that the mutual recursive function are sorted correctly according to the tiger programming language.
 
 
-\subsection{Test1}
+\subsection{break\_exp\_tests.tig}
 
 \begin{lstlisting}[frame=single]
-Just a test..
+/* Check the three possible states for break.
+	in for loop, in while loop, outside loop
+	EXPECTION: an error at last break statement
+ */
+(for i := 1 to 3 do break; while 2 do break;break)
 \end{lstlisting}
 
-\subsection{Test1}
+\subsection{cycle\_in\_typedecl.tig}
 
 \begin{lstlisting}[frame=single]
-Just a test..
+/* test recursive typedefintion */
+let
+	type A = B
+	type B = D
+	type D = A
+	type t1 = t2
+	type t2 = t3
+	type t4 = t2
+	type t3 = int
+	type C = int
+	type tree = {value: int, children:treelist}
+	type treelist = {hd:tree, tl:treelist}
+in 
+end
 \end{lstlisting}
 
-\subsection{Test1}
+\subsection{unassignable.tig}
 
 \begin{lstlisting}[frame=single]
-Just a test..
+(for i := 1 to 3 do i:=2)
 \end{lstlisting}
 
-\subsection{Test1}
+\subsection{recursive\_type\_usage.tig}
 
 \begin{lstlisting}[frame=single]
-Just a test..
+let
+  type tree = {value:int, children:treelist}
+  type treelist = {hd: tree, tl:treelist}
+  var c := tree{value = 0, children = nil}
+  var children := treelist{hd = c, tl = nil}
+  var tree := tree{value = 1, children = children}
+in tree
+end
 \end{lstlisting}
 
 \subsection{Test1}
