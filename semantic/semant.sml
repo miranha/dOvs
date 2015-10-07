@@ -370,11 +370,11 @@ fun transExp (venv, tenv, extra : extra) =
                                                                         in
                                                                           if (actualTy ty' pos) = (actualTy tty pos) 
                                                                             then travRec(xs,xl,acc@[(name,makePair(exp', ty'))])
-                                                                          else out ("Incorrect Record assignment, Types doesn't match in order") pos; acc
+                                                                          else (out ("Incorrect Record assignment, Types doesn't match in order") pos; acc)
                                                                       end
-                                                                    else out ("Incorrect Record assignment, names doesn't match in order") pos; acc
-                                                                  | travRec((name,exp,pos):xs, [], acc) = out ("Incorrect Record assignment, Type doesn't match right side") pos; acc
-                                                                  | travRec([], (tname,tty)::xl, acc) = out ("Incorrect Record assignment, Fields doesn't match left side") pos; acc
+                                                                    else (out ("Incorrect Record assignment, names doesn't match in order") pos; acc)
+                                                                  | travRec((name,exp,pos)::xs, [], acc) = (out ("Incorrect Record assignment, Type doesn't match right side") pos; acc)
+                                                                  | travRec([], (tname,tty)::xl, acc) = (out ("Incorrect Record assignment, Fields doesn't match left side") pos; acc)
 
                                                                 val recty = lookupTy tenv typ pos
                                                                 val resty = (case recty of
