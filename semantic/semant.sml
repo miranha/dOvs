@@ -169,15 +169,28 @@ fun convertOper (oper) =
     | A.DivideOp => TAbs.DivideOp
     | A.ExponentOp => TAbs.ExponentOp
 
+(* If both is nil, we can't determine their type*)
+fun equalTy (t1, t2, pos) =
+  case actualTy t1 pos of
+    Ty.NIL => (case actualTy t2 pos of 
+                 Ty.RECORD(_) => true
+                | Ty.NIL => (out (" two nil expression of type " ^ 
+                  PT.asString Ty.NIL ^ " is not equal, one must be of type RECORD") pos; false)
+                | _=> false)
+  | Ty.RECORD(_) => (case actualTy t2 pos of
+                  Ty.NIL => true
+                  | _ => (actualTy t1 pos = actualTy t2 pos))
+  |_ => actualTy t1 pos = actualTy t2 pos
+
 
 fun makeIfThen( {exp = te, ty = tety} : TAbs.exp, 
   {exp = th, ty = thty} : TAbs.exp, pos) =
-  if tety = Ty.INT then
+  if actualTy tety pos = Ty.INT then
     (* construct the pairs we need *)
     let val tst = makePair(te,tety)
         val thn = makePair(th, thty)
         (* Since no if, then clause must be a unit *)
-        in if thty <> Ty.UNIT then
+        in if actualTy thty pos <> Ty.UNIT then
           (errorIfThen(pos, thty); ERRORPAIR)
         (* Everything is kosher, make the relevant TAbs node *)
         else makePair( TAbs.IfExp {
@@ -193,8 +206,8 @@ fun makeIfThen( {exp = te, ty = tety} : TAbs.exp,
 fun makeIfElse( {exp = te, ty = tety} : TAbs.exp,
   {exp = th, ty = thty} : TAbs.exp,
   {exp = el, ty = elty} : TAbs.exp , pos) =
-  if tety = Ty.INT then
-    if thty = elty then
+  if actualTy tety pos = Ty.INT then
+    if equalTy(actualTy thty pos, actualTy elty pos, pos) then
       (* everything went well, make the things needed *)
       let val test = makePair(te, tety)
           val thn = makePair(th, thty)
@@ -492,18 +505,25 @@ fun transExp (venv, tenv, extra : extra) =
 
         and makeEqExp({exp = exp1, ty = ty1} : TAbs.exp, 
           opr, {exp = exp2, ty = ty2} : TAbs.exp, pos) = 
-          case ty1 of
+          case actualTy ty1 pos of
              Ty.STRING => makeAux(exp1, ty1, exp2, ty2, pos, opr)
             | Ty.INT => makeAux(exp1, ty1, exp2, ty2, pos, opr)
             | Ty.RECORD(_) => makeAux(exp1, ty1, exp2, ty2, pos, opr)
+            | Ty.NIL => (case actualTy ty2 pos of Ty.RECORD(_) => makeAux(exp1, ty1, exp2, ty2, pos, opr)
+                                            | _ => (out ("LHS is type " ^ PT.asString Ty.NIL ^ " so RHS must be a RECORD type") pos; ERRORPAIR))
             | Ty.ARRAY(_) => makeAux(exp1, ty1, exp2, ty2, pos, opr)
-            |_ => (err pos (" LHS is type" ^ (PT.asString ty1) ^ " must be of INT, STRING, RECORD or ARRAY"); ERRORPAIR)
+            |_ => (err pos (" LHS is type" ^ (PT.asString ty1) ^ " must be of INT, STRING, RECORD (including NIL) or ARRAY"); ERRORPAIR)
 
         and makeAux(exp1, ty1, exp2, ty2, pos, opr) =
-          if (actualTy ty1 pos) = (actualTy ty2 pos) then
-            makeBinop( makePair(exp1, ty1), opr, makePair(exp2, ty2), ty1)
-          else
-            (err pos ("LHS has type " ^ (PT.asString ty1) ^ " RHS has type " ^ (PT.asString ty2) ^ ". They must be equal"); ERRORPAIR)
+          case actualTy ty1 pos of Ty.NIL =>
+            if equalTy(ty1, ty2, pos) then
+              makeBinop( makePair(exp1, ty1), opr, makePair(exp2, ty2), ty2)
+            else
+              (err pos ("LHS has type " ^ (PT.asString ty1) ^ " RHS has type " ^ (PT.asString ty2) ^ ". They must be compatabile"); ERRORPAIR)
+          |_ => if equalTy(ty1, ty2, pos) then
+              makeBinop( makePair(exp1, ty1), opr, makePair(exp2, ty2), ty1)
+            else
+              (err pos ("LHS has type " ^ (PT.asString ty1) ^ " RHS has type " ^ (PT.asString ty2) ^ ". They must be compatabile"); ERRORPAIR)
 
 
         and makeOrdExp({exp = exp1, ty = ty1} : TAbs.exp, 
