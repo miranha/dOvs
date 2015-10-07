@@ -545,9 +545,10 @@ fun transExp (venv, tenv, extra : extra) =
               else ERRORPAIR
             else ERRORPAIR
 
+              (* Binops always have an int type, wehter a boolean expression or not *)
         and makeBinop(texp1, opr, texp2, ty) =
           makePair( TAbs.OpExp {left = texp1,
-            oper = opr, right = texp2}, ty)
+            oper = opr, right = texp2}, Ty.INT)
 
         and trletexp({decls=decls, body=body, pos = pos} : A.letdata) = let val {decls = delcs', venv=venv', tenv=tenv'} =
           transDecs(venv,tenv, decls, extra) 
