@@ -420,11 +420,11 @@ fun transExp (venv, tenv, extra : extra) =
                                                                             val testexp = makePair(test, testty)
                                                                             val bodyexp = makePair(body, bodyty)
                                                                            in
-                                                                            case testty of
-                                                                              Ty.INT => ( case bodyty of 
+                                                                            case actualTy testty ps of
+                                                                              Ty.INT => ( case actualTy bodyty ps of 
                                                                                     Ty.UNIT => (makeWhile(testexp, bodyexp))
-                                                                                    | _ => (print("Failed 2.nd"); TODO) )
-                                                                              | _ => (print("Failed 1.st"); TODO)
+                                                                                    | _ => (out ("Body type not of type " ^ PT.asString Ty.UNIT) ps; TODO) )
+                                                                              | _ => (out ("Test type not compatabile with type " ^ PT.asString Ty.INT) ps; TODO)
                                                                           end
 
               (* venv=S.enter(venv,name,E.VarEntry{ty=ty})} *)
@@ -438,15 +438,15 @@ fun transExp (venv, tenv, extra : extra) =
           val hpair = makePair(hexp, hty)
           val bdypair = makePair(bodyexp,bodyty)
         in
-          case lty of
-              Ty.INT => ( case hty of
-                          Ty.INT => ( case bodyty of
+          case actualTy lty ps of
+              Ty.INT => ( case actualTy hty ps of
+                          Ty.INT => ( case actualTy bodyty ps of
                                         Ty.UNIT => (makeFor(va, esc, lpair, hpair, bdypair, venv)) (*TODO: add symbol to env, and make it decoupled from standard env.*)
-                                        | _ => (print("FailedbodyTY"); TODO)
+                                        | _ => (out ("Body type not of type " ^ PT.asString Ty.UNIT) ps; TODO)
                                     )
-                          |_ => (print("FailedHighTY");TODO) 
+                          |_ => (out ("High expression not compatible with type " ^ PT.asString Ty.INT) ps;TODO) 
                         )
-              |_ => (print("FailedLowTY"); TODO)
+              |_ => (out ("Low expression not compatible with type " ^ PT.asString Ty.INT) ps; TODO)
         end
           (* It should be possible to reuse this in other functions *)
         and trvar (A.SimpleVar (id, pos)) = let val ty = lookupVar venv id pos in
@@ -462,10 +462,11 @@ fun transExp (venv, tenv, extra : extra) =
                                                                           case List.find (fn x=> #1(x) = id) fi
                                                                             of SOME(sym,tyv') => makeVar(TAbs.FieldVar((makeVar(varv,tyv),
                                                                                       id)), tyv')
-                                                                            | NONE => makeVar(TAbs.SimpleVar(S.symbol "TODO1"),Ty.ERROR)
+                                                                            | NONE => (out ("Record did not have a field named " ^ S.name id) pos;
+                                                                              makeVar(TAbs.SimpleVar(S.symbol "TODO1"),Ty.ERROR))
                                                                             )
 
-                                                    | _ => makeVar(TAbs.SimpleVar(S.symbol "TODO2"),Ty.ERROR)
+                                                    | _ => (out ("This is not a record type") pos;makeVar(TAbs.SimpleVar(S.symbol "TODO2"),Ty.ERROR))
                                                     )
                                                 end
           | trvar (A.SubscriptVar (var, exp, pos)) = (*makeVar(TAbs.SimpleVar(S.symbol "TODO"),Ty.ERROR)*)
@@ -475,9 +476,11 @@ fun transExp (venv, tenv, extra : extra) =
                                                           (case actualTy tyv pos of
                                                             Ty.ARRAY(tyv',_) => (if checkInt(tye,pos) then 
                                                                                     makeVar(TAbs.SubscriptVar((makeVar(expv,tyv),
-                                                                                      makePair(expe,tye))), tye)
-                                                                                  else makeVar(TAbs.SimpleVar(S.symbol "TODO3"),Ty.ERROR)) 
-                                                            | _ => makeVar(TAbs.SimpleVar(S.symbol "TODO4"),Ty.ERROR)
+                                                                                      makePair(expe,tye))), tyv')
+                                                                                  else (out ("Exp in [...] is not of type " ^ PT.asString Ty.INT) pos;
+                                                                                    makeVar(TAbs.SimpleVar(S.symbol "TODO3"),Ty.ERROR)) )
+                                                            | _ => (out ("Type of lvalue is not array, it is" ^ (PT.asString (actualTy tyv pos))) pos;
+                                                              makeVar(TAbs.SimpleVar(S.symbol "TODO4"),Ty.ERROR))
                                                             )
                                                         end
         
@@ -628,10 +631,14 @@ and transDec ( venv, tenv
             enterTydec(tl,tyDecls @ [decl]
               , tenv, venv, (name,pos)::nameposlst)
           end
-      fun prepareEnv([], tenv) = tenv
-        | prepareEnv({name,ty,pos}::tl, tenv) =
-            prepareEnv(tl, S.enter(tenv, name, Ty.NAME((name,ref(NONE)))))
-      val tenv' = prepareEnv(typdecs, tenv)
+      fun prepareEnv([], tenv, names) = tenv
+        | prepareEnv({name,ty,pos}::tl, tenv, names) =
+            if List.exists (fn x => x = name) names then
+              (out "TYPE ERROR: Type name has appeared before in this type block" pos; 
+                prepareEnv(tl, tenv, name::names))
+            else
+               prepareEnv(tl, S.enter(tenv, name, Ty.NAME((name,ref(NONE)))), name::names)
+      val tenv' = prepareEnv(typdecs, tenv, [])
     in
       enterTydec(typdecs,[], tenv', venv,[])
     end
@@ -685,7 +692,7 @@ and transDec ( venv, tenv
       if (actualTy res pos) = (actualTy ty pos) then
         checkFunctions(venv, tenv, fundecls, extra, functions  @ [ f ], name::names)
       else
-      (out ("The result type " ^ PT.asString res ^ " is not compatible with body type" ^ PT.asString ty) pos;
+      (out ("The result type " ^ PT.asString res ^ " is not compatible with body type " ^ PT.asString ty) pos;
               checkFunctions(venv, tenv, fundecls, extra, functions  @ [ errf ], name::names)
               )
     end
