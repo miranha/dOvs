@@ -38,9 +38,6 @@ fun inLoop({inloop = b, unassignable = lst}: extra) : bool = b
 
 fun setInLoop({inloop = b, unassignable = lst}: extra, inLoop: bool) = {inloop=inLoop, unassignable=lst} 
 
-(* placehloder for declarations, the final code should compile without this *)
-val TODO_DECL = TAbs.TypeDec [] (* Delete when possible *)
-
 (* Error messages *)
 
 
@@ -90,25 +87,27 @@ val ERRORPAIR = {exp = TAbs.ErrorExp, ty = Ty.ERROR} (* In case of major errors 
 (* Use the below three funs like:
    throw errorUnit (pos,ty) ifFalse isUnit(_) *)
 
-fun ifTrue test err args = if test
-                           then err args
-                           else ()
+fun ifTrue test err args = 
+  if test
+    then err args
+  else ()
 
-fun ifFalse test err args = if test
-                            then ()
-                            else err args
+fun ifFalse test err args = 
+  if test
+    then ()
+  else err args
 
-fun throw err args testFun test  = testFun test err args
+fun throw err args testFun test = testFun test err args
 
 
 fun lookupTy tenv sym pos =
-    let
-        val tyOpt = S.look (tenv, sym)
-    in
-        case tyOpt of
-          NONE => (out (" Type " ^ S.name sym ^ " has not been defined.") pos; NONE)
-          |_ => tyOpt
-    end
+  let
+    val tyOpt = S.look (tenv, sym)
+  in
+    case tyOpt of
+      NONE => (out (" Type " ^ S.name sym ^ " has not been defined.") pos; NONE)
+      |_ => tyOpt
+  end
 
 fun lookupVar venv sym pos =
   let
@@ -118,39 +117,32 @@ fun lookupVar venv sym pos =
   end
 
 fun actualTy (Ty.NAME (s, ty)) pos =
-    (
-      case ty of 
-        ref (SOME t) => actualTy t pos
-        | ref NONE => Ty.ERROR)
+  (
+    case ty of 
+      ref (SOME t) => actualTy t pos
+      | ref NONE => Ty.ERROR)
   | actualTy t _ = t
 
 fun checkInt (ty, pos) =
-    case (actualTy ty pos)
-     of Ty.INT => true
-      | Ty.ERROR => false      
-      | _ => (errorInt (pos, ty); false)
+  case (actualTy ty pos) of 
+    Ty.INT => true
+    | Ty.ERROR => false      
+    | _ => (errorInt (pos, ty); false)
 
 fun isUnit (ty) =
-    case ty
-     of Ty.UNIT => true
-      | Ty.ERROR => true
-      | _ => false
-
-fun checkAssignable (declared: Ty.ty, assigned: Ty.ty, pos, msg) =
-    let
-        val aDeclared = actualTy declared pos
-        val aAssigned = actualTy assigned pos
-    in
-        () (* TODO *)
-    end
+  case ty of 
+    Ty.UNIT => true
+    | Ty.ERROR => true
+    | _ => false
 
 (* Helper functions to make life easier *)
 fun makePair (expDesc, ty) =
-    { exp = expDesc, 
-      ty = ty} : TAbs.exp
+  { exp = expDesc, 
+    ty = ty
+  } : TAbs.exp
 
 fun makeVar (varDesc, ty) =
-     {
+  {
     var = varDesc,
     ty = ty
   }:TAbs.var
@@ -177,21 +169,23 @@ fun equalTy (t1, t2, pos) =
                 | Ty.NIL => (out (" two nil expression of type " ^ 
                   PT.asString Ty.NIL ^ " is not equal, one must be of type RECORD") pos; false)
                 | _=> false)
-  | Ty.RECORD(_) => (case actualTy t2 pos of
-                  Ty.NIL => true
-                  | _ => (actualTy t1 pos = actualTy t2 pos))
-  |_ => actualTy t1 pos = actualTy t2 pos
+    |Ty.RECORD(_) => (case actualTy t2 pos of
+                        Ty.NIL => true
+                        | _ => (actualTy t1 pos = actualTy t2 pos))
+    |_ => actualTy t1 pos = actualTy t2 pos
 
 
 fun makeIfThen( {exp = te, ty = tety} : TAbs.exp, 
   {exp = th, ty = thty} : TAbs.exp, pos) =
-  if actualTy tety pos = Ty.INT then
-    (* construct the pairs we need *)
-    let val tst = makePair(te,tety)
+    if actualTy tety pos = Ty.INT 
+    then (* construct the pairs we need *)
+      let 
+        val tst = makePair(te,tety)
         val thn = makePair(th, thty)
         (* Since no if, then clause must be a unit *)
-        in if actualTy thty pos <> Ty.UNIT then
-          (errorIfThen(pos, thty); ERRORPAIR)
+      in 
+        if actualTy thty pos <> Ty.UNIT 
+        then (errorIfThen(pos, thty); ERRORPAIR)
         (* Everything is kosher, make the relevant TAbs node *)
         else makePair( TAbs.IfExp {
                       test = tst,
@@ -206,52 +200,56 @@ fun makeIfThen( {exp = te, ty = tety} : TAbs.exp,
 fun makeIfElse( {exp = te, ty = tety} : TAbs.exp,
   {exp = th, ty = thty} : TAbs.exp,
   {exp = el, ty = elty} : TAbs.exp , pos) =
-  if actualTy tety pos = Ty.INT then
-    if equalTy(actualTy thty pos, actualTy elty pos, pos) then
-      (* everything went well, make the things needed *)
-      let val test = makePair(te, tety)
-          val thn = makePair(th, thty)
-          val els = SOME(makePair(el, elty))
-          in
-            makePair( TAbs.IfExp {
+  if actualTy tety pos = Ty.INT 
+  then
+    if equalTy(actualTy thty pos, actualTy elty pos, pos) 
+    then (* everything went well, make the things needed *)
+      let 
+        val test = makePair(te, tety)
+        val thn = makePair(th, thty)
+        val els = SOME(makePair(el, elty))
+      in
+        makePair( TAbs.IfExp {
                 test = test,
                 thn = thn,
                 els = els
               }, thty)
-          end 
-
+      end 
     else (errorIfElse(pos, thty, elty); ERRORPAIR)
   else (errorIfTest(pos, tety); ERRORPAIR)
 
 fun makeWhile({exp = tstexp, ty = tstty} : TAbs.exp,
               {exp = bdyexp, ty = bdyty} : TAbs.exp ) = 
-                  makePair( TAbs.WhileExp {
-                            test = makePair(tstexp, tstty),
-                            body = makePair(bdyexp,bdyty)
-                            }, Ty.UNIT)
+  makePair( TAbs.WhileExp {
+                           test = makePair(tstexp, tstty),
+                           body = makePair(bdyexp,bdyty)
+                           }, Ty.UNIT)
 
 fun makeFor(vr, scp, {exp = lexp, ty = lty} : TAbs.exp,
-                    {exp = hexp, ty = hty} : TAbs.exp,
-                    {exp = bdyexp, ty = bdyty} : TAbs.exp, venv) = (*TODO Still unfinished.*)
-        makePair(TAbs.ForExp{var = vr,
-                             escape = scp,
-                             lo = makePair(lexp,lty),
-                             hi = makePair(hexp,hty),
-                             body = makePair(bdyexp,bdyty)}, Ty.UNIT)
+                     {exp = hexp, ty = hty} : TAbs.exp,
+                     {exp = bdyexp, ty = bdyty} : TAbs.exp, venv) =
+  makePair(TAbs.ForExp{var = vr,
+                       escape = scp,
+                       lo = makePair(lexp,lty),
+                       hi = makePair(hexp,hty),
+                       body = makePair(bdyexp,bdyty)
+                       }, Ty.UNIT)
 
-fun transTy (tenv, t, callName, pos') = (*Ty.ERROR*) (* TODO *)
+fun transTy (tenv, t, callName, pos') =
   let
     fun fdatafun([] , acc) = acc
-      | fdatafun({name, escape, typ=(sym,pos1), pos}::xs,acc)=
-          let val ty= lookupTy tenv sym pos1
-          in
-            case ty of
-              SOME(t)=>fdatafun(xs,acc@[(name,t)])
-              | NONE => acc
-            end
+      | fdatafun({name, escape, typ=(sym,pos1), pos}::xs,acc) =
+        let 
+          val ty= lookupTy tenv sym pos1
+        in
+          case ty of
+            SOME(t)=>fdatafun(xs,acc@[(name,t)])
+            | NONE => acc
+        end
     val name = lookupTy tenv callName pos'
-    val returnName = (case t of A.NameTy(nt,_) => [nt]
-                          |_  => [])
+    val returnName = (case t of 
+                        A.NameTy(nt,_) => [nt]
+                        |_  => [])
   in
     (case name of
         SOME(Ty.NAME((_,reference))) =>
@@ -273,9 +271,6 @@ fun transTy (tenv, t, callName, pos') = (*Ty.ERROR*) (* TODO *)
                                       in
                                         SOME(Ty.RECORD(recdata, ref()))
                                       end)
-            (*TODO: Add support for Records*)
-          (* | A.ArrayTy(at,pos) => Ty.ARRAY((lookupTy tenv at pos), ref()) *)
-          (*| _ =>  Ty.ERROR*)
           | _ => (out ("couldn't find typename " ^ S.name callName) pos'); returnName)
   end 
 
@@ -311,8 +306,6 @@ and checkFloyd(Ty.NAME(name1,ref(SOME(t))),Ty.NAME(name2,ref(SOME(t'))), name, p
 
 fun transExp (venv, tenv, extra : extra) =
     let
-        (* this is a placeholder value to get started *)
-        val TODO = {exp = TAbs.ErrorExp, ty = Ty.ERROR}
         val NILPAIR = {exp = TAbs.NilExp, ty = Ty.UNIT}
 
         (*
@@ -375,12 +368,13 @@ fun transExp (venv, tenv, extra : extra) =
                                                                     if name=tname then 
                                                                       let val {exp=exp', ty=ty'} = trexp exp
                                                                         in
-                                                                          if (actualTy ty' pos) = (actualTy tty pos) 
+                                                                          if equalTy(ty',tty ,pos) 
                                                                             then travRec(xs,xl,acc@[(name,makePair(exp', ty'))])
-                                                                          else acc
+                                                                          else (out ("Incorrect Record assignment, Types doesn't match in order") pos; acc)
                                                                       end
-                                                                    else acc
-                                                                      
+                                                                    else (out ("Incorrect Record assignment, names doesn't match in order") pos; acc)
+                                                                  | travRec((name,exp,pos)::xs, [], acc) = (out ("Incorrect Record assignment, Type doesn't match right side") pos; acc)
+                                                                  | travRec([], (tname,tty)::xl, acc) = (out ("Incorrect Record assignment, Fields doesn't match left side") pos; acc)
 
                                                                 val recty = lookupTy tenv typ pos
                                                                 val resty = (case recty of
@@ -390,7 +384,7 @@ fun transExp (venv, tenv, extra : extra) =
                                                                 case actualTy resty pos of
                                                                           Ty.RECORD(t,_) => 
                                                                                           makePair(TAbs.RecordExp{fields=travRec(fields,t, [])},resty)
-                                                                                    | _ => (out "Not a record type" pos; TODO)
+                                                                                    | _ => (out "Not a record type" pos; ERRORPAIR)
                                                                             end
 
 
@@ -410,9 +404,9 @@ fun transExp (venv, tenv, extra : extra) =
                                                                                     (*Check Init Ty matches Array Ty*)
                                                                                       if (actualTy initty pos) = (actualTy t pos) then
                                                                                           makePair(TAbs.ArrayExp{size=sizepair,init=initpair},ty')
-                                                                                        else (out "Not maching type in Array" pos; TODO)
-                                                                                  else (out "Failed to match size to INT" pos; TODO)
-                                                                                    | _ => (out "Not a array type" pos; TODO)
+                                                                                        else (out "Not maching type in Array" pos; ERRORPAIR)
+                                                                                  else (out "Failed to match size to INT" pos; ERRORPAIR)
+                                                                                    | _ => (out "Not a array type" pos; ERRORPAIR)
                                                                             end
         and trwhileexp({test = tst, body = bdy, pos = ps} : A.whiledata) = let
                                                                             val {exp = test, ty = testty} : TAbs.exp = trexp(tst)
@@ -423,8 +417,8 @@ fun transExp (venv, tenv, extra : extra) =
                                                                             case actualTy testty ps of
                                                                               Ty.INT => ( case actualTy bodyty ps of 
                                                                                     Ty.UNIT => (makeWhile(testexp, bodyexp))
-                                                                                    | _ => (out ("Body type not of type " ^ PT.asString Ty.UNIT) ps; TODO) )
-                                                                              | _ => (out ("Test type not compatabile with type " ^ PT.asString Ty.INT) ps; TODO)
+                                                                                    | _ => (out ("Body type not of type " ^ PT.asString Ty.UNIT) ps; ERRORPAIR) )
+                                                                              | _ => (out ("Test type not compatabile with type " ^ PT.asString Ty.INT) ps; ERRORPAIR)
                                                                           end
 
               (* venv=S.enter(venv,name,E.VarEntry{ty=ty})} *)
@@ -441,12 +435,12 @@ fun transExp (venv, tenv, extra : extra) =
           case actualTy lty ps of
               Ty.INT => ( case actualTy hty ps of
                           Ty.INT => ( case actualTy bodyty ps of
-                                        Ty.UNIT => (makeFor(va, esc, lpair, hpair, bdypair, venv)) (*TODO: add symbol to env, and make it decoupled from standard env.*)
-                                        | _ => (out ("Body type not of type " ^ PT.asString Ty.UNIT) ps; TODO)
+                                        Ty.UNIT => (makeFor(va, esc, lpair, hpair, bdypair, venv))
+                                        | _ => (out ("Body type not of type " ^ PT.asString Ty.UNIT) ps; ERRORPAIR)
                                     )
-                          |_ => (out ("High expression not compatible with type " ^ PT.asString Ty.INT) ps;TODO) 
+                          |_ => (out ("High expression not compatible with type " ^ PT.asString Ty.INT) ps; ERRORPAIR) 
                         )
-              |_ => (out ("Low expression not compatible with type " ^ PT.asString Ty.INT) ps; TODO)
+              |_ => (out ("Low expression not compatible with type " ^ PT.asString Ty.INT) ps; ERRORPAIR)
         end
           (* It should be possible to reuse this in other functions *)
         and trvar (A.SimpleVar (id, pos)) = let val ty = lookupVar venv id pos in
@@ -454,7 +448,7 @@ fun transExp (venv, tenv, extra : extra) =
                                               SOME(Env.VarEntry({ty = t})) => makeVar(TAbs.SimpleVar(id), t)
                                               |_ => (errorVar(pos, id); makeVar(TAbs.SimpleVar(id),Ty.ERROR))
                                               end
-          | trvar (A.FieldVar (var, id, pos)) = (*makeVar(TAbs.SimpleVar(S.symbol "TODO"),Ty.ERROR)*)
+          | trvar (A.FieldVar (var, id, pos)) =
                                                   let val {var=varv,ty=tyv} = trvar var
                                                   in
                                                   (case actualTy tyv pos of
@@ -463,13 +457,13 @@ fun transExp (venv, tenv, extra : extra) =
                                                                             of SOME(sym,tyv') => makeVar(TAbs.FieldVar((makeVar(varv,tyv),
                                                                                       id)), tyv')
                                                                             | NONE => (out ("Record did not have a field named " ^ S.name id) pos;
-                                                                              makeVar(TAbs.SimpleVar(S.symbol "TODO1"),Ty.ERROR))
+                                                                              makeVar(TAbs.SimpleVar(S.symbol "Bogus_Field"),Ty.ERROR))
                                                                             )
 
-                                                    | _ => (out ("This is not a record type") pos;makeVar(TAbs.SimpleVar(S.symbol "TODO2"),Ty.ERROR))
+                                                    | _ => (out ("This is not a record type") pos;makeVar(TAbs.SimpleVar(S.symbol "Bogus_Record"),Ty.ERROR))
                                                     )
                                                 end
-          | trvar (A.SubscriptVar (var, exp, pos)) = (*makeVar(TAbs.SimpleVar(S.symbol "TODO"),Ty.ERROR)*)
+          | trvar (A.SubscriptVar (var, exp, pos)) =
                                                         let val {var=expv, ty=tyv} = trvar var
                                                           val {exp=expe, ty=tye} = trexp exp
                                                         in
@@ -478,9 +472,9 @@ fun transExp (venv, tenv, extra : extra) =
                                                                                     makeVar(TAbs.SubscriptVar((makeVar(expv,tyv),
                                                                                       makePair(expe,tye))), tyv')
                                                                                   else (out ("Exp in [...] is not of type " ^ PT.asString Ty.INT) pos;
-                                                                                    makeVar(TAbs.SimpleVar(S.symbol "TODO3"),Ty.ERROR)) )
+                                                                                    makeVar(TAbs.SimpleVar(S.symbol "Bogus_INT"),Ty.ERROR)) )
                                                             | _ => (out ("Type of lvalue is not array, it is" ^ (PT.asString (actualTy tyv pos))) pos;
-                                                              makeVar(TAbs.SimpleVar(S.symbol "TODO4"),Ty.ERROR))
+                                                              makeVar(TAbs.SimpleVar(S.symbol "Bogus_Array"),Ty.ERROR))
                                                             )
                                                         end
         
@@ -595,7 +589,7 @@ and transDec ( venv, tenv
             val decl' = TAbs.VarDec{  name = name, escape = escape, ty = ty, init = makePair(exp, ty)}
             val nildecl =  TAbs.VarDec{  name = name, escape = escape, ty = Ty.ERROR, init = makePair(exp, ty)}
           in case (actualTy ty pos) of
-            Ty.NIL => (errorNilNoneVar (pos, name); {decl = nildecl, tenv = tenv, venv = S.enter(venv, name, E.VarEntry{ty = Ty.ERROR})}) (* TODO *)
+            Ty.NIL => (errorNilNoneVar (pos, name); {decl = nildecl, tenv = tenv, venv = S.enter(venv, name, E.VarEntry{ty = Ty.ERROR})})
             | _ => {decl = decl', tenv = tenv, venv = S.enter(venv, name, E.VarEntry{ty = ty})}
           end
 
@@ -615,9 +609,6 @@ and transDec ( venv, tenv
                                 else (out ("Variable " ^ S.name name ^ " declared as type " ^ S.name s ^ " and RHS has type " ^ PT.asString ty ^ " which is non compatabile") pos1; 
                                   errReturn)
                 end
-      (* TODO *)
-
-
   | transDec (venv, tenv, A.TypeDec typdecs, extra) =
     let 
       fun enterTydec([] , tyDecls, tenv, venv, nameposlst) = (checkCycles(tenv, nameposlst); {decl = TAbs.TypeDec(tyDecls), tenv = tenv, venv = venv})
@@ -649,7 +640,7 @@ and transDec ( venv, tenv
     *) val venv' = getFunctionHeaders(fundecls, [], venv,tenv,extra)
       val funlst = checkFunctions (venv', tenv, fundecls, extra, [], [])
     in
-    {decl = TAbs.FunctionDec(funlst), tenv = tenv, venv = venv'} (* TODO *) end
+    {decl = TAbs.FunctionDec(funlst), tenv = tenv, venv = venv'} end
 
   and getFunctionHeaders({name, params,result,body,pos}::xs,names,venv,tenv,extra) =
     let
