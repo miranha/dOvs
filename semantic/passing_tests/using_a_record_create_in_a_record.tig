@@ -1,0 +1,11 @@
+/* Testing to allow to create a
+* inside a record,
+* if the field name is a record */
+let
+	type A = {c:int}
+	type C = A
+	type B = {d:A}
+	var a := B{d = C{c = 2}}
+in
+	a
+end
