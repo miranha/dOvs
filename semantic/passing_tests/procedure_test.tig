@@ -1,0 +1,5 @@
+/* checking to see if we are getting f entered */
+let
+	function f(a:int, b:string) = (a;b;())
+in 42
+end

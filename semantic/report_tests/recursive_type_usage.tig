@@ -1,0 +1,8 @@
+let
+  type tree = {value:int, children:treelist}
+  type treelist = {hd: tree, tl:treelist}
+  var c := tree{value = 0, children = nil}
+  var children := treelist{hd = c, tl = nil}
+  var tree := tree{value = 1, children = children}
+in tree
+end

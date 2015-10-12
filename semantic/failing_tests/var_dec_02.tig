@@ -1,0 +1,8 @@
+/* Test if a var is declared of type something not defined, there is an error
+*/
+let
+	var a:d := 2
+	var b := 42
+	var c := 12
+in a
+end

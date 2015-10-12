@@ -1,0 +1,6 @@
+let
+type A = array of int
+var a := A[2] of 0
+in 
+ a[0]
+end

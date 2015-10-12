@@ -1,0 +1,5 @@
+/* Check that we complain if we use expression of wrong type in function call */
+let
+	function f(a:int, b:string, c:string):int = (a;b;a^2)
+in f(2, "bob", 2)
+end

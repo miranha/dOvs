@@ -1,0 +1,6 @@
+let
+type A = {c:int, b:string}
+var a := A{c=2,b="hej"}
+in 
+ a.c
+end

@@ -1,0 +1,6 @@
+let
+  var a: int := "hej"
+  var b :="hej"
+in
+  a
+end
