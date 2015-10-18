@@ -193,6 +193,7 @@ fun intOp2IR (TAbs.PlusOp, left, right)   = binop2IR (T.PLUS, left, right)
   | intOp2IR (TAbs.LeOp, left, right)     = relop2IR (T.LE, left, right)
   | intOp2IR (TAbs.GtOp, left, right)     = relop2IR (T.GT, left, right)
   | intOp2IR (TAbs.GeOp, left, right)     = relop2IR (T.GE, left, right)
+  (*TODO: Add exponent*)
 
 fun let2IR ([], body) = body
   | let2IR (decls, body) = Ex (T.ESEQ (seq (map unNx decls), unEx body))

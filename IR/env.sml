@@ -3,12 +3,14 @@ struct
 
 structure Sy = Symbol
 structure Ty = Types
+structure Trans = Translate
+structure T = Temp
 
 type access = unit ref
 type ty = Ty.ty
 
-datatype enventry = VarEntry of {ty: ty}
-                  | FunEntry of {formals: ty list, result: ty}
+datatype enventry = VarEntry of {access: Trans.access, ty: ty}
+                  | FunEntry of {(*level: Trans.level, label: T.label,*) formals: ty list, result: ty}
 
 fun enter ((symbol, entry), env) = Sy.enter (env, symbol, entry)
 
