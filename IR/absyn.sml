@@ -1,3 +1,11 @@
+(* AU Compilation 2015.
+ *
+ * Do not change this file, unless you suspect an error.
+ * Use the course web forum to discuss that.
+ *
+ *)
+
+
 structure Absyn =
 struct
 
@@ -35,7 +43,7 @@ and ty       = NameTy of S.symbol * pos
 
 and oper     = EqOp | NeqOp
              | LtOp | LeOp | GtOp | GeOp
-             | PlusOp | MinusOp | TimesOp | DivideOp
+             | PlusOp | MinusOp | TimesOp | DivideOp | ExponentOp
 
 withtype fielddata   = { name: S.symbol
                        , escape: bool ref
@@ -89,4 +97,3 @@ and      rcxdata     = { fields: (S.symbol * exp * pos) list
                        , pos: pos}
 
 end (* Absyn *)
-

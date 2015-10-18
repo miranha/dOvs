@@ -1,12 +1,22 @@
+(* AU Compilation 2015.
+ *
+ * Do not change this file, unless you suspect an error.
+ * Use the course web forum to discuss that.
+ *
+ *)
+
+
+
+
 structure TAbsyn =
 struct
 
 structure S = Symbol
-     
+
 datatype var_desc = SimpleVar of S.symbol
                   | FieldVar of var * S.symbol
                   | SubscriptVar of var * exp
-                                                            
+
 and exp_desc = VarExp of var
              | NilExp
              | IntExp of int
@@ -23,15 +33,15 @@ and exp_desc = VarExp of var
              | LetExp of letdata
              | ArrayExp of arxdata
              | ErrorExp
-                               
+
 and decl = FunctionDec of fundecldata list
          | VarDec of vardecldata
          | TypeDec of tydecldata list
-                                                                          
+
 and oper     = EqOp | NeqOp
              | LtOp | LeOp | GtOp | GeOp
-             | PlusOp | MinusOp | TimesOp | DivideOp
-                                                
+             | PlusOp | MinusOp | TimesOp | DivideOp | ExponentOp
+
 withtype var = { var : var_desc
                , ty : Types.ty }
 
@@ -41,7 +51,7 @@ and exp = { exp : exp_desc
 and fielddata   = { name: S.symbol
                   , escape: bool ref
                   , ty: Types.ty}
-         
+
 and      fundecldata = { name: S.symbol
                        , params: fielddata list
                        , resultTy: Types.ty
@@ -76,4 +86,3 @@ and      asxdata     = { var: var
 and      rcxdata     = { fields: (S.symbol * exp) list}
 
 end (* TAbsyn *)
-

@@ -173,8 +173,8 @@ fun ifThenElse2IR (test, thenExp, elseExp) =
             raise TODO
           | (_, Ex _, Cx _) =>
             raise TODO
-          | (_, _, _) =>
-            raise Bug "encountered thenBody and elseBody of different kinds"
+         (* | (_, _, _) =>
+            raise Bug "encountered thenBody and elseBody of different kinds"*)
     end
 
 fun binop2IR (oper, left, right) =
