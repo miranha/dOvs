@@ -426,7 +426,7 @@ fun transExp (venv, tenv, extra : extra, level : Trans.level) =
               (* venv=S.enter(venv,name,E.VarEntry{ty=ty})} *)
 
         and trforexp({var = va, escape = esc, lo = l, hi = h, body = bdy, pos = ps}: A.fordata, venv) = let
-          val access = Trans.allocLocal level true
+          val access = Trans.allocLocal level (!esc)
           val subvenv = S.enter(venv,va,E.VarEntry{access=access,ty=Ty.INT})
           val {exp = lexp, ty = lty} : TAbs.exp = trexp(l)
           val {exp = hexp, ty = hty} : TAbs.exp = trexp(h)
@@ -447,7 +447,6 @@ fun transExp (venv, tenv, extra : extra, level : Trans.level) =
         end
           (* It should be possible to reuse this in other functions *)
         and trvar (A.SimpleVar (id, pos)) = let val ty = lookupVar venv id pos 
-                                                val access = Trans.allocLocal level true 
                                               in
                                               case ty of
                                               SOME(Env.VarEntry({access=access,ty = t})) => makeVar(TAbs.SimpleVar(id), t)
@@ -558,7 +557,7 @@ fun transExp (venv, tenv, extra : extra, level : Trans.level) =
         and trcallexp({func = name, args = args, pos = pos}) =
           let val f = lookupVar venv name pos
           in case f of
-            SOME(E.FunEntry{formals = formals, result = resultTy}) => 
+            SOME(E.FunEntry{level=_, label=_,formals = formals, result = resultTy}) => 
                       let val {tylst, explst, poslst} = makeArgsList(args,[], [], [])
                       in
                           if checkParam(tylst, formals, poslst, pos, true) then
@@ -657,14 +656,18 @@ and transDec ( venv, tenv
      val {venv = v', lst =l', tylst = tylst, ventries = ventries,level} = transParams(params, venv, tenv, [], [], [], [],level)
     in
       if List.exists (fn x => x = name) names 
-        then (out (S.name name ^ " has already been declared, skipping it") pos; getFunctionHeaders(xs,names,venv,tenv,extra,level))
+        then (out (S.name name ^ " has already been declared, skipping it") pos; 
+          getFunctionHeaders(xs,names,venv,tenv,extra,level))
       else
         let
             fun validtype topt = (case topt of
                          NONE =>(out (" Function " ^ S.name name ^ " return type is undeclared"); Ty.ERROR)
-                       | SOME(t) => t) 
+                       | SOME(t) => t)
+          val newName = T.newLabel("")
+          val newLevel = Trans.newLevel{parent=level, name=newName, formals=map (fn _ => true) params}
+
         in 
-          getFunctionHeaders(xs, name::names,S.enter(venv, name, E.FunEntry{formals = tylst, result = (validtype tOpt)}),tenv,extra,level)
+          getFunctionHeaders(xs, name::names,S.enter(venv, name, E.FunEntry{level=newLevel, label=newName,formals = tylst, result = (validtype tOpt)}),tenv,extra,level)
         end
     end
     | getFunctionHeaders([],_,venv,tenv,extra,level) = venv
@@ -676,10 +679,10 @@ and transDec ( venv, tenv
     else
     let val varOpt = lookupVar venv name pos
       val typeLst = (case varOpt of 
-                            SOME(E.FunEntry{formals = formals, result =_}) => formals
+                            SOME(E.FunEntry{level=_, label=_,formals = formals, result =_}) => formals
                           | _ => [])
       val res = (case varOpt of 
-                            SOME(E.FunEntry{formals = _, result = resultty}) => resultty
+                            SOME(E.FunEntry{level=_, label=_,formals = _, result = resultty}) => resultty
                           | _ => Ty.ERROR)
       val {venv = v, lst = lst, tylst = tylst, ventries = ventries,level} = transParams(params, venv, tenv, [], [], [], [],level)
       fun enterInVenv (venv, (name, ventry)::xs) = enterInVenv(S.enter(venv, name, ventry), xs)
