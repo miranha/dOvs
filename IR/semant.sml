@@ -645,7 +645,6 @@ and transDec ( venv, tenv
     let (*val {venv, funlst, ventries} = transFuncs(fundecls, [], venv, tenv, extra, [])
     *) val venv' = getFunctionHeaders(fundecls, [], venv,tenv,extra,level)
       val funlst = checkFunctions (venv', tenv, fundecls, extra, [], [], level)
-      val newlev = Trans.newLevel({parent=level, name=T.newLabel(""), formals=[]})
     in
     {decl = TAbs.FunctionDec(funlst), tenv = tenv, venv = venv'} end
 
