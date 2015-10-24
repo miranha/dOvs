@@ -16,7 +16,7 @@ fun printEncode s =
         val bs2 = bs1 o bs1
         val bs3 = bs2 o bs1
         val bs4 = bs3 o bs1
-                  
+
         fun pe [] = []
           | pe (#"\\"::cs) = (bs2 o pe) cs
           | pe (#"\""::cs) = bs1 (#"\"" :: pe cs)
@@ -31,7 +31,7 @@ fun printEncode s =
             let
                 val ordc = ord (c)
                 val charsc = Int.toString ordc
-                val charsc' = 
+                val charsc' =
                     case size charsc
                      of 1 => "00" ^ charsc
                       | 2 => "0" ^ charsc
@@ -59,6 +59,7 @@ fun asString e0 =
           | opname A.LeOp = "LeOp"
           | opname A.GtOp = "GtOp"
           | opname A.GeOp = "GeOp"
+          | opname A.ExponentOp = "ExponentOp"
 
         fun dolist d f [a] = "\n" ^ f (a, d+1)
           | dolist d f (a::r) = "\n" ^ f (a, d+1) ^
@@ -152,11 +153,8 @@ fun asString e0 =
             exp (test, d+1) ^
             ",\n" ^
 	    exp (thn, d+1) ^
-	    (case els 
-              of NONE => ""
-	       | SOME e =>
-                 ",\n" ^
-                 exp (e, d+1)) ^
+	    (case els of NONE => ""
+		       | SOME e => ",\n" ^ exp (e, d+1)) ^
 	    ")"
           | exp (A.WhileExp {test, body, pos}, d) =
 	    indent d ^
@@ -223,8 +221,8 @@ fun asString e0 =
 		    dolist d field params ^
                     "],\n" ^
                     indent (d+1) ^
-                    (case result
-                      of NONE => "NONE"
+                    (case result of
+                         NONE => "NONE"
 		       | SOME (s, _) => "SOME(" ^ S.name s ^ ")") ^
                     ",\n" ^
                     exp (body, d+1) ^
@@ -241,8 +239,8 @@ fun asString e0 =
             "," ^
 	    Bool.toString (!escape) ^
             "," ^
-            (case typ
-              of NONE => "NONE"
+            (case typ of
+                 NONE => "NONE"
 	       | SOME (s, p) => "SOME(" ^ S.name s ^ ")") ^
             ",\n" ^
             exp (init, d+1) ^
@@ -299,4 +297,3 @@ fun print (outstream, e0) =
     ; TextIO.flushOut outstream)
 
 end (* PrintAbsyn *)
-

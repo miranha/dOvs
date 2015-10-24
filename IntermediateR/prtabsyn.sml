@@ -2,7 +2,7 @@ structure PrintTAbsyn:
           sig
               val asString: TAbsyn.exp -> string
               val print: TextIO.outstream * TAbsyn.exp -> unit
-          end = 
+          end =
 struct
 
 structure A = TAbsyn
@@ -17,7 +17,7 @@ fun printEncode s =
         val bs2 = bs1 o bs1
         val bs3 = bs2 o bs1
         val bs4 = bs3 o bs1
-                  
+
         fun pe [] = []
           | pe (#"\\"::cs) = (bs2 o pe) cs
           | pe (#"\""::cs) = bs1 (#"\"" :: pe cs)
@@ -32,7 +32,7 @@ fun printEncode s =
             let
                 val ordc = ord (c)
                 val charsc = Int.toString ordc
-                val charsc' = 
+                val charsc' =
                     case size charsc
                      of 1 => "00" ^ charsc
                       | 2 => "0" ^ charsc
@@ -60,9 +60,10 @@ fun asString e0 =
           | opname A.LeOp = "LeOp"
           | opname A.GtOp = "GtOp"
           | opname A.GeOp = "GeOp"
+          | opname A.ExponentOp = "ExponentOp"
 
         fun dolist d f [a] = "\n" ^ f (a, d+1)
-          | dolist d f (a::r) = "\n" ^ f (a, d+1) ^ 
+          | dolist d f (a::r) = "\n" ^ f (a, d+1) ^
                                 "," ^ dolist d f r
           | dolist d f nil = ""
 
@@ -88,7 +89,7 @@ fun asString e0 =
 	    var (v, d+1) ^
             ",\n" ^
 	    exp (e, d+1) ^ ")"
-        and exp ({exp = e, ty = t}, d) = 
+        and exp ({exp = e, ty = t}, d) =
             indent d ^  "(" ^ PT.asString t ^ ", " ^ (exp_desc (e, d+1)) ^ ")"
         and exp_desc (A.VarExp v, d) =
             "VarExp(\n" ^
@@ -180,7 +181,7 @@ fun asString e0 =
             ",\n" ^
             exp (init, d+1) ^
             ")"
-          | exp_desc (A.ErrorExp,d) = 
+          | exp_desc (A.ErrorExp,d) =
             "ErrorExp"
 
         and dec (A.FunctionDec l, d) =
@@ -238,7 +239,7 @@ fun asString e0 =
                dolist d tdec l ^
                "]"
             end
-            
+
         and ty (typ, d) = (indent d) ^ (PT.asString typ)
 
     in  exp (e0, 0) ^
