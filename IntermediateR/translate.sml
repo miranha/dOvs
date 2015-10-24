@@ -24,7 +24,7 @@ type breakpoint = Tree.label
 
 type frag = F.frag
 
-val bogus = Ex (T.CONST 0)
+val bogus = Ex (T.CONST 5)
 
 local
     val frags: (frag list) ref = ref []
@@ -378,5 +378,8 @@ fun printX asStringX (outstream, x) =
 val printLevel  = printX asStringLevel
 val printAccess = printX asStringAccess
 val printExp    = printX asStringExp
+
+fun prIR (ir_val:frag list) = List.app(fn x=>PT.printFrag(TextIO.stdOut,x)) ir_val
+
 
 end (* Translate *)
