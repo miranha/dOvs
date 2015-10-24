@@ -26,8 +26,28 @@ val TODO = {exp=Tr.bogus, ty=Ty.ERROR}
 fun transExp (venv, extra : extra) =
     let                               
         fun trexp {exp=TAbs.NilExp, ty} = {exp=Tr.nil2IR (), ty=ty}
+          | trexp{exp=TAbs.IntExp i, ty} = {exp=Tr.int2IR(i), ty=ty}
+          | trexp{exp=TAbs.OpExp({left=left,oper=oper,right=right}), ty=ty} = {exp=trBinop(left,oper,right), ty=ty}
+          | trexp{exp=TAbs.IfExp({test=test,thn=thn,els=els}), ty=ty} = {exp=trIfElseExp(test,thn,els), ty=ty}
           | trexp _ = TODO
-                
+           
+
+          and trBinop(left,oper,right) = 
+            let val {exp=lexp, ty=_} = trexp left
+                val {exp=rexp, ty=_} = trexp right 
+              in
+                Tr.intOp2IR(oper,lexp,rexp)
+            end
+
+          and trIfElseExp(test,thn,els) =
+            let val {exp=test', ty=_} = trexp test
+                val {exp=thn', ty=_} = trexp thn
+                val elss = case els of SOME(e)=>e
+                val {exp=els', ty=_} = trexp elss 
+              in
+                Tr.ifThenElse2IR(test',thn',els')
+            end
+
         (* The below code suggest how to translate depending what case
         you are in, however, uncommenting the section would result in
         type-errors. You will have to write the rest of the cases your

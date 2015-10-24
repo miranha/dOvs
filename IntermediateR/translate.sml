@@ -83,15 +83,27 @@ fun unEx (Ex e) = e
     end
   | unEx (Nx s) = T.ESEQ (s, T.CONST 0)
 
-fun unNx (Ex e) = raise TODO
-  | unNx (Cx genstm) = raise TODO
-  | unNx (Nx s) = raise TODO
+fun unNx (Ex e) = T.EXP(e)
+  | unNx (Cx genstm) = (*TODO: Maybe optimize this part*)
+      let
+        val r = Temp.newtemp ()
+        val t = Temp.newLabel "unCx_t"
+        val f = Temp.newLabel "unCx_f"
+    in
+        T.SEQ ( seq [ T.MOVE (T.TEMP r, T.CONST 1)
+                     , genstm (t, f)
+                     , T.LABEL f
+                     , T.MOVE (T.TEMP r, T.CONST 0)
+                     , T.LABEL t]
+               , T.EXP(T.TEMP r)) (*Could be move inside seq => the same*)
+    end
+  | unNx (Nx s) = s
 
-fun unCx (Ex (T.CONST 0)) = raise TODO
-  | unCx (Ex (T.CONST _)) = raise TODO
-  | unCx (Ex e) = raise TODO
-  | unCx (Cx genstm) = raise TODO
-  | unCx (Nx _) = raise TODO
+fun unCx (Ex (T.CONST 0)) = (fn(_,f)=>T.JUMP(T.NAME f, [f])) (*TODO: Is it okay to use "_" here?*)
+  | unCx (Ex (T.CONST _)) = (fn(t,_)=>T.JUMP(T.NAME t, [t]))
+  | unCx (Ex e) = (fn(t,f)=>T.CJUMP(T.NE, e, T.CONST 0, t,f))
+  | unCx (Cx genstm) = genstm
+  | unCx (Nx _) = raise Bug "Error: Should never occur"
 
 val empty = Ex (T.CONST 0)
 
@@ -152,17 +164,28 @@ fun ifThen2IR (test, thenExp) =
 fun ifThenElse2IR (test, thenExp, elseExp) =
     let
         val test' = unCx test
+        val thenExp' = unEx thenExp
+        val elseExp' = unEx elseExp
         val labelThen = Temp.newLabel "if_then"
         val labelElse = Temp.newLabel "if_else"
         val labelJoin = Temp.newLabel "if_join"
+        val r = Temp.newtemp()
     in
+      Ex(T.ESEQ(seq[test'(labelThen,labelElse),
+                T.LABEL labelThen,
+                T.MOVE(T.TEMP r, thenExp'),
+                T.LABEL labelElse,
+                T.MOVE(T.TEMP r, elseExp')]
+                ,T.ESEQ(T.LABEL labelJoin,T.TEMP r)))
+
+      (*TODO: Optimize with code below:)
         case (test', thenExp, elseExp)
          of (_, Cx _, Cx _) =>
             raise TODO
           | (_, Ex _, Ex _) =>
             let
-                val r = Temp.newtemp () (* suggested on page 162 *)
-            in
+                val r = Temp.newtemp ()*) (* suggested on page 162 *)
+           (* in
                 raise TODO
             end
           | (_, Nx _, _) =>
@@ -172,16 +195,24 @@ fun ifThenElse2IR (test, thenExp, elseExp) =
           | (_, Cx _, Ex _) =>
             raise TODO
           | (_, Ex _, Cx _) =>
-            raise TODO
+            raise TODO*)
           (*| (_, _, _) =>
             raise Bug "encountered thenBody and elseBody of different kinds"*)
     end
 
 fun binop2IR (oper, left, right) =
-    Ex (raise TODO)
+    let val left' = unEx left
+        val right' = unEx right
+      in
+        Ex(T.BINOP(oper,left',right'))
+    end
 
 fun relop2IR (oper, left, right) =
-    Cx (raise TODO)
+    let val left' = unEx left
+        val right' = unEx right
+    in
+      Cx ((fn(t,f)=>T.CJUMP(oper, left', right', t,f)))
+    end
 
 fun intOp2IR (TAbs.PlusOp, left, right)   = binop2IR (T.PLUS, left, right)
   | intOp2IR (TAbs.MinusOp, left, right)  = binop2IR (T.MINUS, left, right)

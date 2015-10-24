@@ -22,6 +22,10 @@ rescue:
 	./forcetigerc rescue
 	ml-build sources.cm Main.exportedFn tigerc
 
+it:
+	make clean
+	make interact
+
 # create the standalone executable using the "current" lexer/parser
 
 tigerc.x86-linux:
