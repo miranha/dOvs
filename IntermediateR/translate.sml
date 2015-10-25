@@ -115,13 +115,23 @@ fun levelEq (Level (_, u1), Level (_, u2)) = (u1 = u2)
 fun followStaticLink toLevel (fromLevel as Level ({frame, parent}, _)) =
     if levelEq (toLevel, fromLevel)
     then T.TEMP F.FP
-    else raise TODO
+    else 
+      let 
+        val parent' = followStaticLink toLevel parent
+        val offset' = F.staticLinkOffset frame
+      in
+        T.MEM(T.BINOP(T.PLUS, T.CONST offset', parent')) (*TODO: Made from p. 156*)
+      end
   | followStaticLink _ Top =
     T.TEMP F.FP (* delivered to built-in functions like chr,ord,.. *)
 
-fun simpleVar (acc, fromLevel) =
-    (* must return Ex (TEMP _) or Ex (MEM _) *)
-    raise TODO
+fun simpleVar (acc, fromLevel) = (* must return Ex (TEMP _) or Ex (MEM _) *)
+    let
+      val (lev', acc') = acc
+      val exp' = F.exp acc' (followStaticLink lev' fromLevel)
+    in
+      Ex(exp')
+    end
 
 fun fieldVar (var, offset) =
     (* must return Ex (TEMP _) or Ex (MEM _) *)
@@ -153,7 +163,7 @@ fun ifThen2IR (test, thenExp) =
             Cx (fn (t, f) =>
                    seq [ test' (labelThen, labelEnd)
                        , T.LABEL labelThen
-                       , func (t, f)
+                       , func (t, f)(*TODO: Maybe change to unCx thenExp instead..*)
                        , T.LABEL labelEnd])
           | (_, Nx _) =>
                 Nx(
@@ -181,9 +191,8 @@ fun ifThenElse2IR (test, thenExp, elseExp) =
         val labelThen = Temp.newLabel "if_then"
         val labelElse = Temp.newLabel "if_else"
         val labelJoin = Temp.newLabel "if_join"
-        val r = Temp.newtemp()
     in
-      (*Ex(T.ESEQ(seq[test'(labelThen,labelElse),
+      (*TODO: Notes:Ex(T.ESEQ(seq[test'(labelThen,labelElse),
                 T.LABEL labelThen,
                 T.MOVE(T.TEMP r, thenExp'),
                 T.LABEL labelElse,
@@ -192,7 +201,14 @@ fun ifThenElse2IR (test, thenExp, elseExp) =
 
         case (test', thenExp, elseExp)
          of (_, Cx _, Cx _) =>
-            raise TODO
+          Cx (fn (t, f) =>
+                   seq [ test' (labelThen, labelElse)
+                       , T.LABEL labelThen
+                       , unCx thenExp (t, f)
+                       , T.JUMP (T.NAME labelJoin, [labelJoin])
+                       , T.LABEL labelElse
+                       , unCx elseExp(t,f)
+                       , T.LABEL labelJoin])
           | (_, Ex _, Ex _) =>
             let
                 val r = Temp.newtemp () (* suggested on page 162 *)
@@ -212,7 +228,7 @@ fun ifThenElse2IR (test, thenExp, elseExp) =
             raise TODO
           | (_, _, Nx _) =>
             raise TODO
-          | (_, Cx _, Ex _) =>
+          | (_, Cx _, Ex _) => (*TODO: See book: 162 for example*)
             raise TODO
           | (_, Ex _, Cx _) =>
             raise TODO
