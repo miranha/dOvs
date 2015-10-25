@@ -156,9 +156,21 @@ fun ifThen2IR (test, thenExp) =
                        , func (t, f)
                        , T.LABEL labelEnd])
           | (_, Nx _) =>
-            raise TODO
-          | (_, Ex ex) =>
-            raise TODO
+                Nx(
+                  seq[test'(labelThen,labelEnd)
+                      , T.LABEL labelThen
+                      ,  unNx thenExp (*TODO:Why does using func not work?*)
+                      , T.LABEL labelEnd]
+                )
+          | (_, Ex _) =>
+            Ex (
+                T.ESEQ((seq[test'(labelThen,labelEnd)
+                      , T.LABEL labelThen
+                      ,  unNx thenExp (*TODO:Why does using func not work?*)
+                      , T.LABEL labelEnd])
+                  ,T.CONST 0)
+                )
+                  
     end
 
 fun ifThenElse2IR (test, thenExp, elseExp) =
@@ -171,22 +183,30 @@ fun ifThenElse2IR (test, thenExp, elseExp) =
         val labelJoin = Temp.newLabel "if_join"
         val r = Temp.newtemp()
     in
-      Ex(T.ESEQ(seq[test'(labelThen,labelElse),
+      (*Ex(T.ESEQ(seq[test'(labelThen,labelElse),
                 T.LABEL labelThen,
                 T.MOVE(T.TEMP r, thenExp'),
                 T.LABEL labelElse,
                 T.MOVE(T.TEMP r, elseExp')]
-                ,T.ESEQ(T.LABEL labelJoin,T.TEMP r)))
+                ,T.ESEQ(T.LABEL labelJoin,T.TEMP r)))*)
 
-      (*TODO: Optimize with code below:)
         case (test', thenExp, elseExp)
          of (_, Cx _, Cx _) =>
             raise TODO
           | (_, Ex _, Ex _) =>
             let
-                val r = Temp.newtemp ()*) (* suggested on page 162 *)
-           (* in
-                raise TODO
+                val r = Temp.newtemp () (* suggested on page 162 *)
+           in
+            Ex( 
+                T.ESEQ ( seq [ test'(labelThen,labelElse)
+                     , T.LABEL labelThen
+                     , T.MOVE (T.TEMP r, unEx thenExp) 
+                     , T.JUMP (T.NAME labelJoin, [labelJoin])
+                     , T.LABEL labelElse
+                     , T.MOVE (T.TEMP r, unEx elseExp)
+                     , T.LABEL labelJoin]
+               , T.TEMP r)
+            )
             end
           | (_, Nx _, _) =>
             raise TODO
@@ -195,7 +215,7 @@ fun ifThenElse2IR (test, thenExp, elseExp) =
           | (_, Cx _, Ex _) =>
             raise TODO
           | (_, Ex _, Cx _) =>
-            raise TODO*)
+            raise TODO
           (*| (_, _, _) =>
             raise Bug "encountered thenBody and elseBody of different kinds"*)
     end
