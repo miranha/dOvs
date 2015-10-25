@@ -30,6 +30,7 @@ fun transExp (venv, extra : extra) =
           | trexp{exp=TAbs.OpExp({left=left,oper=oper,right=right}), ty=ty} = {exp=trBinop(left,oper,right), ty=ty}
           | trexp{exp=TAbs.IfExp({test=test,thn=thn,els=SOME(els)}), ty=ty} = {exp=trIfElseExp(test,thn,els), ty=ty}
           | trexp{exp=TAbs.IfExp({test=test,thn=thn,els=NONE}), ty=ty} = {exp=trIfThenExp(test,thn), ty=ty}
+          | trexp{exp=TAbs.VarExp(var), ty=ty} = {exp=trVarExp(var), ty=ty}
           | trexp _ = TODO
            
 
@@ -55,6 +56,14 @@ fun transExp (venv, extra : extra) =
               in
                 Tr.ifThen2IR(test',thn')
             end
+
+          and trVarExp(var) =
+            let
+              val {exp=var', ty=ty} = trvar var
+            in
+              var'
+            end
+            
         (* The below code suggest how to translate depending what case
         you are in, however, uncommenting the section would result in
         type-errors. You will have to write the rest of the cases your
@@ -126,17 +135,22 @@ fun transExp (venv, extra : extra) =
          * and Tr.subscript2IR must return an Ex (MEM _) or an 
          * Ex (TEMP _).
          *)
+        (*(acc, fromLevel)*)
+        and trvar {var=TAbs.SimpleVar id, ty} : {exp:Tr.exp,ty:Ty.ty} = (* using Tr.simpleVar *) 
+            let
+              val level' = (#level extra)
+            in
+              case S.look(venv,id) of
+                SOME(E.VarEntry{access=access, ty=ty, escape=escape})=>{exp=Tr.simpleVar(access,level'), ty=ty}
+            end
 
-        and trvar {var=TAbs.SimpleVar id, ty} : {exp:Tr.exp,ty:Ty.ty} = 
-            TODO (* using Tr.simpleVar *)
-
-          | trvar {var=TAbs.FieldVar (var, id), ty} : {exp:Tr.exp,ty:Ty.ty} = 
+          (*| trvar {var=TAbs.FieldVar (var, id), ty} : {exp:Tr.exp,ty:Ty.ty} = *)
             (* ignore 'mutationRequested': all record fields are mutable *)
-            TODO (* using Tr.fieldVar *)
+            (*TODO*) (* using Tr.fieldVar *)
                                        
-          | trvar {var=TAbs.SubscriptVar (var, exp), ty} : {exp:Tr.exp,ty:Ty.ty} = 
+          (*| trvar {var=TAbs.SubscriptVar (var, exp), ty} : {exp:Tr.exp,ty:Ty.ty} = *)
             (* ignore 'mutationRequested': all array entries are mutable *)
-            TODO (* using Tr.subscript2IR *)
+            (*TODO*) (* using Tr.subscript2IR *)
 
     in
         trexp
