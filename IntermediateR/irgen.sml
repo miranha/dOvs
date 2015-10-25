@@ -31,6 +31,8 @@ fun transExp (venv, extra : extra) =
           | trexp{exp=TAbs.IfExp({test=test,thn=thn,els=SOME(els)}), ty=ty} = {exp=trIfElseExp(test,thn,els), ty=ty}
           | trexp{exp=TAbs.IfExp({test=test,thn=thn,els=NONE}), ty=ty} = {exp=trIfThenExp(test,thn), ty=ty}
           | trexp{exp=TAbs.VarExp(var), ty=ty} = {exp=trVarExp(var), ty=ty}
+          | trexp{exp=TAbs.LetExp(letdata), ty=ty} = {exp=trLetExp(letdata), ty=ty}
+          | trexp{exp=TAbs.SeqExp(seqdata), ty=ty} = {exp=trSeqExp(seqdata), ty=ty}
           | trexp _ = TODO
            
 
@@ -59,11 +61,27 @@ fun transExp (venv, extra : extra) =
 
           and trVarExp(var) =
             let
-              val {exp=var', ty=ty} = trvar var
+              val {exp=var', ty=_} = trvar var
             in
               var'
             end
             
+          and trLetExp({decls=decls, body=body}: TAbs.letdata) =
+            let val ({venv=venv'}, expl') = transDecs(venv,decls,extra,[])
+                val {exp=exp', ty=_} = transExp(venv',extra) body
+            in
+              Tr.let2IR(expl',exp')
+            end
+
+          and trSeqExp(seqdata) = 
+            let
+              val seqlist = trSeqExpAux(seqdata,[])
+            in
+              Tr.eseq2IR(seqlist)
+            end
+          
+          and trSeqExpAux(seq::xs, acc) = let val {exp=res, ty=_} = trexp seq in trSeqExpAux(xs,acc@[res]) end
+            | trSeqExpAux([], acc) = acc
         (* The below code suggest how to translate depending what case
         you are in, however, uncommenting the section would result in
         type-errors. You will have to write the rest of the cases your
@@ -178,8 +196,15 @@ and transDec ( venv
   | transDec (venv, TAbs.FunctionDec fundecls, explist, extra) =
     ( {venv = venv}, explist) (* TODO *)
 
-and transDecs (venv, decls, extra) =
-    ({venv = venv}, []) (* TODO *)                 
+and transDecs (venv, decls, extra, explist) =
+  case decls of
+    [] => ({venv=venv}, explist)
+    | (h::t) =>   let 
+                    val ({venv=venv'}, explist') = transDec(venv,h,explist,extra)
+                  in
+                    transDecs(venv',t,extra,explist')
+                  end
+        (*({venv = venv}, [])*) (* TODO *)                
 
 fun transProg absyn : Tr.frag list  =
     let

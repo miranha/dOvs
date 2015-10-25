@@ -186,19 +186,10 @@ fun ifThen2IR (test, thenExp) =
 fun ifThenElse2IR (test, thenExp, elseExp) =
     let
         val test' = unCx test
-        val thenExp' = unEx thenExp
-        val elseExp' = unEx elseExp
         val labelThen = Temp.newLabel "if_then"
         val labelElse = Temp.newLabel "if_else"
         val labelJoin = Temp.newLabel "if_join"
     in
-      (*TODO: Notes:Ex(T.ESEQ(seq[test'(labelThen,labelElse),
-                T.LABEL labelThen,
-                T.MOVE(T.TEMP r, thenExp'),
-                T.LABEL labelElse,
-                T.MOVE(T.TEMP r, elseExp')]
-                ,T.ESEQ(T.LABEL labelJoin,T.TEMP r)))*)
-
         case (test', thenExp, elseExp)
          of (_, Cx _, Cx _) =>
           Cx (fn (t, f) =>
