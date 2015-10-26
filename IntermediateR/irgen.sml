@@ -95,7 +95,7 @@ fun transExp (venv, extra : extra) =
             let
               val {exp=test', ty=_} = trexp test
               val {exp=body', ty=_} = trexp body
-              val done' = Tr.newBreakPoint "while_done"
+              val done' = Tr.newBreakPoint "while_done" (*TODO: We need to use the break from outside I think..*)
               (*val break' = case (#break extra) of SOME(e) => e*) (*TODO: make it nice*)
             in
               Tr.while2IR(test',body',done')

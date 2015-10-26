@@ -312,7 +312,6 @@ fun while2IR (test, body, done) =
                 , T.JUMP(T.NAME labelTest, [labelTest])
                 , T.LABEL done]
           )
-        (*raise TODO*)
     end
 
 fun for2IR (var, done, lo, hi, body) =
@@ -325,8 +324,32 @@ fun for2IR (var, done, lo, hi, body) =
         val hiT = Temp.newtemp ()
         val bodyL = Temp.newLabel "for_body"
         val nextL = Temp.newLabel "for_next"
+
+        val decl_i = assign2IR(Ex(T.TEMP loT), lo)
+        val decl_limit = assign2IR(Ex(T.TEMP hiT), hi)
+        (*val decl_limit = assign2IR()*)
+        (*val decl_i = Nx(T.MOVE(T.TEMP loT,lo'))
+        val decl_limit = Nx(T.MOVE(T.TEMP hiT, hi'))
+        val decl_var = assign2IR(Ex(var'), Ex (lo'))*)
+
+        val decls = decl_i::[decl_limit]
+        val count = binop2IR(T.PLUS, decl_i, Ex (T.CONST 1))
+        val assig = assign2IR(decl_i, count)
+        val while_test = relop2IR(T.LE, decl_i, decl_limit)
+        val while_body = Nx(seq[body',unNx assig])
+
+        val whileEx = while2IR(while_test,while_body,done)
+(*relop2IR (oper, left, right)---binop2IR (T.PLUS, left, right)*)
+        (*val while_test = relop2IR(T.LE, decl_i, decl_limit)
+        val count = binop2IR(T.PLUS, var', Ex (T.CONST 1))*)
+        (*val while_part = while2IR()
+        val i : type = expression*)
+
     in
-        raise TODO
+      let2IR(decls,whileEx)
+        (*Nx(
+
+          )*)(*raise TODO*)
     end
 
 fun funCall2IR ( toLevel as Level ({frame, parent}, _)
