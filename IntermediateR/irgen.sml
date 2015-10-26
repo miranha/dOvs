@@ -33,6 +33,7 @@ fun transExp (venv, extra : extra) =
           | trexp{exp=TAbs.VarExp(var), ty=ty} = {exp=trVarExp(var), ty=ty}
           | trexp{exp=TAbs.LetExp(letdata), ty=ty} = {exp=trLetExp(letdata), ty=ty}
           | trexp{exp=TAbs.SeqExp(seqdata), ty=ty} = {exp=trSeqExp(seqdata), ty=ty}
+          | trexp{exp=TAbs.WhileExp(whiledata), ty=ty} = {exp=trWhileExp(whiledata), ty=ty}
           | trexp _ = TODO
            
 
@@ -82,6 +83,16 @@ fun transExp (venv, extra : extra) =
           
           and trSeqExpAux(seq::xs, acc) = let val {exp=res, ty=_} = trexp seq in trSeqExpAux(xs,acc@[res]) end
             | trSeqExpAux([], acc) = acc
+
+          and trWhileExp({test=test, body=body}: TAbs.whiledata) = 
+            let
+              val {exp=test', ty=_} = trexp test
+              val {exp=body', ty=_} = trexp body
+              val break' = case (#break extra) of SOME(e) => e (*TODO: make it nice*)
+            in
+              Tr.while2IR(test',body',break')
+            end
+
         (* The below code suggest how to translate depending what case
         you are in, however, uncommenting the section would result in
         type-errors. You will have to write the rest of the cases your

@@ -303,7 +303,15 @@ fun while2IR (test, body, done) =
         val labelTest = Temp.newLabel "while_test"
         val labelBody = Temp.newLabel "while_body"
     in
-        raise TODO
+
+        Nx(
+            seq[T.LABEL labelTest
+                , test(labelBody,done)
+                , T.LABEL labelBody
+                , body
+                , T.JUMP(T.NAME labelTest, [labelTest])]
+          )
+        (*raise TODO*)
     end
 
 fun for2IR (var, done, lo, hi, body) =
