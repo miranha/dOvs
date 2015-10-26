@@ -35,6 +35,7 @@ fun transExp (venv, extra : extra) =
           | trexp{exp=TAbs.SeqExp(seqdata), ty=ty} = {exp=trSeqExp(seqdata, ty), ty=ty}
           | trexp{exp=TAbs.WhileExp(whiledata), ty=ty} = {exp=trWhileExp(whiledata), ty=ty}
           | trexp{exp=TAbs.AssignExp(assigndata), ty=ty} = {exp=trAssignExp(assigndata), ty=ty}
+          | trexp{exp=TAbs.ForExp(fordata), ty=ty} = {exp=trForExp(fordata), ty=ty}
           | trexp _ = TODO
            
 
@@ -107,6 +108,19 @@ fun transExp (venv, extra : extra) =
               val {exp=exp', ty=_} = trexp exp
             in
               Tr.assign2IR(var',exp')
+            end
+
+          and trForExp({var=var, escape=escape, lo=lo,hi=hi, body=body}) =
+            let
+              val {exp=lo', ty=_} = trexp lo
+              val {exp=hi', ty=_} = trexp hi
+              val {exp=body', ty=_} = trexp body
+              val done' = Tr.newBreakPoint "for_done"
+              val level' = (#level extra)
+              val acc' = Tr.allocLocal level' (!escape)
+              val var' = Tr.simpleVar(acc',level')
+            in
+              Tr.for2IR(var',done',lo',hi',body')
             end
         (* The below code suggest how to translate depending what case
         you are in, however, uncommenting the section would result in

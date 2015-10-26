@@ -332,6 +332,7 @@ fun for2IR (var, done, lo, hi, body) =
         val decl_limit = Nx(T.MOVE(T.TEMP hiT, hi'))
         val decl_var = assign2IR(Ex(var'), Ex (lo'))*)
 
+        (*TODO: Check if lo>hi*)
         val decls = decl_i::[decl_limit]
         val count = binop2IR(T.PLUS, decl_i, Ex (T.CONST 1))
         val assig = assign2IR(decl_i, count)
@@ -344,6 +345,8 @@ fun for2IR (var, done, lo, hi, body) =
         val count = binop2IR(T.PLUS, var', Ex (T.CONST 1))*)
         (*val while_part = while2IR()
         val i : type = expression*)
+
+
 
     in
       let2IR(decls,whileEx)
