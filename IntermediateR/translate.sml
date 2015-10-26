@@ -309,7 +309,8 @@ fun while2IR (test, body, done) =
                 , test(labelBody,done)
                 , T.LABEL labelBody
                 , body
-                , T.JUMP(T.NAME labelTest, [labelTest])]
+                , T.JUMP(T.NAME labelTest, [labelTest])
+                , T.LABEL done]
           )
         (*raise TODO*)
     end
