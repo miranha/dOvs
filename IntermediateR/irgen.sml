@@ -32,7 +32,7 @@ fun transExp (venv, extra : extra) =
           | trexp{exp=TAbs.IfExp({test=test,thn=thn,els=NONE}), ty=ty} = {exp=trIfThenExp(test,thn), ty=ty}
           | trexp{exp=TAbs.VarExp(var), ty=ty} = {exp=trVarExp(var), ty=ty}
           | trexp{exp=TAbs.LetExp(letdata), ty=ty} = {exp=trLetExp(letdata), ty=ty}
-          | trexp{exp=TAbs.SeqExp(seqdata), ty=ty} = {exp=trSeqExp(seqdata), ty=ty}
+          | trexp{exp=TAbs.SeqExp(seqdata), ty=ty} = {exp=trSeqExp(seqdata, ty), ty=ty}
           | trexp{exp=TAbs.WhileExp(whiledata), ty=ty} = {exp=trWhileExp(whiledata), ty=ty}
           | trexp{exp=TAbs.AssignExp(assigndata), ty=ty} = {exp=trAssignExp(assigndata), ty=ty}
           | trexp _ = TODO
@@ -75,11 +75,13 @@ fun transExp (venv, extra : extra) =
               Tr.let2IR(expl',exp')
             end
 
-          and trSeqExp(seqdata) = 
+          and trSeqExp(seqdata,ty) = 
             let
               val seqlist = trSeqExpAux(seqdata,[])
             in
-              Tr.eseq2IR(seqlist)
+              case ty of
+                Ty.UNIT => Tr.seq2IR(seqlist)
+                | _ => Tr.eseq2IR(seqlist)
             end
           
           and trSeqExpAux(seq::xs, acc) = 
