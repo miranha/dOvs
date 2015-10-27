@@ -1,0 +1,6 @@
+let 
+ type iA = array of int
+ var my := iA [2] of 1
+in
+ 2
+end
