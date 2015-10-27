@@ -37,8 +37,17 @@ fun transExp (venv, extra : extra) =
           | trexp{exp=TAbs.AssignExp(assigndata), ty=ty} = {exp=trAssignExp(assigndata), ty=ty}
           | trexp{exp=TAbs.ForExp(fordata), ty=ty} = {exp=trForExp(fordata), ty=ty}
           | trexp{exp=TAbs.StringExp str, ty=ty} = {exp=Tr.string2IR(str), ty=ty}
+          | trexp{exp=TAbs.BreakExp, ty=ty} = {exp=trBreakExp(), ty=ty}
           | trexp _ = TODO
            
+        and trBreakExp() = 
+          let
+            val break' = (#break extra)
+          in
+            case break' of SOME(br') => Tr.break2IR (br') 
+                          | NONE => Tr.bogus (*TODO: Look into this again*)
+          end
+
 
           and trBinop(left,oper,right) = 
             let val {exp=lexp, ty=_} = trexp left
