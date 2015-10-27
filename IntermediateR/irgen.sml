@@ -27,7 +27,7 @@ fun transExp (venv, extra : extra) =
     let                               
         fun trexp {exp=TAbs.NilExp, ty} = {exp=Tr.nil2IR (), ty=ty}
           | trexp{exp=TAbs.IntExp i, ty} = {exp=Tr.int2IR(i), ty=ty}
-          | trexp{exp=TAbs.OpExp({left=left,oper=oper,right=right}), ty=ty} = {exp=trBinop(left,oper,right), ty=ty}
+          | trexp{exp=TAbs.OpExp({left=left,oper=oper,right=right}), ty=ty} = {exp=trBinop(left,oper,right), ty=ty} (*TODO: Add support for strings too*)
           | trexp{exp=TAbs.IfExp({test=test,thn=thn,els=SOME(els)}), ty=ty} = {exp=trIfElseExp(test,thn,els), ty=ty}
           | trexp{exp=TAbs.IfExp({test=test,thn=thn,els=NONE}), ty=ty} = {exp=trIfThenExp(test,thn), ty=ty}
           | trexp{exp=TAbs.VarExp(var), ty=ty} = {exp=trVarExp(var), ty=ty}
@@ -38,6 +38,7 @@ fun transExp (venv, extra : extra) =
           | trexp{exp=TAbs.ForExp(fordata), ty=ty} = {exp=trForExp(fordata), ty=ty}
           | trexp{exp=TAbs.StringExp str, ty=ty} = {exp=Tr.string2IR(str), ty=ty}
           | trexp{exp=TAbs.BreakExp, ty=ty} = {exp=trBreakExp(), ty=ty}
+          | trexp{exp=TAbs.ArrayExp(arrdata), ty=ty} = {exp=trArrayExp(arrdata), ty=ty}
           | trexp _ = TODO
            
         and trBreakExp() = 
@@ -131,6 +132,14 @@ fun transExp (venv, extra : extra) =
               val var' = Tr.simpleVar(acc',level')
             in
               Tr.for2IR(var',done',lo',hi',body')
+            end
+
+          and trArrayExp({size=size, init=init}) = (* using Tr.array2IR *)
+            let 
+              val {exp=sizeexp', ty=_} = trexp size
+              val {exp=initexp', ty=_} = trexp init
+            in
+              Tr.array2IR(sizeexp', initexp')
             end
         (* The below code suggest how to translate depending what case
         you are in, however, uncommenting the section would result in

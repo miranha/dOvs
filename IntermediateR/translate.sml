@@ -381,7 +381,7 @@ fun procCall2IR ( toLevel as Level ({frame, parent}, _)
 
 fun array2IR (size, init) =
     Ex (T.CALL ( T.NAME (Temp.namedLabel "initArray")
-               , raise TODO))
+               , [unEx size, unEx init]))
 
 fun record2IR explist =
     let
