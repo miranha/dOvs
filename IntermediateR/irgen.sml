@@ -36,6 +36,7 @@ fun transExp (venv, extra : extra) =
           | trexp{exp=TAbs.WhileExp(whiledata), ty=ty} = {exp=trWhileExp(whiledata), ty=ty}
           | trexp{exp=TAbs.AssignExp(assigndata), ty=ty} = {exp=trAssignExp(assigndata), ty=ty}
           | trexp{exp=TAbs.ForExp(fordata), ty=ty} = {exp=trForExp(fordata), ty=ty}
+          | trexp{exp=TAbs.StringExp str, ty=ty} = {exp=Tr.string2IR(str), ty=ty}
           | trexp _ = TODO
            
 
