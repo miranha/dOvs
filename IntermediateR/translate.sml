@@ -241,6 +241,10 @@ fun relop2IR (oper, left, right) =
       Cx ((fn(t,f)=>T.CJUMP(oper, left', right', t,f)))
     end
 
+fun exponent2IR (left, right) =
+    Ex (T.CALL ( T.NAME (Temp.namedLabel "pow") (*TODO: Check function name*)
+               , [unEx left, unEx right])) (*TODO: could also have used external call*)
+
 fun intOp2IR (TAbs.PlusOp, left, right)   = binop2IR (T.PLUS, left, right)
   | intOp2IR (TAbs.MinusOp, left, right)  = binop2IR (T.MINUS, left, right)
   | intOp2IR (TAbs.TimesOp, left, right)  = binop2IR (T.MUL, left, right)
@@ -251,7 +255,7 @@ fun intOp2IR (TAbs.PlusOp, left, right)   = binop2IR (T.PLUS, left, right)
   | intOp2IR (TAbs.LeOp, left, right)     = relop2IR (T.LE, left, right)
   | intOp2IR (TAbs.GtOp, left, right)     = relop2IR (T.GT, left, right)
   | intOp2IR (TAbs.GeOp, left, right)     = relop2IR (T.GE, left, right)
-  | intOp2IR (TAbs.ExponentOp, left, right) = raise TODO
+  | intOp2IR (TAbs.ExponentOp, left, right) = exponent2IR (left, right)(*TODO: I can not find pow function, we need to implment it?*)
 
 fun let2IR ([], body) = body
   | let2IR (decls, body) = Ex (T.ESEQ (seq (map unNx decls), unEx body))
