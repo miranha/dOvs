@@ -135,7 +135,9 @@ fun simpleVar (acc, fromLevel) = (* must return Ex (TEMP _) or Ex (MEM _) *)
 
 fun fieldVar (var, offset) =
     (* must return Ex (TEMP _) or Ex (MEM _) *)
-    raise TODO
+     Ex(
+        T.MEM(T.BINOP(T.PLUS, unEx(var), T.BINOP(T.MUL,T.CONST offset,T.CONST F.wordSize)))
+        )
 
 fun assign2IR (var, exp) =
     let
