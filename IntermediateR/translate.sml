@@ -404,7 +404,7 @@ fun record2IR explist =
     end
 
 
-fun subscript2IR (array, offset) =
+fun subscript2IR (arr, offset) =
     (* must return Ex (TEMP _) or Ex (MEM _) *)
     let
         val offsetT = Temp.newtemp ()
@@ -415,10 +415,12 @@ fun subscript2IR (array, offset) =
         val nonNegativeL = Temp.newLabel "subs_nneg"
         val overflowL = Temp.newLabel "subs_ovf"
         val noOverflowL = Temp.newLabel "subs_novf"
-        val array' = unEx array
+        val arr' = unEx arr
         val offset' = unEx offset
     in
-        raise TODO
+        Ex(
+            T.MEM(T.BINOP(T.PLUS, arr', T.BINOP(T.MUL,offset',T.CONST F.wordSize)))
+          )
     end
 
 fun funEntryExit {level = Level ({frame, parent}, _), body = body} =
