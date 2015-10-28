@@ -92,7 +92,7 @@ fun transExp (venv, extra : extra) =
             let
               val seqlist = trSeqExpAux(seqdata,[])
             in
-              case ty of
+              case actualTy ty of
                 Ty.UNIT => Tr.seq2IR(seqlist)
                 | _ => Tr.eseq2IR(seqlist)
             end
@@ -236,7 +236,20 @@ fun transExp (venv, extra : extra) =
                 SOME(E.VarEntry{access=access, ty=ty, escape=escape})=>{exp=Tr.simpleVar(access,level'), ty=ty}
             end
 
-          | trvar {var=TAbs.FieldVar (var, id), ty} : {exp:Tr.exp,ty:Ty.ty} = TODO
+          | trvar {var=TAbs.FieldVar (var, id), ty} : {exp:Tr.exp,ty:Ty.ty} = 
+          let 
+            val {exp=var', ty=varty'} = trvar var
+            val lst = (case actualTy varty' of
+                          Ty.RECORD(fi,_) => fi
+                          | _ => [](* Semant says this never happens*))
+            fun index ((s,_)::xs, acc) = if s = id then acc else index(xs, acc + 1)
+              | index (_) = ~1 (* Semans says this never happens *)
+            val offset = index(lst,0)
+          in
+             {exp = Tr.fieldVar(var', offset), ty = ty}
+          end 
+
+            (*TODO*)
             (* ignore 'mutationRequested': all record fields are mutable *)
             (*TODO*) (* using Tr.fieldVar *)
                                        
