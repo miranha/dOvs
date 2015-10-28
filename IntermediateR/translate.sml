@@ -395,13 +395,14 @@ fun record2IR explist =
                            , T.CALL (T.NAME (Temp.namedLabel "allocRecord") (*TODO:Check this function*)
                , [size]) (* call "allocRecord" *))
         fun step (exp, n) =
-            T.MOVE ( raise TODO (* the n-th field in the record *)
+            T.MOVE ( T.MEM(T.BINOP(T.PLUS, T.TEMP r, T.CONST (n*F.wordSize)))(* the n-th field in the record *)(*T.MEM(T.BINOP(T.PLUS, T.CONST offset', parent'))*)
                    , unEx exp)
         fun steps ([], n) = []
           | steps (e::es, n) = (step (e, n))::(steps (es, n+1))
     in
         Ex (T.ESEQ (seq (setup :: steps (explist, 0)), T.TEMP r))
     end
+
 
 fun subscript2IR (array, offset) =
     (* must return Ex (TEMP _) or Ex (MEM _) *)

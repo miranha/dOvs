@@ -39,6 +39,7 @@ fun transExp (venv, extra : extra) =
           | trexp{exp=TAbs.StringExp str, ty=ty} = {exp=Tr.string2IR(str), ty=ty}
           | trexp{exp=TAbs.BreakExp, ty=ty} = {exp=trBreakExp(), ty=ty}
           | trexp{exp=TAbs.ArrayExp(arrdata), ty=ty} = {exp=trArrayExp(arrdata), ty=ty}
+          | trexp{exp=TAbs.RecordExp(recdata), ty=ty} = {exp=trRecordExp(recdata), ty=ty}
           | trexp _ = TODO
            
         and trBreakExp() = 
@@ -141,6 +142,20 @@ fun transExp (venv, extra : extra) =
             in
               Tr.array2IR(sizeexp', initexp')
             end
+
+          and trRecordExp({fields=fields}) = (*{ fields: (S.symbol * exp) list}*)
+            let
+              val expl = trRecExpAux(fields,[])
+            in
+              Tr.record2IR(expl)
+            end
+
+          and trRecExpAux((_, exp)::xs, acc) = 
+            let val {exp=res, ty=_} = trexp exp 
+            in 
+              trRecExpAux(xs,acc@[res]) 
+            end
+            | trRecExpAux([], acc) = acc
         (* The below code suggest how to translate depending what case
         you are in, however, uncommenting the section would result in
         type-errors. You will have to write the rest of the cases your
