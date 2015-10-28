@@ -52,10 +52,13 @@ fun transExp (venv, extra : extra) =
 
 
           and trBinop(left,oper,right) = 
-            let val {exp=lexp, ty=_} = trexp left
+            let val {exp=lexp, ty=tyl} = trexp left
                 val {exp=rexp, ty=_} = trexp right 
               in
-                Tr.intOp2IR(oper,lexp,rexp)
+                case actualTy tyl of (*Both left and right types are same type-> ensured by semant*)
+                  Ty.STRING => Tr.stringOp2IR(oper,lexp,rexp) (*TODO: Check that this works as expected*)
+                  | Ty.INT => Tr.intOp2IR(oper,lexp,rexp)
+                  | _ => Tr.bogus (*Should never happend-> ensured by semnat*)
             end
 
           and trIfElseExp(test,thn,els) =
