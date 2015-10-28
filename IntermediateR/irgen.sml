@@ -221,11 +221,17 @@ fun transExp (venv, extra : extra) =
                 SOME(E.VarEntry{access=access, ty=ty, escape=escape})=>{exp=Tr.simpleVar(access,level'), ty=ty}
             end
 
-          (*| trvar {var=TAbs.FieldVar (var, id), ty} : {exp:Tr.exp,ty:Ty.ty} = *)
+          | trvar {var=TAbs.FieldVar (var, id), ty} : {exp:Tr.exp,ty:Ty.ty} = TODO
             (* ignore 'mutationRequested': all record fields are mutable *)
             (*TODO*) (* using Tr.fieldVar *)
                                        
-          (*| trvar {var=TAbs.SubscriptVar (var, exp), ty} : {exp:Tr.exp,ty:Ty.ty} = *)
+          | trvar {var=TAbs.SubscriptVar (var, exp), ty} : {exp:Tr.exp,ty:Ty.ty} = 
+          let 
+            val {exp=var', ty=_} = trvar var
+            val {exp=exp', ty=_} = trexp exp
+          in
+            {exp=Tr.subscript2IR(var',exp'), ty=ty}  
+          end
             (* ignore 'mutationRequested': all array entries are mutable *)
             (*TODO*) (* using Tr.subscript2IR *)
 

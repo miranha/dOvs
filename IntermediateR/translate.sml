@@ -362,7 +362,7 @@ fun funCall2IR ( toLevel as Level ({frame, parent}, _)
     let
         val sl = followStaticLink parent fromLevel
     in
-        Ex (T.CALL (T.NAME label, sl :: (raise TODO)))
+        Ex (T.CALL (T.NAME label, sl :: (map unEx exps)(*raise TODO*)))
     end
   | funCall2IR (Top, _, _, _) =
     raise Bug "called function seems to have above-top-level context"
@@ -374,21 +374,22 @@ fun procCall2IR ( toLevel as Level ({frame, parent}, _)
     let
         val sl = followStaticLink parent fromLevel
     in
-        Nx (T.EXP (T.CALL (T.NAME label, sl :: (raise TODO))))
+        Nx (T.EXP (T.CALL (T.NAME label, sl :: (map unEx exps)(*raise TODO*))))
     end
   | procCall2IR (Top, _, _, _) =
     raise Bug "called procedure seems to have above-top-level context"
 
 fun array2IR (size, init) =
     Ex (T.CALL ( T.NAME (Temp.namedLabel "initArray")
-               , [unEx size, unEx init]))
+               , [unEx size, unEx init])) (*TODO: could also have used external call*)
 
 fun record2IR explist =
     let
         val size = T.CONST (length explist)
         val r = Temp.newtemp ()
         val setup = T.MOVE ( T.TEMP r
-                           , raise TODO (* call "allocRecord" *))
+                           , T.CALL (T.NAME (Temp.namedLabel "allocRecord") (*TODO:Check this function*)
+               , [size]) (* call "allocRecord" *))
         fun step (exp, n) =
             T.MOVE ( raise TODO (* the n-th field in the record *)
                    , unEx exp)
