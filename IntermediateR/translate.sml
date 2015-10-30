@@ -419,9 +419,21 @@ fun subscript2IR (arr, offset) =
         val noOverflowL = Temp.newLabel "subs_novf"
         val arr' = unEx arr
         val offset' = unEx offset
+        val size = T.MEM(T.BINOP(T.PLUS, arr', T.CONST (~F.wordSize))) (* if elemtents starts at i, the arrays size is at i-Wordsize *)
     in
-        Ex(
-            T.MEM(T.BINOP(T.PLUS, arr', T.BINOP(T.MUL,offset',T.CONST F.wordSize)))
+      (* First checks for negative index, then for overflow. If an error, call external error handling *)
+        Ex( T.ESEQ (seq [
+              T.CJUMP(T.GT, offset', T.CONST ~1, nonNegativeL, negativeL),
+              T.LABEL negativeL,
+              T.EXP(F.externalCall("arrInxError", [offset'])),
+              T.LABEL nonNegativeL,
+              T.CJUMP(T.LT, offset',size, noOverflowL,overflowL),
+              T.LABEL overflowL,
+              T.EXP(F.externalCall("arrInxError", [offset'])),
+              T.LABEL noOverflowL,
+              T.MOVE(T.TEMP arrayT, T.MEM(T.BINOP(T.PLUS, arr', T.BINOP(T.MUL,offset',T.CONST F.wordSize))))]
+            ,
+        T.TEMP arrayT)
           )
     end
 
