@@ -14,22 +14,10 @@
 \maketitle
 
 \section{Introduction}
-<<<<<<< HEAD
-This report describes how the semantic analysis module was developed. The semantic analysis is the third component of the compiler. This component takes the Abstract Syntax Tree (AST) from the parser and makes a semantics analysis, also known as type-checking. 
-
-First it is described how the missing cases where implemented in the provided file \texttt{semant.sml} and which other files had to be extended in order to developed the semantic analysis component. Afterwards, the problems encountered and experience gain are described. Then 5 tiger program are presented, which tests different cases of the semantics analysis. Finally, the work carried out and the experience gained are summarised. 
-
-\section{The semantic analysis}
-%How did you implement the missing cases in the semant.sml. Describe how the file works as a whole and explain a few interesting cases.
-The main task of the semantics analysis is that it takes the AST provided by the parser and applies the function \texttt{transExp}. This function is able to transvers a AST, and created a Typed AST (TAST), based on the file \texttt{tabsyn.sml}. This new TAST, which is the output of the semantic analysis module, is a AST which has be decorated with type information. This was a high level description of how the semantic module is working. Below more low-level parts are highlighted.
-
-The main development in order to create the semantics analysis module, was made inside the file \texttt{semant.sml}. Basically the approach from the book together with the adjustments from dOvs was followed during the development. For example the nested function \texttt{trexp} inside the function \texttt{transExp}, is used on all expressions which do not change the environment. Then \texttt{transExp} is only used when an expression has to be evaluated with an new, and altered, environment. As an example this is the case when the body of let expression has to be evaluated with possibly new declarations. Also the \texttt{extra} record is used in order to send additional needed information with the relevant functions.
-
-Also a key part of this semantic analysis is the handling of the declarations, especially the recursive declarations of types and functions. In this case first the non-recursive version (part a) was developed. Afterwards, it was extended to handle recursive declarations. The recursive declarations are handled by evaluating them two times. For types, first all the headers of each type declaration are stored, along with a reference to their type, set to NONE in the first evaluation. In the next evaluation actual type declaration is identified, and the reference updated with the correct reference. TODO: Explain the cycle identifier. The recursive function where handled in a similar way by analysing through two runs, by first going through the headers, and afterwards the body.  
-=======
 This report describes how the semantic analysis module was developed. The semantic analysis is the third component of the compiler. This component takes the Abstract Syntax Tree (AST) from the parser and performs a semantic analysis, also known as type-checking, to produce a typed syntax tree. 
 
 First we described how the missing cases where implemented in the provided file \texttt{semant.sml} and which other files had to be extended in order to developed the semantic analysis component. Afterwards, the problems encountered and experience gained are described. Then 5 tiger programs are presented, which tests different cases of the semantics analysis.
+
 
 \section{The semantic analysis}
 %How did you implement the missing cases in the semant.sml. Describe how the file works as a whole and explain a few interesting cases.
@@ -39,19 +27,14 @@ on a few parts of the semantic analysis.
 The main development in order to create the semantics analysis module, occured inside the file \texttt{semant.sml}. We used the approach from the book as well as 
 what was described by the material provided. For example, the nested function \texttt{trexp} inside the function \texttt{transExp}, is used on all expressions which do not change the environment. Then \texttt{transExp} is only used when an expression has to be evaluated with an new, and altered, environment. As an example of this is the case when the body of let expression has to be evaluated with possibly new declarations, or a for loop with a newly defined variabe. Also the \texttt{extra} record is used in order to send additional needed information with the relevant functions.
 
-Also a key part of this semantic analysis is the handling of the declarations, especially the recursive declarations of types and functions. We first developed a non recursive version, in order to test other parts of the semantic analysis. Afterwards, it was extended to handle recursive declarations. The recursive declarations are handled by parsing the defintions twice. While we add stuff to their respective enviorments in the first pass, they are far from equal in what is occuring.
->>>>>>> mha/sem
+Also a key part of this semantic analysis is the handling of the declarations, especially the recursive declarations of types and functions. We first developed a non recursive version, in order to test other parts of the semantic analysis. Afterwards, it was extended to handle recursive declarations. The recursive declarations are handled by parsing the defintions twice. While we add stuff to their respective enviorments in the first pass, they are far from equal in what is occuring. 
 
 \subsection{Types and Mutual Recursive Types}
 They way we handle recursive types is by processing type declarations twice. 
 First time through, we put the types into the type enviorment. More concretly
-<<<<<<< HEAD
-we add the entry (name, TY.NAME(name,ref(NONE))) to the type enviorment.
-=======
 we add the entry \texttt{(name, TY.NAME(name,ref(NONE)))} to the type enviorment.
 
 While here, we check if the same name occurs twice in the block. If it does, we report it as an error
->>>>>>> mha/sem
 
 Second time through, we use the name to lookup our type in the type enviorment.
 Then we call transTy on the returned type with our updated type enviorment and the abstract syntax trees type declaration.
@@ -59,19 +42,6 @@ Trans ty then creates the relevant type if the user wanted to create a record or
 to refer to an already named type. In all cases, it updates the named types reference to point to the a newly created or fetched type.
 
 While we are in the proccess of creating the types we maintain a list of the names of the new type declarations. After
-<<<<<<< HEAD
-we are done creating, we use this list to check of a cyclic type declaration.
-
-The way we detect cycles is simple: We use Floyds cycle detection algorithm. If A has a reference to named type B, we start the algorithm
-with these at inputs. We then check if B has a reference to a named type C and if so, if it has a reference to a named type D. 
-Then, we allow the pointer to A to jump to B. IF there is a cycle, we will find it once the pointers point to the same names.
-
-
-The only time there won't be a cycle is if we in a long sequence of named types end up at a record or array type. If so, we do stop, since we then can't have a jump
-step of size 2.
-
-We also check if one wants to declare a named Type twice, e.g. type A = string, type A = int. If so, we report an error.
-=======
 we are done creating, we use this list to check for cyclic type declarations.
 
 The way we detect cycles is simple: We use Floyds cycle detection algorithm. If A has a reference to named type B, we start the algorithm
@@ -81,7 +51,6 @@ Then, we allow the pointer to A to jump to B. If there is a cycle, we will find 
 
 The only time there won't be a cycle is if we in a long sequence of named types end up at a record or array type. If so, we do stop, since we then can't have a jump
 step of size 2 at the end.
->>>>>>> mha/sem
 
 \subsection{Functions and Mutual Recursive Functions}
 
@@ -92,11 +61,9 @@ we go through each function body separately. Firstly, the arguments are added as
 variable enviorment, then we proccess the bodies with the newly updated variable enviorment, containing functions headers as
 well as the arguments.
 
-<<<<<<< HEAD
-After passing, the arguments will drop from the variable enviorment, so only the function headers remain.
-=======
 After passing, the arguments will drop from the variable enviorment, so only the function headers remain and we continue on.
->>>>>>> mha/sem
+
+
 
 \section{The support modules}
 %Write what changes you made to other files and how the play a part in the compiler.
@@ -109,11 +76,7 @@ The support module \texttt{ENV} was extended with the information about the stan
 
 One key experience is how to create the semantic analysis in order to detect which parts are not working correctly during development. For this reason Test Driven Development was used, like in our work in the warm up assignment. During the development small unit test where created in order to test single aspects of the module in isolation. This helped in order to identify the source of errors encountered.
 
-<<<<<<< HEAD
-Additionally, it led to discussions about how to handle type error in order not to let an error propagate. The main principle in this approach is to ensure that the semantic analysis can continue even though an error was encountered. Such things can be handled in different ways, and here we had to make a compromise and decision, which are mainly based on the severity of the error.
-=======
 Additionally, it led to discussions about how to handle type errors in order not to let an error propagate. The main principle in this approach is to ensure that the semantic analysis can continue even though an error was encountered. Such things can be handled in different ways, and here we had to make a compromise and decision, which are mainly based on the severity of the error. Mostly, we want to report as many errors as possible to the user.
->>>>>>> mha/sem
 
 \section{5 tiger programs}
 %5 interesting tiger programs that you find test your semantic analysis in a good way.
@@ -122,7 +85,6 @@ The five tiger programs presented here are simple, created in order to focus on 
 which provided testcases does not. These tests contain different syntax errors as required by the project description. In order to ensure that this semantic analysis works it is run on the provided testcases by the course. 
 
 %Additionally, some intersting experiments where made in order to test some of the more challenging aspects of this parser. This includes creating test for the \texttt{lvalue}, test that exponent binds tighter then unary minus\footnote{This is changed according to Aslan's new requirement} and that the mutual recursive function are sorted correctly according to the tiger programming language.
-
 
 \subsection{break\_exp\_tests.tig}
 
@@ -197,3 +159,4 @@ end
 This report presented the development of the semantics analysis, which creates a typed AST. Additionally the gained experience was described. Finally, additional tests provided confidence that this semantic analysis is working correctly and also reports correct error messages.
 
 This report showed the implementation of the semantic analysis. Furthermore some the problems encountered where described. 
+\end{document}

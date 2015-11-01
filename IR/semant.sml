@@ -23,6 +23,8 @@ structure E = Env
 structure Ty = Types
 structure PT = PrintTypes
 structure TAbs = TAbsyn
+structure Trans = Translate
+structure T = Temp
 
 (* Use the extra record to add more information when traversing the tree
    It should become obvious when you actually need it, what to do.
@@ -304,7 +306,7 @@ and checkFloyd(Ty.NAME(name1,ref(SOME(t))),Ty.NAME(name2,ref(SOME(t'))), name, p
             )
     | checkFloyd(_,_,_,_) = ()
 
-fun transExp (venv, tenv, extra : extra) =
+fun transExp (venv, tenv, extra : extra, level : Trans.level) =
     let
         val NILPAIR = {exp = TAbs.NilExp, ty = Ty.UNIT}
 
@@ -410,7 +412,7 @@ fun transExp (venv, tenv, extra : extra) =
                                                                             end
         and trwhileexp({test = tst, body = bdy, pos = ps} : A.whiledata) = let
                                                                             val {exp = test, ty = testty} : TAbs.exp = trexp(tst)
-                                                                            val {exp = body, ty = bodyty} : TAbs.exp = transExp(venv, tenv, setInLoop(extra, true)) bdy
+                                                                            val {exp = body, ty = bodyty} : TAbs.exp = transExp(venv, tenv, setInLoop(extra, true), level) bdy
                                                                             val testexp = makePair(test, testty)
                                                                             val bodyexp = makePair(body, bodyty)
                                                                            in
@@ -424,10 +426,11 @@ fun transExp (venv, tenv, extra : extra) =
               (* venv=S.enter(venv,name,E.VarEntry{ty=ty})} *)
 
         and trforexp({var = va, escape = esc, lo = l, hi = h, body = bdy, pos = ps}: A.fordata, venv) = let
-          val subvenv = S.enter(venv,va,E.VarEntry{ty=Ty.INT})
+          val access = Trans.allocLocal level (!esc)
+          val subvenv = S.enter(venv,va,E.VarEntry{access=access,ty=Ty.INT})
           val {exp = lexp, ty = lty} : TAbs.exp = trexp(l)
           val {exp = hexp, ty = hty} : TAbs.exp = trexp(h)
-          val {exp = bodyexp, ty = bodyty} : TAbs.exp = transExp(subvenv, tenv, addUnassignable(va, (setInLoop(extra, true) )) ) bdy
+          val {exp = bodyexp, ty = bodyty} : TAbs.exp = transExp(subvenv, tenv, addUnassignable(va, (setInLoop(extra, true) )) , level) bdy
           val lpair = makePair(lexp,lty)
           val hpair = makePair(hexp, hty)
           val bdypair = makePair(bodyexp,bodyty)
@@ -443,9 +446,10 @@ fun transExp (venv, tenv, extra : extra) =
               |_ => (out ("Low expression not compatible with type " ^ PT.asString Ty.INT) ps; ERRORPAIR)
         end
           (* It should be possible to reuse this in other functions *)
-        and trvar (A.SimpleVar (id, pos)) = let val ty = lookupVar venv id pos in
+        and trvar (A.SimpleVar (id, pos)) = let val ty = lookupVar venv id pos 
+                                              in
                                               case ty of
-                                              SOME(Env.VarEntry({ty = t})) => makeVar(TAbs.SimpleVar(id), t)
+                                              SOME(Env.VarEntry({access=access,ty = t})) => makeVar(TAbs.SimpleVar(id), t)
                                               |_ => (errorVar(pos, id); makeVar(TAbs.SimpleVar(id),Ty.ERROR))
                                               end
           | trvar (A.FieldVar (var, id, pos)) =
@@ -545,15 +549,15 @@ fun transExp (venv, tenv, extra : extra) =
             oper = opr, right = texp2}, Ty.INT)
 
         and trletexp({decls=decls, body=body, pos = pos} : A.letdata) = let val {decls = delcs', venv=venv', tenv=tenv'} =
-          transDecs(venv,tenv, decls, extra) 
-          val {exp, ty} = (transExp(venv',tenv',extra) body)
+          transDecs(venv,tenv, decls, extra, level) 
+          val {exp, ty} = (transExp(venv',tenv',extra,level) body)
         in {exp = TAbs.LetExp { decls = delcs', body = makePair(exp, ty)}, ty = ty}
           end
 
         and trcallexp({func = name, args = args, pos = pos}) =
           let val f = lookupVar venv name pos
           in case f of
-            SOME(E.FunEntry{formals = formals, result = resultTy}) => 
+            SOME(E.FunEntry{level=_, label=_,formals = formals, result = resultTy}) => 
                       let val {tylst, explst, poslst} = makeArgsList(args,[], [], [])
                       in
                           if checkParam(tylst, formals, poslst, pos, true) then
@@ -584,32 +588,34 @@ fun transExp (venv, tenv, extra : extra) =
 
 
 and transDec ( venv, tenv
-             , A.VarDec {name, escape, typ = NONE, init, pos}, extra : extra) =
-          let val {exp, ty} = transExp(venv, tenv, extra) init
+             , A.VarDec {name, escape, typ = NONE, init, pos}, extra : extra, level) =
+          let val {exp, ty} = transExp(venv, tenv, extra, level) init
             val decl' = TAbs.VarDec{  name = name, escape = escape, ty = ty, init = makePair(exp, ty)}
             val nildecl =  TAbs.VarDec{  name = name, escape = escape, ty = Ty.ERROR, init = makePair(exp, ty)}
+            val access = Trans.allocLocal level true
           in case (actualTy ty pos) of
-            Ty.NIL => (errorNilNoneVar (pos, name); {decl = nildecl, tenv = tenv, venv = S.enter(venv, name, E.VarEntry{ty = Ty.ERROR})})
-            | _ => {decl = decl', tenv = tenv, venv = S.enter(venv, name, E.VarEntry{ty = ty})}
+            Ty.NIL => (errorNilNoneVar (pos, name); {decl = nildecl, tenv = tenv, venv = S.enter(venv, name, E.VarEntry{access=access,ty = Ty.ERROR})})
+            | _ => {decl = decl', tenv = tenv, venv = S.enter(venv, name, E.VarEntry{access=access,ty = ty})}
           end
 
 
   | transDec ( venv, tenv
-             , A.VarDec {name, escape, typ = SOME (s, pos), init, pos=pos1}, extra) =
-                let val {exp, ty} = transExp(venv, tenv, extra) init
+             , A.VarDec {name, escape, typ = SOME (s, pos), init, pos=pos1}, extra, level) =
+                let val {exp, ty} = transExp(venv, tenv, extra, level) init
                   val ty' = lookupTy tenv s pos
+                  val access = Trans.allocLocal level true
                   val errDecl = TAbs.VarDec{  name = name, escape = escape, ty = Ty.ERROR, init = makePair(exp, ty)}
-                  val errReturn = {decl = errDecl, tenv = tenv, venv = S.enter(venv, name, E.VarEntry{ty = Ty.ERROR})}
+                  val errReturn = {decl = errDecl, tenv = tenv, venv = S.enter(venv, name, E.VarEntry{access=access,ty = Ty.ERROR})}
                   val decl' = TAbs.VarDec { name = name, escape = escape, ty = ty, init = makePair(exp, ty)}
                 in
                   case ty' of
                     NONE => errReturn
                     |SOME(t) => if equalTy( t, ty, pos1)
-                                    then {decl = decl', tenv = tenv, venv = S.enter(venv, name, E.VarEntry{ty = actualTy t pos})} 
+                                    then {decl = decl', tenv = tenv, venv = S.enter(venv, name, E.VarEntry{access=access ,ty = actualTy t pos})} 
                                 else (out ("Variable " ^ S.name name ^ " declared as type " ^ S.name s ^ " and RHS has type " ^ PT.asString ty ^ " which is non compatabile") pos1; 
                                   errReturn)
                 end
-  | transDec (venv, tenv, A.TypeDec typdecs, extra) =
+  | transDec (venv, tenv, A.TypeDec typdecs, extra, level) =
     let 
       fun enterTydec([] , tyDecls, tenv, venv, nameposlst) = (checkCycles(tenv, nameposlst); {decl = TAbs.TypeDec(tyDecls), tenv = tenv, venv = venv})
         | enterTydec({name,ty,pos}::tl,tyDecls, tenv, venv, nameposlst)=
@@ -635,80 +641,87 @@ and transDec ( venv, tenv
       enterTydec(typdecs,[], tenv', venv,[])
     end
 
-  | transDec (venv, tenv, A.FunctionDec fundecls, extra) =
+  | transDec (venv, tenv, A.FunctionDec fundecls, extra, level) =
     let (*val {venv, funlst, ventries} = transFuncs(fundecls, [], venv, tenv, extra, [])
-    *) val venv' = getFunctionHeaders(fundecls, [], venv,tenv,extra)
-      val funlst = checkFunctions (venv', tenv, fundecls, extra, [], [])
+    *) val venv' = getFunctionHeaders(fundecls, [], venv,tenv,extra,level)
+      val funlst = checkFunctions (venv', tenv, fundecls, extra, [], [], level)
     in
     {decl = TAbs.FunctionDec(funlst), tenv = tenv, venv = venv'} end
 
-  and getFunctionHeaders({name, params,result,body,pos}::xs,names,venv,tenv,extra) =
+  and getFunctionHeaders({name, params,result,body,pos}::xs,names,venv,tenv,extra,level) =
     let
      val tOpt = (case result of SOME((id, pos')) => lookupTy tenv id pos'
       | NONE => SOME(Ty.UNIT))
-     val {venv = v', lst =l', tylst = tylst, ventries = ventries} = transParams(params, venv, tenv, [], [], [], [])
+     val {venv = v', lst =l', tylst = tylst, ventries = ventries,level} = transParams(params, venv, tenv, [], [], [], [],level)
     in
       if List.exists (fn x => x = name) names 
-        then (out (S.name name ^ " has already been declared, skipping it") pos; getFunctionHeaders(xs,names,venv,tenv,extra))
+        then (out (S.name name ^ " has already been declared, skipping it") pos; 
+          getFunctionHeaders(xs,names,venv,tenv,extra,level))
       else
         let
             fun validtype topt = (case topt of
                          NONE =>(out (" Function " ^ S.name name ^ " return type is undeclared"); Ty.ERROR)
-                       | SOME(t) => t) 
+                       | SOME(t) => t)
+          val newName = T.newLabel("")
+          val newLevel = Trans.newLevel{parent=level, name=newName, formals=map (fn _ => true) params}
+
         in 
-          getFunctionHeaders(xs, name::names,S.enter(venv, name, E.FunEntry{formals = tylst, result = (validtype tOpt)}),tenv,extra)
+          getFunctionHeaders(xs, name::names,S.enter(venv, name, E.FunEntry{level=newLevel, label=newName,formals = tylst, result = (validtype tOpt)}),tenv,extra,level)
         end
     end
-    | getFunctionHeaders([],_,venv,tenv,extra) = venv
+    | getFunctionHeaders([],_,venv,tenv,extra,level) = venv
 
-  and checkFunctions(venv, tenv, {name, params, result, body, pos}::fundecls, extra, functions, names) =
+  and checkFunctions(venv, tenv, {name, params, result, body, pos}::fundecls, extra, functions, names, level) =
     if (List.exists (fn x => x = name) names) then
       (out ("Function " ^ S.name name ^ " is already declared, will keep old definition") pos;
-        checkFunctions(venv, tenv, fundecls, extra, functions, names))
+        checkFunctions(venv, tenv, fundecls, extra, functions, names, level))
     else
     let val varOpt = lookupVar venv name pos
       val typeLst = (case varOpt of 
-                            SOME(E.FunEntry{formals = formals, result =_}) => formals
+                            SOME(E.FunEntry{level=_, label=_,formals = formals, result =_}) => formals
                           | _ => [])
       val res = (case varOpt of 
-                            SOME(E.FunEntry{formals = _, result = resultty}) => resultty
+                            SOME(E.FunEntry{level=_, label=_,formals = _, result = resultty}) => resultty
                           | _ => Ty.ERROR)
-      val {venv = v, lst = lst, tylst = tylst, ventries = ventries} = transParams(params, venv, tenv, [], [], [], [])
+      val {venv = v, lst = lst, tylst = tylst, ventries = ventries,level} = transParams(params, venv, tenv, [], [], [], [],level)
       fun enterInVenv (venv, (name, ventry)::xs) = enterInVenv(S.enter(venv, name, ventry), xs)
         | enterInVenv (venv, []) = venv
       val venv' = enterInVenv (venv, ventries)
-      val {exp, ty} = transExp (venv', tenv, extra) body
+      val {exp, ty} = transExp (venv', tenv, extra, level) body
       val f = {name = name, params = lst, resultTy = res, body = makePair(exp, ty)}
       val errf = {name = name, params = lst, resultTy = Ty.ERROR, body = makePair(exp, ty)} : TAbs.fundecldata
     in
       if (actualTy res pos) = (actualTy ty pos) then
-        checkFunctions(venv, tenv, fundecls, extra, functions  @ [ f ], name::names)
+        checkFunctions(venv, tenv, fundecls, extra, functions  @ [ f ], name::names, level)
       else
       (out ("The result type " ^ PT.asString res ^ " is not compatible with body type " ^ PT.asString ty) pos;
-              checkFunctions(venv, tenv, fundecls, extra, functions  @ [ errf ], name::names)
+              checkFunctions(venv, tenv, fundecls, extra, functions  @ [ errf ], name::names, level)
               )
     end
-    | checkFunctions(venv, tenv, [], extra, functions, names) = functions
+    | checkFunctions(venv, tenv, [], extra, functions, names, level) = functions
 
-  and transParams({name = name, escape = escape, typ = (typ, pos1), pos = pos}::xs, venv, tenv, lst, tylst, names, ventries) =
+  and transParams({name = name, escape = escape, typ = (typ, pos1), pos = pos}::xs, venv, tenv, lst, tylst, names, ventries, level) =
     if List.exists (fn x => x = name) names
-      then (out (" parameter " ^ S.name name ^ " already declared, will keep old definition") pos1; transParams(xs, venv, tenv, lst, tylst, names, ventries))
+      then (out (" parameter " ^ S.name name ^ " already declared, will keep old definition") pos1; 
+        transParams(xs, venv, tenv, lst, tylst, names, ventries,level))
     else
       let val ty = lookupTy tenv typ pos1 (* Check if we have a defined type *)
+          val access = Trans.allocLocal level true
       in case ty of NONE => 
         let val fData = {name = name, escape = escape, ty = Ty.ERROR} : TAbs.fielddata
         in
         (out ("parameter " ^ S.name name ^ " is decalered as type " ^ S.name typ ^ ", as type that has yet to be declared") pos;
-                              transParams(xs, S.enter(venv, name, E.VarEntry{ty = Ty.ERROR}), tenv, lst@[fData], tylst @ [Ty.ERROR], name::names, 
-                                ventries @ [(name, E.VarEntry{ty = Ty.ERROR})]))
+                              transParams(xs, S.enter(venv, name, E.VarEntry{access=access,ty = Ty.ERROR}), tenv, lst@[fData], tylst @ [Ty.ERROR], name::names, 
+                                ventries @ [(name, E.VarEntry{access=access,ty = Ty.ERROR})],level))
         end
         | SOME(t) => 
           let val fData = {name = name, escape = escape, ty = t} : TAbs.fielddata in
-        transParams(xs, S.enter(venv,name, E.VarEntry{ty = t}), tenv, lst@[fData], tylst @ [t], name::names, ventries @ [(name, E.VarEntry{ty = t})]) end
+        transParams(xs, S.enter(venv,name, E.VarEntry{access=access,ty = t}), tenv, lst@[fData], tylst @ [t], name::names, 
+          ventries @ [(name, E.VarEntry{access=access,ty = t})],level) end
       end
-    | transParams([], venv, _, lst, tylst, _, ventries) = {venv = venv, lst = lst : TAbs.fielddata list, tylst = tylst : Ty.ty list, ventries = ventries}
+    | transParams([], venv, _, lst, tylst, _, ventries,level) = {venv = venv, lst = lst : TAbs.fielddata list, tylst = tylst : Ty.ty list, ventries = ventries,level=level}
 
-and transDecs (venv, tenv, decls, extra : extra) =
+and transDecs (venv, tenv, decls, extra : extra, level) =
     let fun visit venv tenv decls result =
             case decls
              of [] => {decls = result, venv = venv, tenv = tenv}
@@ -716,7 +729,7 @@ and transDecs (venv, tenv, decls, extra : extra) =
                 let
                     val { decl = decl
                         , venv = venv'
-                        , tenv = tenv'} = transDec (venv, tenv, d, extra)
+                        , tenv = tenv'} = transDec (venv, tenv, d, extra, level)
                 in
                     visit venv' tenv' ds (result @ (decl :: []))
                 end
@@ -726,6 +739,6 @@ and transDecs (venv, tenv, decls, extra : extra) =
 
 
 fun transProg absyn =
-    transExp (Env.baseVenv, Env.baseTenv, {inloop = false, unassignable=[]}) absyn
+    transExp (Env.baseVenv, Env.baseTenv, {inloop = false, unassignable=[]}, Trans.outermost) absyn
 
 end (* Semant *)
