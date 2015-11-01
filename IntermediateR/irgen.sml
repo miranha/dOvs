@@ -13,13 +13,17 @@ structure Ty = Types
 structure Tr = Translate
 
 type extra = { level : Tr.level (* frame of enclosing function *)
-             , break : S.symbol option } (* jump to this label on 'break' *)
+             , break : Tr.breakpoint option } (* jump to this label on 'break' *)
 
+
+fun addBreakLabel ({level=l,break=_}, breakpoint) = {level=l,break=SOME(breakpoint)}
 
 (* Helper functions *)
 
 fun actualTy (Ty.NAME (_, ref (SOME ty))) = actualTy ty
   | actualTy t = t
+
+
 
 val TODO = {exp=Tr.bogus, ty=Ty.ERROR}        
 
@@ -32,7 +36,7 @@ fun transExp (venv, extra : extra) =
           | trexp{exp=TAbs.IfExp({test=test,thn=thn,els=NONE}), ty=ty} = {exp=trIfThenExp(test,thn), ty=ty}
           | trexp{exp=TAbs.VarExp(var), ty=ty} = {exp=trVarExp(var), ty=ty}
           | trexp{exp=TAbs.LetExp(letdata), ty=ty} = {exp=trLetExp(letdata), ty=ty}
-          | trexp{exp=TAbs.SeqExp(seqdata), ty=ty} = {exp=trSeqExp(seqdata, ty), ty=ty}
+          | trexp{exp=TAbs.SeqExp(seqdata), ty=ty} = {exp=trSeqExp(seqdata, ty), ty=ty} (*TODO: What if sequence is empty??*)
           | trexp{exp=TAbs.WhileExp(whiledata), ty=ty} = {exp=trWhileExp(whiledata), ty=ty}
           | trexp{exp=TAbs.AssignExp(assigndata), ty=ty} = {exp=trAssignExp(assigndata), ty=ty}
           | trexp{exp=TAbs.ForExp(fordata), ty=ty} = {exp=trForExp(fordata), ty=ty}
@@ -51,14 +55,13 @@ fun transExp (venv, extra : extra) =
                           | NONE => Tr.bogus (*TODO: Look into this again*)
           end
 
-
           and trBinop(left,oper,right) = 
             let val {exp=lexp, ty=tyl} = trexp left
                 val {exp=rexp, ty=_} = trexp right 
               in
                 case actualTy tyl of (*Both left and right types are same type-> ensured by semant*)
                   Ty.STRING => Tr.stringOp2IR(oper,lexp,rexp) (*TODO: Check that this works as expected*)
-                  | Ty.INT => Tr.intOp2IR(oper,lexp,rexp)
+                  | Ty.INT => Tr.intOp2IR(oper,lexp,rexp) (*TODO: Also arrays and records can be tested for equality*)
                   | _ => Tr.bogus (*Should never happend-> ensured by semnat*)
             end
 
@@ -110,9 +113,10 @@ fun transExp (venv, extra : extra) =
 
           and trWhileExp({test=test, body=body}: TAbs.whiledata) = 
             let
-              val {exp=test', ty=_} = trexp test
-              val {exp=body', ty=_} = trexp body
               val done' = Tr.newBreakPoint "while_done" (*TODO: We need to use the break from outside I think..*)
+              val {exp=test', ty=_} = trexp test
+              val {exp=body', ty=_} = transExp(venv, addBreakLabel(extra, done')) body
+              
               (*val break' = case (#break extra) of SOME(e) => e*) (*TODO: make it nice*)
             in
               Tr.while2IR(test',body',done')
@@ -126,15 +130,18 @@ fun transExp (venv, extra : extra) =
               Tr.assign2IR(var',exp')
             end
 
-          and trForExp({var=var, escape=escape, lo=lo,hi=hi, body=body}) =
+          and trForExp({var=varname, escape=escape, lo=lo,hi=hi, body=body}) =
             let
-              val {exp=lo', ty=_} = trexp lo
-              val {exp=hi', ty=_} = trexp hi
-              val {exp=body', ty=_} = trexp body
               val done' = Tr.newBreakPoint "for_done"
+              val {exp=lo', ty=_} = trexp lo
+              val {exp=hi', ty=ty} = trexp hi
               val level' = (#level extra)
               val acc' = Tr.allocLocal level' (!escape)
               val var' = Tr.simpleVar(acc',level')
+              val venv' = S.enter(venv,varname,(E.VarEntry {access=acc'
+                                                 , ty=actualTy ty
+                                                 , escape= escape}))
+              val {exp=body', ty=_} = transExp(venv', addBreakLabel(extra, done')) body (*TODO: Consider sending value enviroment*)
             in
               Tr.for2IR(var',done',lo',hi',body')
             end
@@ -301,6 +308,9 @@ and transDec ( venv
     ({ venv = venv}, explist)
         
   | transDec (venv, TAbs.FunctionDec fundecls, explist, extra) =
+    (*let 
+      val parentlevel = #level extra
+      val level' = Tr.newLevel{parent=parentlevel, ,}*)
     ( {venv = venv}, explist) (* TODO *)
 
 and transDecs (venv, decls, extra, explist) =
