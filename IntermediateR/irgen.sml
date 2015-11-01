@@ -40,6 +40,7 @@ fun transExp (venv, extra : extra) =
           | trexp{exp=TAbs.BreakExp, ty=ty} = {exp=trBreakExp(), ty=ty}
           | trexp{exp=TAbs.ArrayExp(arrdata), ty=ty} = {exp=trArrayExp(arrdata), ty=ty}
           | trexp{exp=TAbs.RecordExp(recdata), ty=ty} = {exp=trRecordExp(recdata), ty=ty}
+          | trexp{exp=TAbs.CallExp(calldata), ty=ty} = {exp=trCallExp(calldata,ty), ty=ty}
           | trexp _ = TODO
            
         and trBreakExp() = 
@@ -97,7 +98,7 @@ fun transExp (venv, extra : extra) =
             in
               case actualTy ty of
                 Ty.UNIT => Tr.seq2IR(seqlist)
-                | _ => Tr.eseq2IR(seqlist)
+                | _ => Tr.eseq2IR(seqlist) (*TODO: Is this okay?*)
             end
           
           and trSeqExpAux(seq::xs, acc) = 
@@ -159,6 +160,16 @@ fun transExp (venv, extra : extra) =
               trRecExpAux(xs,acc@[res]) 
             end
             | trRecExpAux([], acc) = acc
+
+
+          and trCallExp({func=func, args=args},ty) = (*calldata    = { func: S.symbol, args: exp list}*)
+            let
+            in
+              (*case actualTy ty of
+                Ty.UNIT => Tr.seq2IR(seqlist)
+                | _ => Tr.eseq2IR(seqlist) TODO: Is this okay?*)
+                Tr.bogus
+            end
         (* The below code suggest how to translate depending what case
         you are in, however, uncommenting the section would result in
         type-errors. You will have to write the rest of the cases your

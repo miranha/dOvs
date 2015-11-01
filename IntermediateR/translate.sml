@@ -217,14 +217,49 @@ fun ifThenElse2IR (test, thenExp, elseExp) =
                , T.TEMP r)
             )
             end
-          | (_, Nx _, _) =>
-            raise TODO
-          | (_, _, Nx _) =>
-            raise TODO
-          | (_, Cx _, Ex _) => (*TODO: See book: 162 for example*)
-            raise TODO
+          (*| (_, Nx _, _) =>*) (*TODO: Why do they give us two of Nx??Optimize??? I think it is just to make the pattern match exostive*)
+            (*raise TODO*)
+          | (_, Nx _, Nx _) =>
+            Nx(
+              seq [ test'(labelThen,labelElse)
+                     , T.LABEL labelThen
+                     , unNx thenExp 
+                     , T.JUMP (T.NAME labelJoin, [labelJoin])
+                     , T.LABEL labelElse
+                     , unNx elseExp
+                     , T.LABEL labelJoin]
+              )
+            
+          | (_, Cx _, Ex _) => (*TODO: Optimize See book: 162 for example*)
+          let
+              val r = Temp.newtemp () (* suggested on page 162 *)
+           in
+            Ex( 
+                T.ESEQ ( seq [ test'(labelThen,labelElse)
+                     , T.LABEL labelThen
+                     , T.MOVE (T.TEMP r, unEx thenExp) (*TODO: I think we need to use unCx instead to optimize, also below*)
+                     , T.JUMP (T.NAME labelJoin, [labelJoin])
+                     , T.LABEL labelElse
+                     , T.MOVE (T.TEMP r, unEx elseExp)
+                     , T.LABEL labelJoin]
+               , T.TEMP r)
+            )
+            end
           | (_, Ex _, Cx _) =>
-            raise TODO
+            let
+                val r = Temp.newtemp () (* suggested on page 162 *)
+           in
+            Ex( 
+                T.ESEQ ( seq [ test'(labelThen,labelElse)
+                     , T.LABEL labelThen
+                     , T.MOVE (T.TEMP r, unEx thenExp) 
+                     , T.JUMP (T.NAME labelJoin, [labelJoin])
+                     , T.LABEL labelElse
+                     , T.MOVE (T.TEMP r, unEx elseExp)
+                     , T.LABEL labelJoin]
+               , T.TEMP r)
+            )
+            end
           (*| (_, _, _) =>
             raise Bug "encountered thenBody and elseBody of different kinds"*)
     end
@@ -331,7 +366,16 @@ fun for2IR (var, done, lo, hi, body) =
         val bodyL = Temp.newLabel "for_body"
         val nextL = Temp.newLabel "for_next"
 
-        val decl_i = assign2IR(Ex(T.TEMP loT), lo)
+        (*fun assign2IR (var, exp) =
+    let
+        val var = unEx var
+        val exp = unEx exp
+    in
+        Nx (T.MOVE (var, exp))
+    end*)  
+
+
+        val decl_i = assign2IR(Ex(T.TEMP loT), lo) (*Use move instead..*)
         val decl_limit = assign2IR(Ex(T.TEMP hiT), hi)
         (*val decl_limit = assign2IR()*)
         (*val decl_i = Nx(T.MOVE(T.TEMP loT,lo'))
@@ -352,7 +396,14 @@ fun for2IR (var, done, lo, hi, body) =
         (*val while_part = while2IR()
         val i : type = expression*)
 
-
+        (*val whilebody =         Nx(
+            seq[T.LABEL labelTest
+                , test(labelBody,done)
+                , T.LABEL labelBody
+                , body
+                , T.JUMP(T.NAME labelTest, [labelTest])
+                , T.LABEL done]
+          )*)
 
     in
       let2IR(decls,whileEx)
