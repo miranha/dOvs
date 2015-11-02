@@ -366,16 +366,7 @@ fun for2IR (var, done, lo, hi, body) =
         val bodyL = Temp.newLabel "for_body"
         val nextL = Temp.newLabel "for_next"
 
-        (*fun assign2IR (var, exp) =
-    let
-        val var = unEx var
-        val exp = unEx exp
-    in
-        Nx (T.MOVE (var, exp))
-    end*)  
-
-
-        val decl_i = assign2IR(Ex(T.TEMP loT), lo) (*Use move instead..*)
+        val decl_i = assign2IR(Ex(T.TEMP loT), lo) (*Use move instead maybe better??..*)
         val decl_limit = assign2IR(Ex(T.TEMP hiT), hi)
         (*val decl_limit = assign2IR()*)
         (*val decl_i = Nx(T.MOVE(T.TEMP loT,lo'))
@@ -387,8 +378,9 @@ fun for2IR (var, done, lo, hi, body) =
         val count = binop2IR(T.PLUS, decl_i, Ex (T.CONST 1))
         val assig = assign2IR(decl_i, count)
         val while_test = relop2IR(T.LE, decl_i, decl_limit)
+        
+        (*TODO: Maybe we should not use while2IR, and just make our own, which we use for the let? to add the extra test maybe?*)
         val while_body = Nx(seq[body',unNx assig])
-
         val whileEx = while2IR(while_test,while_body,done)
 (*relop2IR (oper, left, right)---binop2IR (T.PLUS, left, right)*)
         (*val while_test = relop2IR(T.LE, decl_i, decl_limit)
