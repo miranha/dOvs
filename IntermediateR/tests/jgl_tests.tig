@@ -1,6 +1,5 @@
 let
-	type A = array of int
-	var a = A[2] of 9
+	function g() = print("hello")
 in
-	a[1]
+	g()
 end

@@ -24,7 +24,7 @@ type breakpoint = Tree.label
 
 type frag = F.frag
 
-val bogus = Ex (T.CONST 5)
+val bogus = Ex (T.CONST 90)
 
 local
     val frags: (frag list) ref = ref []
@@ -499,6 +499,14 @@ fun procEntryExit {level = Level ({frame, parent}, _), body = body} =
     end
   | procEntryExit {level = Top, ...} =
     raise Bug "attempt to add procedure at top level"
+
+(* Gives a new frame to a function *)
+fun funHeader2IR (parent, name, formals) =
+  let
+    val nameL = Temp.newLabel name (* Function names are symbols *)
+  in
+    {level = (newLevel {parent = parent, name = nameL, formals = formals}), label = nameL}
+  end
 
 fun getResult () = getFrags ()
 
