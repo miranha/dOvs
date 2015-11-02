@@ -217,14 +217,49 @@ fun ifThenElse2IR (test, thenExp, elseExp) =
                , T.TEMP r)
             )
             end
-          | (_, Nx _, _) =>
-            raise TODO
-          | (_, _, Nx _) =>
-            raise TODO
-          | (_, Cx _, Ex _) => (*TODO: See book: 162 for example*)
-            raise TODO
+          (*| (_, Nx _, _) =>*) (*TODO: Why do they give us two of Nx??Optimize??? I think it is just to make the pattern match exostive*)
+            (*raise TODO*)
+          | (_, Nx _, Nx _) =>
+            Nx(
+              seq [ test'(labelThen,labelElse)
+                     , T.LABEL labelThen
+                     , unNx thenExp 
+                     , T.JUMP (T.NAME labelJoin, [labelJoin])
+                     , T.LABEL labelElse
+                     , unNx elseExp
+                     , T.LABEL labelJoin]
+              )
+            
+          | (_, Cx _, Ex _) => (*TODO: Optimize See book: 162 for example*)
+          let
+              val r = Temp.newtemp () (* suggested on page 162 *)
+           in
+            Ex( 
+                T.ESEQ ( seq [ test'(labelThen,labelElse)
+                     , T.LABEL labelThen
+                     , T.MOVE (T.TEMP r, unEx thenExp) (*TODO: I think we need to use unCx instead to optimize, also below*)
+                     , T.JUMP (T.NAME labelJoin, [labelJoin])
+                     , T.LABEL labelElse
+                     , T.MOVE (T.TEMP r, unEx elseExp)
+                     , T.LABEL labelJoin]
+               , T.TEMP r)
+            )
+            end
           | (_, Ex _, Cx _) =>
-            raise TODO
+            let
+                val r = Temp.newtemp () (* suggested on page 162 *)
+           in
+            Ex( 
+                T.ESEQ ( seq [ test'(labelThen,labelElse)
+                     , T.LABEL labelThen
+                     , T.MOVE (T.TEMP r, unEx thenExp) 
+                     , T.JUMP (T.NAME labelJoin, [labelJoin])
+                     , T.LABEL labelElse
+                     , T.MOVE (T.TEMP r, unEx elseExp)
+                     , T.LABEL labelJoin]
+               , T.TEMP r)
+            )
+            end
           (*| (_, _, _) =>
             raise Bug "encountered thenBody and elseBody of different kinds"*)
     end
@@ -331,7 +366,7 @@ fun for2IR (var, done, lo, hi, body) =
         val bodyL = Temp.newLabel "for_body"
         val nextL = Temp.newLabel "for_next"
 
-        val decl_i = assign2IR(Ex(T.TEMP loT), lo)
+        val decl_i = assign2IR(Ex(T.TEMP loT), lo) (*Use move instead maybe better??..*)
         val decl_limit = assign2IR(Ex(T.TEMP hiT), hi)
         (*val decl_limit = assign2IR()*)
         (*val decl_i = Nx(T.MOVE(T.TEMP loT,lo'))
@@ -343,8 +378,9 @@ fun for2IR (var, done, lo, hi, body) =
         val count = binop2IR(T.PLUS, decl_i, Ex (T.CONST 1))
         val assig = assign2IR(decl_i, count)
         val while_test = relop2IR(T.LE, decl_i, decl_limit)
+        
+        (*TODO: Maybe we should not use while2IR, and just make our own, which we use for the let? to add the extra test maybe?*)
         val while_body = Nx(seq[body',unNx assig])
-
         val whileEx = while2IR(while_test,while_body,done)
 (*relop2IR (oper, left, right)---binop2IR (T.PLUS, left, right)*)
         (*val while_test = relop2IR(T.LE, decl_i, decl_limit)
@@ -352,7 +388,14 @@ fun for2IR (var, done, lo, hi, body) =
         (*val while_part = while2IR()
         val i : type = expression*)
 
-
+        (*val whilebody =         Nx(
+            seq[T.LABEL labelTest
+                , test(labelBody,done)
+                , T.LABEL labelBody
+                , body
+                , T.JUMP(T.NAME labelTest, [labelTest])
+                , T.LABEL done]
+          )*)
 
     in
       let2IR(decls,whileEx)
@@ -419,9 +462,21 @@ fun subscript2IR (arr, offset) =
         val noOverflowL = Temp.newLabel "subs_novf"
         val arr' = unEx arr
         val offset' = unEx offset
+        val size = T.MEM(T.BINOP(T.PLUS, arr', T.CONST (~F.wordSize))) (* if elemtents starts at i, the arrays size is at i-Wordsize *)
     in
-        Ex(
-            T.MEM(T.BINOP(T.PLUS, arr', T.BINOP(T.MUL,offset',T.CONST F.wordSize)))
+      (* First checks for negative index, then for overflow. If an error, call external error handling *)
+        Ex( T.ESEQ (seq [
+              T.CJUMP(T.GT, offset', T.CONST ~1, nonNegativeL, negativeL),
+              T.LABEL negativeL,
+              T.EXP(F.externalCall("arrInxError", [offset'])),
+              T.LABEL nonNegativeL,
+              T.CJUMP(T.LT, offset',size, noOverflowL,overflowL),
+              T.LABEL overflowL,
+              T.EXP(F.externalCall("arrInxError", [offset'])),
+              T.LABEL noOverflowL,
+              T.MOVE(T.TEMP arrayT, T.MEM(T.BINOP(T.PLUS, arr', T.BINOP(T.MUL,offset',T.CONST F.wordSize))))]
+            ,
+        T.TEMP arrayT)
           )
     end
 
