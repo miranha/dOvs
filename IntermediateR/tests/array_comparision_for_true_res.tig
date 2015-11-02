@@ -1,0 +1,11 @@
+/*
+Array test for equal of equal things and unequal for unequal things
+*/
+let
+	type A = array of int
+	var b := A[2] of 0
+	var c := b
+	var d := A[1] of 3
+in
+	b = c & c <> d
+end
