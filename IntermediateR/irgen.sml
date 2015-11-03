@@ -107,7 +107,7 @@ fun transExp (venv, extra : extra) =
             in
               case actualTy ty of
                 Ty.UNIT => Tr.seq2IR(seqlist)
-                | _ => Tr.eseq2IR(seqlist) (*TODO: Is this okay?*)
+                | _ => Tr.eseq2IR(seqlist) (*Semant guarantees this case*)
             end
           
           and trSeqExpAux(seq::xs, acc) = 
@@ -266,6 +266,7 @@ fun transExp (venv, extra : extra) =
             in
               case S.look(venv,id) of
                 SOME(E.VarEntry{access=access, ty=ty, escape=escape})=>{exp=Tr.simpleVar(access,level'), ty=ty}
+                | _ => raise Bug "SimpleVar not declared"
             end
 
           | trvar {var=TAbs.FieldVar (var, id), ty} : {exp:Tr.exp,ty:Ty.ty} = 
