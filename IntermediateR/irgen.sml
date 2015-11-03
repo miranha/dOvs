@@ -66,6 +66,8 @@ fun transExp (venv, extra : extra) =
                 case actualTy tyl of (*Both left and right types are same type-> ensured by semant*)
                   Ty.STRING => Tr.stringOp2IR(oper,lexp,rexp) (*TODO: Check that this works as expected*)
                   | Ty.INT => Tr.intOp2IR(oper,lexp,rexp) (*TODO: Also arrays and records can be tested for equality*)
+                  | Ty.ARRAY(_) => Tr.arrayRecordOp2IR(oper,lexp,rexp)
+                  | Ty.RECORD(_) => Tr.arrayRecordOp2IR(oper,lexp,rexp)
                   | _ => Tr.bogus (*Should never happend-> ensured by semnat*)
             end
 
