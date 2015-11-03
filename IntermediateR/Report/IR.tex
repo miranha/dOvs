@@ -1,0 +1,125 @@
+\documentclass{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{listings}
+\title{dOvs - IR-translation}
+
+\author{
+  Group 9 \\
+  Miran Hasanagi\'{c} - 20084902 \\
+  Jakob Graugaard Laursen - 20093220\\
+  Steven Astrup S\o rensen - 201206081
+}
+
+\begin{document}
+\maketitle
+
+\section{Introduction}
+This report described the IR-translation phase of the compiler, which is the fourth phase of the whole compilation process. This component takes the type-check output from the \texttt{semant.sml}, and creates an Intermediate Representation (IR) as output. How this functionality was achieved is described below.
+
+The first section described how the IR-translation is done, and afterwards the following section describes the additions made to the support modules. Then problems encountered during the development are highlighted. Finally, five tiger test programs are shown, and concluding remarks are provided.
+
+\section{The IR-translation}
+%How did you implement the missing cases in the irgen.sml. Describe how the file works as a whole and explain a few interesting cases.
+
+The goal of the IR-translation is to create the IR of the typed abstract syntax tree from the previous phase. The \texttt{irgen.sml} takes the output from the \texttt{semant.sml}, and creates the IR tree as output. Its main structure is similar to the \texttt{semant.sml}, in that recursive function are used to transverse the typed abstract syntax tree. However, for the IR we do not need to type-check, but only focus on creating the IR. This IR is created by using the support module \texttt{translate.sml}, which is able to create the IR constructs.
+
+\section{The support modules}
+%Write what changes you made to translate.sml and how the play a part in the compiler.
+
+One support module is \texttt{translate.sml}. The transformation themselves of the different tiger language constructs, such as \texttt{for} and \texttt{if-then}, are inside this file. 
+The main functionality of this file is described in chapter 7 in the book. This IR-translation is done for each construct of the tiger language, as mentioned above. In order to support the different constructs, the suggestions in the book where followed. An example is to translate a for-loop to a let expression in the IR tree. 
+Also the unCx, unEx and unNx functions where used at relevant places in order to get the correct constructs. As an example in the if IR translation. 
+Additionally, this file has support for creating a new level, which is used in the function declaration. Basically, it has support for all the low-level constructs, which are close the assemble language. 
+
+Another support module is \texttt{irgenenv.sml}, which holds the environment. This environment is extended with the functionality described in chapter 6. This contains both the information needed, and the functionality described in chapter 6, such as storing the level of a function declaration.
+
+\section{Problems encountered \& experience gained}
+%If you had any problems in the work process, write it here with what you gained.
+
+\subsection{General Experience}
+
+\subsection{Function Declaration}
+
+\subsection{Record and Array pointers}
+
+\section{5 tiger programs}
+%5 interesting tiger programs that you find test your ir-translation in a good way.
+
+The five tiger programs presented here are simple, created in order to focus on different aspects of the implemented IR generator. Some of our tests cover aspects which provided test-cases do not.
+
+\fbox{TODO: Make new test}
+
+\subsection{break\_exp\_tests.tig}
+
+\begin{lstlisting}[frame=single]
+/* Check the three possible states for break.
+	in for loop, in while loop, outside loop
+	EXPECTION: an error at last break statement
+ */
+(for i := 1 to 3 do break; while 2 do break;break)
+\end{lstlisting}
+
+\subsection{cycle\_in\_typedecl.tig}
+
+\begin{lstlisting}[frame=single]
+/* test recursive typedefintion.
+	ERROR: Cycle will be detected with A,B,D */
+let
+	type A = B
+	type B = D
+	type D = A
+	type t1 = t2
+	type t2 = t3
+	type t4 = t2
+	type t3 = int
+	type C = int
+	type tree = {value: int, children:treelist}
+	type treelist = {hd:tree, tl:treelist}
+in 
+end
+\end{lstlisting}
+
+\subsection{unassignable.tig}
+
+\begin{lstlisting}[frame=single]
+/* test for immutable for ID.
+	ERROR: i is immutable, and can not be assigned to.*/
+(for i := 1 to 3 do i:=2)
+\end{lstlisting}
+
+\subsection{recursive\_type\_usage.tig}
+
+\begin{lstlisting}[frame=single]
+ /* test recursive type usage.
+	PASS: No Errors should be produced */
+let
+  type tree = {value:int, children:treelist}
+  type treelist = {hd: tree, tl:treelist}
+  var c := tree{value = 0, children = nil}
+  var children := treelist{hd = c, tl = nil}
+  var tree := tree{value = 1, children = children}
+in tree
+end
+\end{lstlisting}
+
+\subsection{using\_a\_record\_create\_in\_a\_record.tig}
+
+\begin{lstlisting}[frame=single]
+/* Testing to allow to create a
+* inside a record,
+* if the field name is a record */
+let
+	type A = {c:int}
+	type C = A
+	type B = {d:A}
+	var a := B{d = C{c = 2}}
+in
+	a
+end
+\end{lstlisting}
+
+
+\section{Conclusion}
+This report presented the development of the IR generator in \texttt{irgen.sml}, which creates an IR tree from the typed abstract syntax tree produced by the \texttt{semant.sml}. The main functionality was described, and how some modules are used in order to support the IR generation. Additionally the gained experience was described. Finally, additional tests provided confidence that this IR generator is working correctly.
+
+\end{document}
