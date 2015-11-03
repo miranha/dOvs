@@ -260,8 +260,8 @@ fun ifThenElse2IR (test, thenExp, elseExp) =
                , T.TEMP r)
             )
             end
-          (*| (_, _, _) =>
-            raise Bug "encountered thenBody and elseBody of different kinds"*)
+          | (_, _, _) =>
+            raise Bug "encountered thenBody and elseBody of different kinds"
     end
 
 fun binop2IR (oper, left, right) =
@@ -384,7 +384,7 @@ fun for2IR (var, done, lo, hi, body) =
         let
         val var' = unEx var
         val bodyL = Temp.newLabel "for_body"
-        val doneL = Temp.newLabel "for_done"
+        val doneL = done(*Temp.newLabel "for_done"*)
         val hiReg = Temp.newtemp ()
         val testReg = Temp.newtemp ()
         val high = unEx hi
