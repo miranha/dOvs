@@ -17,6 +17,8 @@ type extra = { level : Tr.level (* frame of enclosing function *)
 
 
 fun addBreakLabel ({level=l,break=_}, breakpoint) = {level=l,break=SOME(breakpoint)}
+fun getLevel {level=l,break=_} = l
+fun setLevel {level=_,break=b} l= {level = l, break = b}
 
 (* Helper functions *)
 
@@ -25,7 +27,9 @@ fun actualTy (Ty.NAME (_, ref (SOME ty))) = actualTy ty
 
 
 
-val TODO = {exp=Tr.bogus, ty=Ty.ERROR}        
+val TODO = {exp=Tr.bogus, ty=Ty.ERROR}
+
+exception Bug of string;        
 
 fun transExp (venv, extra : extra) =
     let                               
@@ -62,6 +66,8 @@ fun transExp (venv, extra : extra) =
                 case actualTy tyl of (*Both left and right types are same type-> ensured by semant*)
                   Ty.STRING => Tr.stringOp2IR(oper,lexp,rexp) (*TODO: Check that this works as expected*)
                   | Ty.INT => Tr.intOp2IR(oper,lexp,rexp) (*TODO: Also arrays and records can be tested for equality*)
+                  | Ty.ARRAY(_) => Tr.arrayRecordOp2IR(oper,lexp,rexp)
+                  | Ty.RECORD(_) => Tr.arrayRecordOp2IR(oper,lexp,rexp)
                   | _ => Tr.bogus (*Should never happend-> ensured by semnat*)
             end
 
@@ -171,11 +177,16 @@ fun transExp (venv, extra : extra) =
 
           and trCallExp({func=func, args=args},ty) = (*calldata    = { func: S.symbol, args: exp list}*)
             let
-            in
-              (*case actualTy ty of
-                Ty.UNIT => Tr.seq2IR(seqlist)
-                | _ => Tr.eseq2IR(seqlist) TODO: Is this okay?*)
-                Tr.bogus
+              fun arg {exp=exp, ty=ty'} = exp
+              val exps = map arg (map trexp args)
+              val {formals, result, label,
+                      level} = (case( S.look (venv, func)) of 
+                                SOME(E.FunEntry(e)) => e
+                                |_ => raise Bug "Function have not been entered into enviorment")
+              in
+              case actualTy ty of
+                Ty.UNIT => Tr.procCall2IR(level, getLevel extra, label, exps)
+                | _ => Tr.funCall2IR(level, getLevel extra, label, exps)
             end
         (* The below code suggest how to translate depending what case
         you are in, however, uncommenting the section would result in
@@ -308,10 +319,70 @@ and transDec ( venv
     ({ venv = venv}, explist)
         
   | transDec (venv, TAbs.FunctionDec fundecls, explist, extra) =
-    (*let 
-      val parentlevel = #level extra
-      val level' = Tr.newLevel{parent=parentlevel, ,}*)
-    ( {venv = venv}, explist) (* TODO *)
+    let val headers = map (transFunHeader extra) fundecls
+      val venv' = enterHeaders(venv,headers,fundecls)
+      val _ = map (transFunction extra venv') fundecls
+    in
+      ( {venv = venv'}, explist ) (* TODO *)
+    end
+
+  and transFunction extra venv {name = name, params = params, 
+    resultTy = resultTy, body = body} = 
+    let 
+      val level = (case (S.look (venv, name)) of
+                  SOME(E.FunEntry({formals,result,label,level}))
+                    => level
+                  | _=> raise Bug "Function name not entered into enviorment")
+      val access = Tr.formals level
+
+      fun enterFormal (venv, {name,escape,ty}::xs, acc::ys) =
+        enterFormal (S.enter(venv,name,
+            (E.VarEntry {access = acc, ty = actualTy ty, escape = escape})), xs, ys)
+        | enterFormal (venv',[],[]) = venv'
+        | enterFormal (venv,[],_) = venv(* raise Bug "Formal list length les than access list" *)
+
+      fun args (sl::xs) = xs (* First access is static link*)
+
+      val venv' = enterFormal(venv,params,args(access))
+      val {exp, ty} = transExp(venv',setLevel extra level) body
+    in
+      case actualTy resultTy of
+        Ty.UNIT => Tr.procEntryExit {level = level, body = exp}
+        | _ => Tr.funEntryExit{level = level, body = exp}
+    end
+
+    (* Since we can have recursive functions, we need give each funtion its level first before
+      we can process the body*)
+  and transFunHeader extra {name = name, params = params, 
+    resultTy = resultTy, body = body} = 
+      let 
+        val formals = map (fn x => true) params (* Everything escapes, currently *)
+        val fLabel = Temp.newLabel (S.name name)
+        val parent = (getLevel extra)
+        val level = Tr.newLevel {parent = parent, name = fLabel, formals = formals}
+      in
+        (level,fLabel)
+      end
+
+  and enterHeaders(venv,[],[]) = venv
+    | enterHeaders(venv,(level,label)::headers, {name,params,resultTy,body}::fDecls) =
+        let
+            fun paramType { name = _, escape = _
+                  , ty = ty} = ty
+            val formals = map paramType params
+            val venv' = S.enter(venv,name,(E.FunEntry {
+                            formals = formals
+                            , result = resultTy
+                            , label = label
+                            , level = level
+                }))
+        in
+            enterHeaders(venv', headers, fDecls)
+        end
+    | enterHeaders(_) = raise Bug "The number of headers doesnt match the number of function declarations"
+
+
+
 
 and transDecs (venv, decls, extra, explist) =
   case decls of

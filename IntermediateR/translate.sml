@@ -24,7 +24,7 @@ type breakpoint = Tree.label
 
 type frag = F.frag
 
-val bogus = Ex (T.CONST 5)
+val bogus = Ex (T.CONST 90)
 
 local
     val frags: (frag list) ref = ref []
@@ -294,6 +294,31 @@ fun intOp2IR (TAbs.PlusOp, left, right)   = binop2IR (T.PLUS, left, right)
   | intOp2IR (TAbs.GeOp, left, right)     = relop2IR (T.GE, left, right)
   | intOp2IR (TAbs.ExponentOp, left, right) = exponent2IR (left, right)(*TODO: I can not find pow function, we need to implment it?*)
 
+fun checkAddr(oper, left, right) =
+  let 
+    val tL = Temp.newLabel "addr_comp_true"
+    val fL = Temp.newLabel "addr_comp_false"
+    val r = Temp.newtemp ()
+  in
+    Ex (T.ESEQ (seq [
+      T.MOVE(T.TEMP r, T.CONST 1),
+      T.CJUMP(oper,left, right, tL, fL),
+      T.LABEL fL,
+      T.MOVE (T.TEMP r, T.CONST 0),
+      T.LABEL tL],
+    T.TEMP r))
+  end
+
+
+fun arrayRecordOp2IR(oper, left, right) =
+  let val oper' = (case oper of
+                      TAbs.EqOp => T.EQ
+                      | _ => T.NE)
+  in
+    checkAddr(oper', unEx left, unEx right)
+  end
+
+
 fun let2IR ([], body) = body
   | let2IR (decls, body) = Ex (T.ESEQ (seq (map unNx decls), unEx body))
 
@@ -499,6 +524,14 @@ fun procEntryExit {level = Level ({frame, parent}, _), body = body} =
     end
   | procEntryExit {level = Top, ...} =
     raise Bug "attempt to add procedure at top level"
+
+(* Gives a new frame to a function *)
+fun funHeader2IR (parent, name, formals) =
+  let
+    val nameL = Temp.newLabel name (* Function names are symbols *)
+  in
+    {level = (newLevel {parent = parent, name = nameL, formals = formals}), label = nameL}
+  end
 
 fun getResult () = getFrags ()
 

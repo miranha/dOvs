@@ -1,0 +1,8 @@
+/*
+Checks if we put the arguments in correct order
+*/
+let
+	function sub(a:int,b:int):int = a - b
+in
+	sub(3,2)
+end
