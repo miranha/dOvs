@@ -402,6 +402,8 @@ fun for2IR (var, done, lo, hi, body) =
               , T.MOVE(T.TEMP testReg, var')
               , T.MOVE(var', T.BINOP(T.PLUS, var', T.CONST 1)) (* Increment var. TODO: Can we avoid testReg? *)
               (*  Here we have var' - 1 <= high. Only continue if var' - 1 < high *)
+              (* The test var' <=  high would cause overflow of var' if high is maximal int we can represent,
+              next time we end up here, since we add 1 to var' before *)
               , T.CJUMP(T.LT, T.TEMP testReg, T.TEMP hiReg, bodyL, doneL)
               , T.LABEL doneL ]
         )
