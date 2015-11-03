@@ -279,7 +279,7 @@ fun relop2IR (oper, left, right) =
     end
 
 fun exponent2IR (left, right) =
-    Ex (T.CALL ( T.NAME (Temp.namedLabel "pow") (*TODO: Check function name*)
+    Ex (T.CALL ( T.NAME (Temp.namedLabel "exponent") (*TODO: Check function name*)
                , [unEx left, unEx right])) (*TODO: could also have used external call*)
 
 fun intOp2IR (TAbs.PlusOp, left, right)   = binop2IR (T.PLUS, left, right)
@@ -386,7 +386,7 @@ fun for2IR (var, done, lo, hi, body) =
         val bodyL = Temp.newLabel "for_body"
         val doneL = Temp.newLabel "for_done"
         val hiReg = Temp.newtemp ()
-        val countReg = Temp.newtemp ()
+        val testReg = Temp.newtemp ()
         val high = unEx hi
         val low = unEx lo
         val body' = unNx body (* Semantic dictate that body expression are unit types *)
@@ -396,12 +396,13 @@ fun for2IR (var, done, lo, hi, body) =
       Nx (
           seq [ T.MOVE(var',low)
               , T.MOVE(T.TEMP hiReg, high)
-              , T.CJUMP(T.LE, low, high, bodyL, doneL)
+              , T.CJUMP(T.LE, var', T.TEMP hiReg, bodyL, doneL) (* Actually, we test here if low <= high *)
               , T.LABEL bodyL
               , body'
-              , T.MOVE(T.TEMP countReg, T.BINOP(T.PLUS, var', T.CONST 1))
-              , T.MOVE(var', T.TEMP countReg)
-              , T.CJUMP(T.LE, var', high, bodyL, doneL)
+              , T.MOVE(T.TEMP testReg, var')
+              , T.MOVE(var', T.BINOP(T.PLUS, var', T.CONST 1)) (* Increment var. TODO: Can we avoid testReg? *)
+              (*  Here we have var' - 1 <= high. Only continue if var' - 1 < high *)
+              , T.CJUMP(T.LT, T.TEMP testReg, T.TEMP hiReg, bodyL, doneL)
               , T.LABEL doneL ]
         )
         (*Nx(
