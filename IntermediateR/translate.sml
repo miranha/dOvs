@@ -381,49 +381,29 @@ fun while2IR (test, body, done) =
     end
 
 fun for2IR (var, done, lo, hi, body) =
-    let
+        let
         val var' = unEx var
-        val lo' = unEx lo
-        val hi' = unEx hi
-        val body' = unNx body
-        val loT = Temp.newtemp ()
-        val hiT = Temp.newtemp ()
         val bodyL = Temp.newLabel "for_body"
-        val nextL = Temp.newLabel "for_next"
+        val doneL = Temp.newLabel "for_done"
+        val hiReg = Temp.newtemp ()
+        val countReg = Temp.newtemp ()
+        val high = unEx hi
+        val low = unEx lo
+        val body' = unNx body (* Semantic dictate that body expression are unit types *)
 
-        val decl_i = assign2IR(Ex(T.TEMP loT), lo) (*Use move instead maybe better??..*)
-        val decl_limit = assign2IR(Ex(T.TEMP hiT), hi)
-        (*val decl_limit = assign2IR()*)
-        (*val decl_i = Nx(T.MOVE(T.TEMP loT,lo'))
-        val decl_limit = Nx(T.MOVE(T.TEMP hiT, hi'))
-        val decl_var = assign2IR(Ex(var'), Ex (lo'))*)
-
-        (*TODO: Check if lo>hi*)
-        val decls = decl_i::[decl_limit]
-        val count = binop2IR(T.PLUS, decl_i, Ex (T.CONST 1))
-        val assig = assign2IR(decl_i, count)
-        val while_test = relop2IR(T.LE, decl_i, decl_limit)
-        
-        (*TODO: Maybe we should not use while2IR, and just make our own, which we use for the let? to add the extra test maybe?*)
-        val while_body = Nx(seq[body',unNx assig])
-        val whileEx = while2IR(while_test,while_body,done)
-(*relop2IR (oper, left, right)---binop2IR (T.PLUS, left, right)*)
-        (*val while_test = relop2IR(T.LE, decl_i, decl_limit)
-        val count = binop2IR(T.PLUS, var', Ex (T.CONST 1))*)
-        (*val while_part = while2IR()
-        val i : type = expression*)
-
-        (*val whilebody =         Nx(
-            seq[T.LABEL labelTest
-                , test(labelBody,done)
-                , T.LABEL labelBody
-                , body
-                , T.JUMP(T.NAME labelTest, [labelTest])
-                , T.LABEL done]
-          )*)
 
     in
-      let2IR(decls,whileEx)
+      Nx (
+          seq [ T.MOVE(var',low)
+              , T.MOVE(T.TEMP hiReg, high)
+              , T.CJUMP(T.LE, low, high, bodyL, doneL)
+              , T.LABEL bodyL
+              , body'
+              , T.MOVE(T.TEMP countReg, T.BINOP(T.PLUS, var', T.CONST 1))
+              , T.MOVE(var', T.TEMP countReg)
+              , T.CJUMP(T.LE, var', high, bodyL, doneL)
+              , T.LABEL doneL ]
+        )
         (*Nx(
 
           )*)(*raise TODO*)

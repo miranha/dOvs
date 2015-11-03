@@ -1,11 +1,11 @@
 /*
-Checking that we only compare for memory adress equality
+Test for loops,
+that we update control variable correctly,
+and that we do not loop to much,
+and that we do no enter loops where low > high
 */
 let
-	type A = {a:int}
-	var b := A{a=2}
-	var c := b
-	var d := A{a=2}
+	var a := 0
 in
-	b = c & c <> d
+	for i := 1 to 0 do a := 99; for i := 1 to 3 do a := a + i; a
 end
