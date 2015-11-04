@@ -31,8 +31,6 @@ The main functionality of this file is described in chapter 7 in the book. This 
 Also the unCx, unEx and unNx functions were used at relevant places in order to get the correct constructs. An example of this is seen in the \texttt{if} IR translation. 
 Additionally, this file has support for creating a new level, which is used in function declarations. Basically, it has support for all the low-level constructs, which are close the assemble language. 
 
-\fbox{TODO: Mention the extra function for headers}
-
 Another support module is \texttt{irgenenv.sml}, which holds the environment. This environment is extended with the functionality described in chapter 6. This contains both the information needed, and the functionality described in chapter 6, such as storing the level of a function declaration.
 
 \section{Problems encountered \& experience gained}
@@ -44,34 +42,32 @@ General it was hard to understand the IR code in the beginning. However, reading
 \subsection{For Loops}
 In order to prevent an overflow of the control variable (here i) would lead to an infinite loop, we had to modify the test used in a for loop.
 
-The general idea is this: i <= high, if and only if i - 1 < high. The overflow happens if we increment i by 1 and i was maxInt(the highest integer value we could represent). If high wasn't maxInt, then the test fails once i = high + 1, since high + 1 didn't overflow. However, if high was maxInt, then high + 1 <= high in our code, so i would always fullfill i <= high.
+The general idea is this: i <= high, if and only if i - 1 < high. The overflow happens if we increment i by 1 and i was maxInt(the highest integer value we could represent). If high wasn't maxInt, then the test fails once i = high + 1, since high + 1 didn't overflow. However, if high was maxInt, then high + 1 <= high in our code, so i would always fulfill i <= high.
 
 But, once i overflow, i - 1 would be maxInt, and the test i - 1 < high would fail, preventing the overflow of i to cause an infinite loop.
 
-In pratical terms, the foor loop works like this:
+In practical terms, the for loop works like this:
 
-First, set i = low and store the value of high in the register hiReg. Test if i <= high. If so, execute the body. From here on out, we store the current value of i in the register testReg. Increment i. Test if testReg < hiReg. If not, jump to the done statement. If so, start over, first with executing the body. Notice we in first round aren't concerened if the values of low or high were overflowing, we are only concerend about i overflowing when we increment it in the loop.
+First, set i = low and store the value of high in the register hiReg. Test if i <= high. If so, execute the body. From here on out, we store the current value of i in the register testReg. Increment i. Test if testReg < hiReg. If not, jump to the done statement. If so, start over, first with executing the body. Notice we in first round aren't concerned if the values of low or high were overflowing, we are only concerned about i overflowing when we increment it in the loop.
 
 \subsection{Function Declaration}
 They way we generate IR code for functions is by parsing a function declaration block twice.
 
-First, we gather functions names and the number of parameters for the functions, as well as creating a level for each. This info entered into the variable enviorment, which we use for the second pass.
+First, we gather functions names and the number of parameters for the functions, as well as creating a level for each. This info entered into the variable environment, which we use for the second pass.
 
-In the second pass, we will generate the function bodies. Firstly, we enter the location of the arguments into the variable enviorment. We then use transExp on the bodies, where we now set the level we are working on to be the level belonging to the function.
+In the second pass, we will generate the function bodies. Firstly, we enter the location of the arguments into the variable environment. We then use transExp on the bodies, where we now set the level we are working on to be the level belonging to the function.
 
-The reason for the two phase proccess is that we have mutual recursive functions. Since we first gather info about the parameters as well as where the function will eventually live, we can use this in call expressions, without knowing what the bodies consists off.
+The reason for the two phase process is that we have mutual recursive functions. Since we first gather info about the parameters as well as where the function will eventually live, we can use this in call expressions, without knowing what the bodies consists off.
 
 The second pass ensures that once a function is called, it will execute correctly.
 
 \subsection{Record and Array pointers}
-Here we use the realization that the mememory addresses stored in the pointers are actually ints. Since we only check if the pointer adresses are equal or not equal, we are not concerened about wehter ints are signed or not signed.
+Here we use the realization that the memory addresses stored in the pointers are actually ints. Since we only check if the pointer addresses are equal or not equal, we are not concerned about whether ints are signed or not signed.
 
 \section{5 tiger programs}
 %5 interesting tiger programs that you find test your ir-translation in a good way.
 
-The five tiger programs presented here are simple, and were created in order to focus on different aspects of the implemented IR generator. Some of our tests cover aspects which the provided test-cases do not.
-
-\fbox{TODO: Make new test}
+The five tiger programs presented here are simple, and were created in order to focus on different aspects of the implemented IR generator. Some of our tests cover aspects which the provided test-cases do not. Additionally, more test were used internally, inside the folder \texttt{tests}. As an example we have the test ``if 2>1 then 18 else 3<1'' in the file \texttt{test_if_else_with_Ex_Cx.tig}, which is expected to give 18, because we expect 3<1 to be a integer value, as it is in tiger. Hence both then and else have the same return type, which is int.
 
 \subsection{test01.tig}
 
