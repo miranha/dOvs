@@ -31,12 +31,16 @@ The main functionality of this file is described in chapter 7 in the book. This 
 Also the unCx, unEx and unNx functions where used at relevant places in order to get the correct constructs. As an example in the if IR translation. 
 Additionally, this file has support for creating a new level, which is used in the function declaration. Basically, it has support for all the low-level constructs, which are close the assemble language. 
 
+\fbox{TODO: Mention the extra function for headers}
+
 Another support module is \texttt{irgenenv.sml}, which holds the environment. This environment is extended with the functionality described in chapter 6. This contains both the information needed, and the functionality described in chapter 6, such as storing the level of a function declaration.
 
 \section{Problems encountered \& experience gained}
 %If you had any problems in the work process, write it here with what you gained.
 
 \subsection{General Experience}
+General it was hard to understand the IR code in the beginning. However, reading in the book, and looking at the code provided in \texttt{translate.sml}, help at understand it quicker. Afterwards, the simple constructs were made, such a integer expression and binary operators, and tested. Next the more challenging constructs could be implemented. Some of the more challenging are addressed below. Additionally, a function called \texttt{prIR} was implemented inside \texttt{translate.sml}, which could print the IR tree. This IR could then be run by the online tool provided, in order to validate the expected output from the generated IR. 
+
 
 \subsection{Function Declaration}
 
