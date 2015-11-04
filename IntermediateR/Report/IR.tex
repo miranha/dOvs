@@ -41,10 +41,30 @@ Another support module is \texttt{irgenenv.sml}, which holds the environment. Th
 \subsection{General Experience}
 General it was hard to understand the IR code in the beginning. However, reading in the book, and looking at the code provided in \texttt{translate.sml}, help at understand it quicker. Afterwards, the simple constructs were made, such a integer expression and binary operators, and tested. Next the more challenging constructs could be implemented. Some of the more challenging are addressed below. Additionally, a function called \texttt{prIR} was implemented inside \texttt{translate.sml}, which could print the IR tree. This IR could then be run by the online tool provided, in order to validate the expected output from the generated IR. 
 
+\subsection{For Loops}
+In order to prevent an overflow of the control variable (here i) would lead to an infinite loop, we had to modify the test used in a for loop.
+
+The general idea is this: i <= high, if and only if i - 1 < high. The overflow happens if we increment i by 1 and i was maxInt(the highest integer value we could represent). If high wasn't maxInt, then the test fails once i = high + 1, since high + 1 didn't overflow. However, if high was maxInt, then high + 1 <= high in our code, so i would always fullfill i <= high.
+
+But, once i overflow, i - 1 would be maxInt, and the test i - 1 < high would fail, preventing the overflow of i to cause an infinite loop.
+
+In pratical terms, the foor loop works like this:
+
+First, set i = low and store the value of high in the register hiReg. Test if i <= high. If so, execute the body. From here on out, we store the current value of i in the register testReg. Increment i. Test if testReg < hiReg. If not, jump to the done statement. If so, start over, first with executing the body. Notice we in first round aren't concerened if the values of low or high were overflowing, we are only concerend about i overflowing when we increment it in the loop.
 
 \subsection{Function Declaration}
+They way we generate IR code for functions is by parsing a function declaration block twice.
+
+First, we gather functions names and the number of parameters for the functions, as well as creating a level for each. This info entered into the variable enviorment, which we use for the second pass.
+
+In the second pass, we will generate the function bodies. Firstly, we enter the location of the arguments into the variable enviorment. We then use transExp on the bodies, where we now set the level we are working on to be the level belonging to the function.
+
+The reason for the two phase proccess is that we have mutual recursive functions. Since we first gather info about the parameters as well as where the function will eventually live, we can use this in call expressions, without knowing what the bodies consists off.
+
+The second pass ensures that once a function is called, it will execute correctly.
 
 \subsection{Record and Array pointers}
+Here we use the realization that the mememory addresses stored in the pointers are actually ints. Since we only check if the pointer adresses are equal or not equal, we are not concerened about wehter ints are signed or not signed.
 
 \section{5 tiger programs}
 %5 interesting tiger programs that you find test your ir-translation in a good way.
