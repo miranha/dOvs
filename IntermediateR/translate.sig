@@ -41,7 +41,6 @@ sig
   val string2IR: string -> exp
   val defaultStringIR: exp
   val stringOp2IR: TAbsyn.oper * exp * exp -> exp
-  val arrayRecordOp2IR: TAbsyn.oper * exp * exp -> exp
   val while2IR: exp * exp * Tree.label -> exp
   val for2IR: exp * Tree.label * exp * exp * exp -> exp
   val funCall2IR: level * level * Tree.label * exp list -> exp
