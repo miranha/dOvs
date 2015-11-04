@@ -1,7 +1,11 @@
-/* an array type and an array variable */
+/*
+Array test for equal of equal things and unequal for unequal things
+*/
 let
-    type arrtype = array of int
-    var arr1: arrtype := arrtype [10] of 0
+	type A = array of int
+	var b := A[2] of 0
+	var c := b
+	var d := A[1] of 3
 in
-    arr1
+	b = c & c <> d
 end

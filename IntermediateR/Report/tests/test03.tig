@@ -1,8 +1,8 @@
-/* a record type and a record variable */
+/*
+Checks if we put the arguments in correct order
+*/
 let
-    type  rectype = {name:string, age:int}
-    var rec1: rectype := rectype{name="Nobody", age=1000}
+	function sub(a:int,b:int):int = a - b
 in
-    rec1.name := "Somebody";
-    rec1
+	sub(3,2)
 end

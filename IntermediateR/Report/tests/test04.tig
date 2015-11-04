@@ -1,8 +1,10 @@
-/* define a recursive function */
 let
-    /* calculate n! */
-    function nfactor(n: int): int =
-        if n = 0 then 1 else n * nfactor(n-1)
+type rectype = {name: string, address: string, id: int, age: int}
+type arrtype = array of rectype
+var arr := arrtype [5] of 
+                  rectype{name="aname", address="somewhere", id=0, age=0}
 in
-    nfactor(10)
+    arr[3].name := "kati";
+    arr[1].age := 23;
+    arr[1].age
 end

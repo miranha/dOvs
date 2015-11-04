@@ -1,9 +1,11 @@
-/* arr1 is valid since expression 0 is int = myint */
+/*
+Test for loops,
+that we update control variable correctly,
+and that we do not loop to much,
+and that we do no enter loops where low > high
+*/
 let
-    type myint = int
-    type  arrtype = array of myint
-
-    var arr1: arrtype := arrtype [10] of 0
+	var a := 0
 in
-    arr1
+	for i := 1 to 0 do a := 99; for i := 1 to 3 do a := a + i; a
 end
