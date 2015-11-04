@@ -26,10 +26,10 @@ The goal of the IR-translation is to create the IR of the typed abstract syntax 
 \section{The support modules}
 %Write what changes you made to translate.sml and how the play a part in the compiler.
 
-One support module is \texttt{translate.sml}. The transformation themselves of the different tiger language constructs, such as \texttt{for} and \texttt{if-then}, are inside this file. 
+One support module is \texttt{translate.sml}. The IR transformations themselves of the different tiger language constructs, such as \texttt{for} and \texttt{if-then}, are inside this file. 
 The main functionality of this file is described in chapter 7 in the book. This IR-translation is done for each construct of the tiger language, as mentioned above. In order to support the different constructs, the suggestions in the book where followed. An example is to translate a for-loop to a let expression in the IR tree. 
-Also the unCx, unEx and unNx functions where used at relevant places in order to get the correct constructs. As an example in the if IR translation. 
-Additionally, this file has support for creating a new level, which is used in the function declaration. Basically, it has support for all the low-level constructs, which are close the assemble language. 
+Also the unCx, unEx and unNx functions were used at relevant places in order to get the correct constructs. An example of this is seen in the \texttt{if} IR translation. 
+Additionally, this file has support for creating a new level, which is used in function declarations. Basically, it has support for all the low-level constructs, which are close the assemble language. 
 
 \fbox{TODO: Mention the extra function for headers}
 
@@ -49,7 +49,7 @@ General it was hard to understand the IR code in the beginning. However, reading
 \section{5 tiger programs}
 %5 interesting tiger programs that you find test your ir-translation in a good way.
 
-The five tiger programs presented here are simple, created in order to focus on different aspects of the implemented IR generator. Some of our tests cover aspects which provided test-cases do not.
+The five tiger programs presented here are simple, and were created in order to focus on different aspects of the implemented IR generator. Some of our tests cover aspects which the provided test-cases do not.
 
 \fbox{TODO: Make new test}
 
@@ -124,6 +124,6 @@ end
 
 
 \section{Conclusion}
-This report presented the development of the IR generator in \texttt{irgen.sml}, which creates an IR tree from the typed abstract syntax tree produced by the \texttt{semant.sml}. The main functionality was described, and how some modules are used in order to support the IR generation. Additionally the gained experience was described. Finally, additional tests provided confidence that this IR generator is working correctly.
+This report presented the development of the IR generator in \texttt{irgen.sml}, which creates an IR tree from the typed abstract syntax tree produced by the \texttt{semant.sml}. The main functionality was described, and how some modules, like \texttt{translate.sml}, are used in order to support the IR generation. Additionally the gained experience was described. Finally, additional tests provided confidence that this IR generator is working correctly.
 
 \end{document}
