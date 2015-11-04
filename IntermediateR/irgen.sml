@@ -66,8 +66,9 @@ fun transExp (venv, extra : extra) =
                 case actualTy tyl of (*Both left and right types are same type-> ensured by semant*)
                   Ty.STRING => Tr.stringOp2IR(oper,lexp,rexp) (*TODO: Check that this works as expected*)
                   | Ty.INT => Tr.intOp2IR(oper,lexp,rexp) (*TODO: Also arrays and records can be tested for equality*)
-                  | Ty.ARRAY(_) => Tr.arrayRecordOp2IR(oper,lexp,rexp)
-                  | Ty.RECORD(_) => Tr.arrayRecordOp2IR(oper,lexp,rexp)
+                    (* Addresses are ints, so we use it here *)
+                  | Ty.ARRAY(_) => Tr.intOp2IR(oper,lexp,rexp)
+                  | Ty.RECORD(_) => Tr.intOp2IR(oper,lexp,rexp)
                   | _ => Tr.bogus (*Should never happend-> ensured by semnat*)
             end
 
@@ -107,7 +108,7 @@ fun transExp (venv, extra : extra) =
             in
               case actualTy ty of
                 Ty.UNIT => Tr.seq2IR(seqlist)
-                | _ => Tr.eseq2IR(seqlist) (*TODO: Is this okay?*)
+                | _ => Tr.eseq2IR(seqlist) (*Semant guarantees this case*)
             end
           
           and trSeqExpAux(seq::xs, acc) = 
@@ -266,6 +267,7 @@ fun transExp (venv, extra : extra) =
             in
               case S.look(venv,id) of
                 SOME(E.VarEntry{access=access, ty=ty, escape=escape})=>{exp=Tr.simpleVar(access,level'), ty=ty}
+                | _ => raise Bug "SimpleVar not declared"
             end
 
           | trvar {var=TAbs.FieldVar (var, id), ty} : {exp:Tr.exp,ty:Ty.ty} = 
@@ -340,8 +342,10 @@ and transDec ( venv
             (E.VarEntry {access = acc, ty = actualTy ty, escape = escape})), xs, ys)
         | enterFormal (venv',[],[]) = venv'
         | enterFormal (venv,[],_) = venv(* raise Bug "Formal list length les than access list" *)
+        | enterFormal (venv,_,_) = venv (* Either we can enter something in enviorment or not. TODO: This could be cleaned up significantly *)
 
       fun args (sl::xs) = xs (* First access is static link*)
+        | args (_) = raise Bug "Static link should always be first argument"
 
       val venv' = enterFormal(venv,params,args(access))
       val {exp, ty} = transExp(venv',setLevel extra level) body

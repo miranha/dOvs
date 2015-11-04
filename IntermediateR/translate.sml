@@ -260,8 +260,8 @@ fun ifThenElse2IR (test, thenExp, elseExp) =
                , T.TEMP r)
             )
             end
-          (*| (_, _, _) =>
-            raise Bug "encountered thenBody and elseBody of different kinds"*)
+          | (_, _, _) =>
+            raise Bug "encountered thenBody and elseBody of different kinds"
     end
 
 fun binop2IR (oper, left, right) =
@@ -293,30 +293,6 @@ fun intOp2IR (TAbs.PlusOp, left, right)   = binop2IR (T.PLUS, left, right)
   | intOp2IR (TAbs.GtOp, left, right)     = relop2IR (T.GT, left, right)
   | intOp2IR (TAbs.GeOp, left, right)     = relop2IR (T.GE, left, right)
   | intOp2IR (TAbs.ExponentOp, left, right) = exponent2IR (left, right)(*TODO: I can not find pow function, we need to implment it?*)
-
-fun checkAddr(oper, left, right) =
-  let 
-    val tL = Temp.newLabel "addr_comp_true"
-    val fL = Temp.newLabel "addr_comp_false"
-    val r = Temp.newtemp ()
-  in
-    Ex (T.ESEQ (seq [
-      T.MOVE(T.TEMP r, T.CONST 1),
-      T.CJUMP(oper,left, right, tL, fL),
-      T.LABEL fL,
-      T.MOVE (T.TEMP r, T.CONST 0),
-      T.LABEL tL],
-    T.TEMP r))
-  end
-
-
-fun arrayRecordOp2IR(oper, left, right) =
-  let val oper' = (case oper of
-                      TAbs.EqOp => T.EQ
-                      | _ => T.NE)
-  in
-    checkAddr(oper', unEx left, unEx right)
-  end
 
 
 fun let2IR ([], body) = body
@@ -384,7 +360,7 @@ fun for2IR (var, done, lo, hi, body) =
         let
         val var' = unEx var
         val bodyL = Temp.newLabel "for_body"
-        val doneL = Temp.newLabel "for_done"
+        val doneL = done(*Temp.newLabel "for_done"*)
         val hiReg = Temp.newtemp ()
         val testReg = Temp.newtemp ()
         val high = unEx hi
