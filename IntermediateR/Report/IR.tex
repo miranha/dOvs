@@ -73,74 +73,28 @@ The five tiger programs presented here are simple, and were created in order to 
 
 \fbox{TODO: Make new test}
 
-\subsection{break\_exp\_tests.tig}
+\subsection{test01.tig}
 
-\begin{lstlisting}[frame=single]
-/* Check the three possible states for break.
-	in for loop, in while loop, outside loop
-	EXPECTION: an error at last break statement
- */
-(for i := 1 to 3 do break; while 2 do break;break)
-\end{lstlisting}
+\lstinputlisting[frame=single]{tests/test01.tig}
 
-\subsection{cycle\_in\_typedecl.tig}
+\subsection{test02.tig}
 
-\begin{lstlisting}[frame=single]
-/* test recursive typedefintion.
-	ERROR: Cycle will be detected with A,B,D */
-let
-	type A = B
-	type B = D
-	type D = A
-	type t1 = t2
-	type t2 = t3
-	type t4 = t2
-	type t3 = int
-	type C = int
-	type tree = {value: int, children:treelist}
-	type treelist = {hd:tree, tl:treelist}
-in 
-end
-\end{lstlisting}
 
-\subsection{unassignable.tig}
+\lstinputlisting[frame=single]{tests/test02.tig}
 
-\begin{lstlisting}[frame=single]
-/* test for immutable for ID.
-	ERROR: i is immutable, and can not be assigned to.*/
-(for i := 1 to 3 do i:=2)
-\end{lstlisting}
 
-\subsection{recursive\_type\_usage.tig}
 
-\begin{lstlisting}[frame=single]
- /* test recursive type usage.
-	PASS: No Errors should be produced */
-let
-  type tree = {value:int, children:treelist}
-  type treelist = {hd: tree, tl:treelist}
-  var c := tree{value = 0, children = nil}
-  var children := treelist{hd = c, tl = nil}
-  var tree := tree{value = 1, children = children}
-in tree
-end
-\end{lstlisting}
+\subsection{test03.tig}
 
-\subsection{using\_a\_record\_create\_in\_a\_record.tig}
+\lstinputlisting[frame=single]{tests/test03.tig}
 
-\begin{lstlisting}[frame=single]
-/* Testing to allow to create a
-* inside a record,
-* if the field name is a record */
-let
-	type A = {c:int}
-	type C = A
-	type B = {d:A}
-	var a := B{d = C{c = 2}}
-in
-	a
-end
-\end{lstlisting}
+\subsection{test04.tig}
+
+\lstinputlisting[frame=single]{tests/test04.tig}
+
+\subsection{test05.tig}
+
+\lstinputlisting[frame=single]{tests/test05.tig}
 
 
 \section{Conclusion}
