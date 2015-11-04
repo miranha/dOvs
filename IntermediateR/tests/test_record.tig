@@ -1,0 +1,6 @@
+let
+  type r = {i:int, j:int}
+  var a := r{i=3,j=5}
+in
+ a.i
+end
