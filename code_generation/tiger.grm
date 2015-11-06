@@ -1,0 +1,94 @@
+structure A = Absyn
+structure S = Symbol
+
+(* [these functions and similar ones may be convenient
+ * for the creation of abstract syntax trees] *)
+
+datatype lvaluePartSpec = Field of S.symbol
+                        | Subscript of A.exp
+
+fun makeLvaluePartSpec (v, pos, l::r) =
+  (case l
+    of Field idsym =>
+       makeLvaluePartSpec (A.FieldVar (v, idsym, pos), pos, r)
+     | Subscript exp =>
+       makeLvaluePartSpec (A.SubscriptVar (v, exp, pos), pos,r))
+  | makeLvaluePartSpec (v, _, nil) = v
+
+fun makeBinop (e1, bop, e2, p) =
+    A.OpExp  { left = e1
+             , oper = bop
+             , right = e2
+             , pos = p}
+
+fun makeIf (et, en, el, p) =
+    A.IfExp  { test = et
+             , thn = en
+             , els = el
+             , pos = p}
+
+fun makeVarDec (idsym, ty, e, p) =
+    A.VarDec { name = idsym
+             , escape = ref true
+             , typ = ty
+             , init = e
+             , pos = p}
+
+fun makeFundecl (idsym, ps, rty, e, p) =
+             { name = idsym
+             , params = ps
+             , result = rty
+             , body = e
+             , pos = p} : A.fundecldata
+
+%%
+%term
+    EOF
+  | ID of string
+  | INT of int | STRING of string
+  | COMMA | COLON | SEMICOLON | LPAREN | RPAREN | LBRACK | RBRACK
+  | LBRACE | RBRACE | DOT
+  | PLUS | MINUS | TIMES | DIVIDE | EQ | NEQ | LT | LE | GT | GE
+  | AND | OR | ASSIGN
+  | ARRAY | IF | THEN | ELSE | WHILE | FOR | TO | DO | LET | IN | END | OF
+  | BREAK | NIL
+  | FUNCTION | VAR | TYPE
+
+(* TODO: add missing nonterminals with semantic values *)
+
+%nonterm program of A.exp | exp of A.exp
+
+%pos int
+%verbose
+%start program
+%eop EOF
+%noshift EOF
+
+%name Tiger
+
+%keyword WHILE FOR TO BREAK LET IN END FUNCTION
+         VAR TYPE ARRAY IF THEN ELSE DO OF NIL
+
+%prefer THEN ELSE LPAREN
+
+%value ID ("bogus")
+%value INT (1)
+%value STRING ("")
+
+(* TODO: specify precedence/associativity, least tight binding first *)
+
+%nonassoc   FUNCTION VAR TYPE THEN DO OF ASSIGN
+%right      ELSE
+(* [..more tokens & levels..] *)
+
+%%
+
+(* Top level constructs *)
+
+program: exp                  (A.NilExp (* TODO *))
+
+exp: INT                      (A.NilExp (* TODO *))
+    (* TODO: add missing rules for exp *)
+
+(* TODO: add missing rules for missing nonterminals *)
+
