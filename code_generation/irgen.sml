@@ -13,21 +13,182 @@ structure Ty = Types
 structure Tr = Translate
 
 type extra = { level : Tr.level (* frame of enclosing function *)
-             , break : S.symbol option } (* jump to this label on 'break' *)
+             , break : Tr.breakpoint option } (* jump to this label on 'break' *)
 
+
+fun addBreakLabel ({level=l,break=_}, breakpoint) = {level=l,break=SOME(breakpoint)}
+fun getLevel {level=l,break=_} = l
+fun setLevel {level=_,break=b} l= {level = l, break = b}
 
 (* Helper functions *)
 
 fun actualTy (Ty.NAME (_, ref (SOME ty))) = actualTy ty
   | actualTy t = t
 
-val TODO = {exp=Tr.bogus, ty=Ty.ERROR}        
+
+
+val TODO = {exp=Tr.bogus, ty=Ty.ERROR}
+
+exception Bug of string;        
 
 fun transExp (venv, extra : extra) =
     let                               
         fun trexp {exp=TAbs.NilExp, ty} = {exp=Tr.nil2IR (), ty=ty}
+          | trexp{exp=TAbs.IntExp i, ty} = {exp=Tr.int2IR(i), ty=ty}
+          | trexp{exp=TAbs.OpExp({left=left,oper=oper,right=right}), ty=ty} = {exp=trBinop(left,oper,right), ty=ty} (*TODO: Add support for strings too*)
+          | trexp{exp=TAbs.IfExp({test=test,thn=thn,els=SOME(els)}), ty=ty} = {exp=trIfElseExp(test,thn,els), ty=ty}
+          | trexp{exp=TAbs.IfExp({test=test,thn=thn,els=NONE}), ty=ty} = {exp=trIfThenExp(test,thn), ty=ty}
+          | trexp{exp=TAbs.VarExp(var), ty=ty} = {exp=trVarExp(var), ty=ty}
+          | trexp{exp=TAbs.LetExp(letdata), ty=ty} = {exp=trLetExp(letdata), ty=ty}
+          | trexp{exp=TAbs.SeqExp(seqdata), ty=ty} = {exp=trSeqExp(seqdata, ty), ty=ty} (*TODO: What if sequence is empty??*)
+          | trexp{exp=TAbs.WhileExp(whiledata), ty=ty} = {exp=trWhileExp(whiledata), ty=ty}
+          | trexp{exp=TAbs.AssignExp(assigndata), ty=ty} = {exp=trAssignExp(assigndata), ty=ty}
+          | trexp{exp=TAbs.ForExp(fordata), ty=ty} = {exp=trForExp(fordata), ty=ty}
+          | trexp{exp=TAbs.StringExp str, ty=ty} = {exp=Tr.string2IR(str), ty=ty}
+          | trexp{exp=TAbs.BreakExp, ty=ty} = {exp=trBreakExp(), ty=ty}
+          | trexp{exp=TAbs.ArrayExp(arrdata), ty=ty} = {exp=trArrayExp(arrdata), ty=ty}
+          | trexp{exp=TAbs.RecordExp(recdata), ty=ty} = {exp=trRecordExp(recdata), ty=ty}
+          | trexp{exp=TAbs.CallExp(calldata), ty=ty} = {exp=trCallExp(calldata,ty), ty=ty}
           | trexp _ = TODO
-                
+           
+        and trBreakExp() = 
+          let
+            val break' = (#break extra)
+          in
+            case break' of SOME(br') => Tr.break2IR (br') 
+                          | NONE => Tr.bogus (*TODO: Look into this again*)
+          end
+
+          and trBinop(left,oper,right) = 
+            let val {exp=lexp, ty=tyl} = trexp left
+                val {exp=rexp, ty=_} = trexp right 
+              in
+                case actualTy tyl of (*Both left and right types are same type-> ensured by semant*)
+                  Ty.STRING => Tr.stringOp2IR(oper,lexp,rexp) (*TODO: Check that this works as expected*)
+                  | Ty.INT => Tr.intOp2IR(oper,lexp,rexp) (*TODO: Also arrays and records can be tested for equality*)
+                    (* Addresses are ints, so we use it here *)
+                  | Ty.ARRAY(_) => Tr.intOp2IR(oper,lexp,rexp)
+                  | Ty.RECORD(_) => Tr.intOp2IR(oper,lexp,rexp)
+                  | _ => Tr.bogus (*Should never happend-> ensured by semnat*)
+            end
+
+          and trIfElseExp(test,thn,els) =
+            let val {exp=test', ty=_} = trexp test
+                val {exp=thn', ty=_} = trexp thn
+                (*val elss = case els of SOME(e)=>e*)
+                val {exp=els', ty=_} = trexp els 
+              in
+                Tr.ifThenElse2IR(test',thn',els')
+            end
+
+          and trIfThenExp(test,thn) =
+            let val {exp=test', ty=_} = trexp test
+                val {exp=thn', ty=_} = trexp thn
+              in
+                Tr.ifThen2IR(test',thn')
+            end
+
+          and trVarExp(var) =
+            let
+              val {exp=var', ty=_} = trvar var
+            in
+              var'
+            end
+            
+          and trLetExp({decls=decls, body=body}: TAbs.letdata) =
+            let val ({venv=venv'}, expl') = transDecs(venv,decls,extra,[])
+                val {exp=exp', ty=_} = transExp(venv',extra) body
+            in
+              Tr.let2IR(expl',exp')
+            end
+
+          and trSeqExp(seqdata,ty) = 
+            let
+              val seqlist = trSeqExpAux(seqdata,[])
+            in
+              case actualTy ty of
+                Ty.UNIT => Tr.seq2IR(seqlist)
+                | _ => Tr.eseq2IR(seqlist) (*Semant guarantees this case*)
+            end
+          
+          and trSeqExpAux(seq::xs, acc) = 
+            let val {exp=res, ty=_} = trexp seq 
+            in 
+              trSeqExpAux(xs,acc@[res]) 
+            end
+            | trSeqExpAux([], acc) = acc
+
+          and trWhileExp({test=test, body=body}: TAbs.whiledata) = 
+            let
+              val done' = Tr.newBreakPoint "while_done" (*TODO: We need to use the break from outside I think..*)
+              val {exp=test', ty=_} = trexp test
+              val {exp=body', ty=_} = transExp(venv, addBreakLabel(extra, done')) body
+              
+              (*val break' = case (#break extra) of SOME(e) => e*) (*TODO: make it nice*)
+            in
+              Tr.while2IR(test',body',done')
+            end
+
+          and trAssignExp({var=var, exp=exp}) = 
+            let
+              val {exp=var', ty=_} = trvar var
+              val {exp=exp', ty=_} = trexp exp
+            in
+              Tr.assign2IR(var',exp')
+            end
+
+          and trForExp({var=varname, escape=escape, lo=lo,hi=hi, body=body}) =
+            let
+              val done' = Tr.newBreakPoint "for_done"
+              val {exp=lo', ty=_} = trexp lo
+              val {exp=hi', ty=ty} = trexp hi
+              val level' = (#level extra)
+              val acc' = Tr.allocLocal level' (!escape)
+              val var' = Tr.simpleVar(acc',level')
+              val venv' = S.enter(venv,varname,(E.VarEntry {access=acc'
+                                                 , ty=actualTy ty
+                                                 , escape= escape}))
+              val {exp=body', ty=_} = transExp(venv', addBreakLabel(extra, done')) body (*TODO: Consider sending value enviroment*)
+            in
+              Tr.for2IR(var',done',lo',hi',body')
+            end
+
+          and trArrayExp({size=size, init=init}) = (* using Tr.array2IR *)
+            let 
+              val {exp=sizeexp', ty=_} = trexp size
+              val {exp=initexp', ty=_} = trexp init
+            in
+              Tr.array2IR(sizeexp', initexp')
+            end
+
+          and trRecordExp({fields=fields}) = (*{ fields: (S.symbol * exp) list}*)
+            let
+              val expl = trRecExpAux(fields,[])
+            in
+              Tr.record2IR(expl)
+            end
+
+          and trRecExpAux((_, exp)::xs, acc) = 
+            let val {exp=res, ty=_} = trexp exp 
+            in 
+              trRecExpAux(xs,acc@[res]) 
+            end
+            | trRecExpAux([], acc) = acc
+
+
+          and trCallExp({func=func, args=args},ty) = (*calldata    = { func: S.symbol, args: exp list}*)
+            let
+              fun arg {exp=exp, ty=ty'} = exp
+              val exps = map arg (map trexp args)
+              val {formals, result, label,
+                      level} = (case( S.look (venv, func)) of 
+                                SOME(E.FunEntry(e)) => e
+                                |_ => raise Bug "Function have not been entered into enviorment")
+              in
+              case actualTy ty of
+                Ty.UNIT => Tr.procCall2IR(level, getLevel extra, label, exps)
+                | _ => Tr.funCall2IR(level, getLevel extra, label, exps)
+            end
         (* The below code suggest how to translate depending what case
         you are in, however, uncommenting the section would result in
         type-errors. You will have to write the rest of the cases your
@@ -99,17 +260,42 @@ fun transExp (venv, extra : extra) =
          * and Tr.subscript2IR must return an Ex (MEM _) or an 
          * Ex (TEMP _).
          *)
-
-        and trvar {var=TAbs.SimpleVar id, ty} : {exp:Tr.exp,ty:Ty.ty} = 
-            TODO (* using Tr.simpleVar *)
+        (*(acc, fromLevel)*)
+        and trvar {var=TAbs.SimpleVar id, ty} : {exp:Tr.exp,ty:Ty.ty} = (* using Tr.simpleVar *) 
+            let
+              val level' = (#level extra)
+            in
+              case S.look(venv,id) of
+                SOME(E.VarEntry{access=access, ty=ty, escape=escape})=>{exp=Tr.simpleVar(access,level'), ty=ty}
+                | _ => raise Bug "SimpleVar not declared"
+            end
 
           | trvar {var=TAbs.FieldVar (var, id), ty} : {exp:Tr.exp,ty:Ty.ty} = 
+          let 
+            val {exp=var', ty=varty'} = trvar var
+            val lst = (case actualTy varty' of
+                          Ty.RECORD(fi,_) => fi
+                          | _ => [](* Semant says this never happens*))
+            fun index ((s,_)::xs, acc) = if s = id then acc else index(xs, acc + 1)
+              | index (_) = ~1 (* Semans says this never happens *)
+            val offset = index(lst,0)
+          in
+             {exp = Tr.fieldVar(var', offset), ty = ty}
+          end 
+
+            (*TODO*)
             (* ignore 'mutationRequested': all record fields are mutable *)
-            TODO (* using Tr.fieldVar *)
+            (*TODO*) (* using Tr.fieldVar *)
                                        
           | trvar {var=TAbs.SubscriptVar (var, exp), ty} : {exp:Tr.exp,ty:Ty.ty} = 
+          let 
+            val {exp=var', ty=_} = trvar var
+            val {exp=exp', ty=_} = trexp exp
+          in
+            {exp=Tr.subscript2IR(var',exp'), ty=ty}  
+          end
             (* ignore 'mutationRequested': all array entries are mutable *)
-            TODO (* using Tr.subscript2IR *)
+            (*TODO*) (* using Tr.subscript2IR *)
 
     in
         trexp
@@ -135,10 +321,82 @@ and transDec ( venv
     ({ venv = venv}, explist)
         
   | transDec (venv, TAbs.FunctionDec fundecls, explist, extra) =
-    ( {venv = venv}, explist) (* TODO *)
+    let val headers = map (transFunHeader extra) fundecls
+      val venv' = enterHeaders(venv,headers,fundecls)
+      val _ = map (transFunction extra venv') fundecls
+    in
+      ( {venv = venv'}, explist ) (* TODO *)
+    end
 
-and transDecs (venv, decls, extra) =
-    ({venv = venv}, []) (* TODO *)                 
+  and transFunction extra venv {name = name, params = params, 
+    resultTy = resultTy, body = body} = 
+    let 
+      val level = (case (S.look (venv, name)) of
+                  SOME(E.FunEntry({formals,result,label,level}))
+                    => level
+                  | _=> raise Bug "Function name not entered into enviorment")
+      val access = Tr.formals level
+
+      fun enterFormal (venv, {name,escape,ty}::xs, acc::ys) =
+        enterFormal (S.enter(venv,name,
+            (E.VarEntry {access = acc, ty = actualTy ty, escape = escape})), xs, ys)
+        | enterFormal (venv',[],[]) = venv'
+        | enterFormal (venv,[],_) = venv(* raise Bug "Formal list length les than access list" *)
+        | enterFormal (venv,_,_) = venv (* Either we can enter something in enviorment or not. TODO: This could be cleaned up significantly *)
+
+      fun args (sl::xs) = xs (* First access is static link*)
+        | args (_) = raise Bug "Static link should always be first argument"
+
+      val venv' = enterFormal(venv,params,args(access))
+      val {exp, ty} = transExp(venv',setLevel extra level) body
+    in
+      case actualTy resultTy of
+        Ty.UNIT => Tr.procEntryExit {level = level, body = exp}
+        | _ => Tr.funEntryExit{level = level, body = exp}
+    end
+
+    (* Since we can have recursive functions, we need give each funtion its level first before
+      we can process the body*)
+  and transFunHeader extra {name = name, params = params, 
+    resultTy = resultTy, body = body} = 
+      let 
+        val formals = map (fn x => true) params (* Everything escapes, currently *)
+        val fLabel = Temp.newLabel (S.name name)
+        val parent = (getLevel extra)
+        val level = Tr.newLevel {parent = parent, name = fLabel, formals = formals}
+      in
+        (level,fLabel)
+      end
+
+  and enterHeaders(venv,[],[]) = venv
+    | enterHeaders(venv,(level,label)::headers, {name,params,resultTy,body}::fDecls) =
+        let
+            fun paramType { name = _, escape = _
+                  , ty = ty} = ty
+            val formals = map paramType params
+            val venv' = S.enter(venv,name,(E.FunEntry {
+                            formals = formals
+                            , result = resultTy
+                            , label = label
+                            , level = level
+                }))
+        in
+            enterHeaders(venv', headers, fDecls)
+        end
+    | enterHeaders(_) = raise Bug "The number of headers doesnt match the number of function declarations"
+
+
+
+
+and transDecs (venv, decls, extra, explist) =
+  case decls of
+    [] => ({venv=venv}, explist)
+    | (h::t) =>   let 
+                    val ({venv=venv'}, explist') = transDec(venv,h,explist,extra)
+                  in
+                    transDecs(venv',t,extra,explist')
+                  end
+        (*({venv = venv}, [])*) (* TODO *)                
 
 fun transProg absyn : Tr.frag list  =
     let
