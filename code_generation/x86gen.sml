@@ -30,7 +30,7 @@ fun codegen frame stm =
 
         fun result gen =
             let val t = Tm.newtemp ()
-            in  gen t; t
+            in  t
             end
 
         fun operator2jump oper =
@@ -117,7 +117,7 @@ fun codegen frame stm =
             raise TODO
             
           | munchStm (T.EXP exp) =
-            raise TODO
+             (munchExp(exp);())
 
           (* If no match so far, complain *)
           | munchStm (T.JUMP a) =
@@ -149,6 +149,7 @@ fun codegen frame stm =
                                          , dst = [r]
                                          , jump = NONE
                                          , doc = "x86gen:151"}))
+
 
           | munchExp (T.MEM (T.BINOP (T.PLUS, T.CONST n, e))) =
             result (fn r => raise TODO)
@@ -228,14 +229,22 @@ fun codegen frame stm =
           (* Other constructs *)
           | munchExp (T.TEMP t) = t
 
-          | munchExp (T.ESEQ (s, e)) = raise TODO
+          | munchExp (T.ESEQ (s, e)) = result (fn r => raise TODO)
 
           | munchExp (T.NAME label) =
             result (fn r => raise TODO)
 
+            
           | munchExp (T.CONST n) =
             result (fn r => raise TODO)
-
+            (*
+            result (fn r => emit (A.OPER { assem = "\tmovl $" ^ int n ^ ", `d0"
+                                          , src = []
+                                          , dst = [r]
+                                          , jump = NONE
+                                          , doc = "x86gen:munchExp(T.CONST n)" }))
+  *)
+            
           (* If no match so far, complain *)
           | munchExp (tr as T.CALL (_, _)) =
             ( TextIO.output (TextIO.stdErr, "\nBUG: bad CALL in munchExp:\n")
@@ -246,7 +255,6 @@ fun codegen frame stm =
                                            , dst = []
                                            , jump = NONE
                                            , doc = "x86gen:248"})))
-
           | munchExp (tr as T.BINOP (_, _, _)) =
             ( TextIO.output (TextIO.stdErr, "\nBUG: bad BINOP in munchExp:\n")
             ; PT.printExp (TextIO.stdErr, tr)
