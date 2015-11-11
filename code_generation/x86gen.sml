@@ -94,10 +94,15 @@ fun codegen frame stm =
             raise TODO
 
           | munchStm (T.MOVE (T.TEMP i, e2)) =
-            raise TODO
-
+            let
+              val s = munchExp e2
+            in
+              emit (moveInstr s i "x86gen:muchStm(T.MOVE(T.TEMP i, e2))")
+            end
           | munchStm (T.LABEL lab) =
-            raise TODO
+            emit (A.LABEL { assem = S.name lab ^ "\n" (* Labels aren't indented *)
+                          , lab = lab
+                          , doc = "x86gen:munchStm(T.LABEL lab)"})
 
           (* JUMP *)
           | munchStm (T.CJUMP (oper, T.CONST i, e2, lab1, lab2)) =
@@ -110,14 +115,19 @@ fun codegen frame stm =
             raise TODO
 
           | munchStm (T.JUMP (T.NAME lab, llst)) =
-            raise TODO
+            emit (A.OPER {  assem = "\tjmp " ^ S.name lab ^ "\n"
+                          , dst = []
+                          , src = []
+                          , jump = SOME( llst )
+                          , doc = "x86gen:munchStm(T.JUMP(T.NAME lab, llst))"
+              })
 
           (* EXP *)
           | munchStm (T.EXP (T.CALL (T.NAME lab, args))) =
             raise TODO
             
           | munchStm (T.EXP exp) =
-            raise TODO
+             (munchExp(exp);())
 
           (* If no match so far, complain *)
           | munchStm (T.JUMP a) =
@@ -149,6 +159,7 @@ fun codegen frame stm =
                                          , dst = [r]
                                          , jump = NONE
                                          , doc = "x86gen:151"}))
+
 
           | munchExp (T.MEM (T.BINOP (T.PLUS, T.CONST n, e))) =
             result (fn r => raise TODO)
@@ -228,14 +239,19 @@ fun codegen frame stm =
           (* Other constructs *)
           | munchExp (T.TEMP t) = t
 
-          | munchExp (T.ESEQ (s, e)) = raise TODO
+          | munchExp (T.ESEQ (s, e)) = result (fn r => raise TODO)
 
           | munchExp (T.NAME label) =
             result (fn r => raise TODO)
 
+            
           | munchExp (T.CONST n) =
-            result (fn r => raise TODO)
-
+            result (fn r => emit (A.OPER { assem = "\tmovl $" ^ int n ^ ", `d0\n"
+                                          , src = []
+                                          , dst = [r]
+                                          , jump = NONE
+                                          , doc = "x86gen:munchExp(T.CONST n)" }))
+            
           (* If no match so far, complain *)
           | munchExp (tr as T.CALL (_, _)) =
             ( TextIO.output (TextIO.stdErr, "\nBUG: bad CALL in munchExp:\n")
@@ -246,7 +262,6 @@ fun codegen frame stm =
                                            , dst = []
                                            , jump = NONE
                                            , doc = "x86gen:248"})))
-
           | munchExp (tr as T.BINOP (_, _, _)) =
             ( TextIO.output (TextIO.stdErr, "\nBUG: bad BINOP in munchExp:\n")
             ; PT.printExp (TextIO.stdErr, tr)
