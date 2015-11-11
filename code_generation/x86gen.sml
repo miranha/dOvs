@@ -246,7 +246,7 @@ fun codegen frame stm =
 
             
           | munchExp (T.CONST n) =
-            result (fn r => emit (A.OPER { assem = "\tmovl $" ^ int n ^ ", `d0\n"
+            result (fn r => emit (A.OPER { assem = "\tmovl `d0 , $" ^ int n 
                                           , src = []
                                           , dst = [r]
                                           , jump = NONE
