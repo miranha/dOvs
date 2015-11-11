@@ -100,7 +100,7 @@ fun codegen frame stm =
               emit (moveInstr s i "x86gen:muchStm(T.MOVE(T.TEMP i, e2))")
             end
           | munchStm (T.LABEL lab) =
-            emit (A.LABEL { assem = S.name lab ^ "\n" (* Labels aren't indented *)
+            emit (A.LABEL { assem = S.name lab ^ ":" (* Labels aren't indented *)
                           , lab = lab
                           , doc = "x86gen:munchStm(T.LABEL lab)"})
 
@@ -244,9 +244,9 @@ fun codegen frame stm =
           | munchExp (T.NAME label) =
             result (fn r => raise TODO)
 
-            
+            (* TODO: Could we use a A.MOVE? *)
           | munchExp (T.CONST n) =
-            result (fn r => emit (A.OPER { assem = "\tmovl `d0 , $" ^ int n 
+            result (fn r => emit (A.OPER { assem = "\tmovl $" ^ int n ^ ", `d0" 
                                           , src = []
                                           , dst = [r]
                                           , jump = NONE
