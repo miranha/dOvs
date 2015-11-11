@@ -30,7 +30,7 @@ fun codegen frame stm =
 
         fun result gen =
             let val t = Tm.newtemp ()
-            in  t
+            in  gen t; t
             end
 
         fun operator2jump oper =
@@ -94,10 +94,15 @@ fun codegen frame stm =
             raise TODO
 
           | munchStm (T.MOVE (T.TEMP i, e2)) =
-            raise TODO
-
+            let
+              val s = munchExp e2
+            in
+              emit (moveInstr s i "x86gen:muchStm(T.MOVE(T.TEMP i, e2))")
+            end
           | munchStm (T.LABEL lab) =
-            raise TODO
+            emit (A.LABEL { assem = S.name lab ^ "\n" (* Labels aren't indented *)
+                          , lab = lab
+                          , doc = "x86gen:munchStm(T.LABEL lab)"})
 
           (* JUMP *)
           | munchStm (T.CJUMP (oper, T.CONST i, e2, lab1, lab2)) =
@@ -110,7 +115,12 @@ fun codegen frame stm =
             raise TODO
 
           | munchStm (T.JUMP (T.NAME lab, llst)) =
-            raise TODO
+            emit (A.OPER {  assem = "\tjmp " ^ S.name lab ^ "\n"
+                          , dst = []
+                          , src = []
+                          , jump = SOME( llst )
+                          , doc = "x86gen:munchStm(T.JUMP(T.NAME lab, llst))"
+              })
 
           (* EXP *)
           | munchStm (T.EXP (T.CALL (T.NAME lab, args))) =
@@ -236,14 +246,11 @@ fun codegen frame stm =
 
             
           | munchExp (T.CONST n) =
-            result (fn r => raise TODO)
-            (*
-            result (fn r => emit (A.OPER { assem = "\tmovl $" ^ int n ^ ", `d0"
+            result (fn r => emit (A.OPER { assem = "\tmovl $" ^ int n ^ ", `d0\n"
                                           , src = []
                                           , dst = [r]
                                           , jump = NONE
                                           , doc = "x86gen:munchExp(T.CONST n)" }))
-  *)
             
           (* If no match so far, complain *)
           | munchExp (tr as T.CALL (_, _)) =
