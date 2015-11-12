@@ -82,7 +82,16 @@ fun codegen frame stm =
             end
 
           | munchStm (T.MOVE (T.MEM (T.BINOP (T.PLUS, e1, T.CONST i)), e2)) =
-            raise TODO
+              let
+                val s0 = munchExp e1
+                val d0 = munchExp e2
+              in
+                emit( A.MOVE {    assem = "\tmovl " ^ int i ^ "(`s0), d0"
+                                , src = s0
+                                , dst = d0
+                                , doc = "x86gen:92"
+                  })
+              end
 
           | munchStm (T.MOVE (T.MEM (T.BINOP (T.PLUS, T.CONST i, e1)), e2)) =
             raise TODO
@@ -153,8 +162,7 @@ fun codegen frame stm =
 
         (* Memory access *)
         and munchExp (T.MEM (T.BINOP (T.PLUS, e, T.CONST n))) =
-            result (fn r => emit (A.OPER { assem = "\tmovl " ^ int n ^
-                                                   "(`s0), `d0"
+            result (fn r => emit (A.OPER { assem = "\tmovl " ^ int n ^ "(`s0), `d0"
                                          , src = [munchExp e]
                                          , dst = [r]
                                          , jump = NONE
@@ -172,7 +180,21 @@ fun codegen frame stm =
 
           (* PLUS *)
           | munchExp (T.BINOP (T.PLUS, e1, T.CONST i)) =
-            result (fn r => raise TODO)
+            let 
+              val s0 = munchExp(e1)
+            in
+              emit (A.OPER {  assem = "\tmovl $" ^ int i ^ ", `d0"
+                            , src = []
+                            , dst = [F.EAX]
+                            , jump = NONE
+                            , doc = "x86gen:189"});
+              emit (A.OPER {  assem = "\tadd `s0, `d0"
+                            , src = [s0]
+                            , dst = [F.EAX]
+                            , jump = NONE
+                            , doc = "x86gen:195"});
+              result (fn r => emit (moveInstr F.EAX r "x86gen:196"))
+          end
 
           | munchExp (T.BINOP (T.PLUS, T.CONST i, e1)) =
             result (fn r => raise TODO)

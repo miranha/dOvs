@@ -298,7 +298,16 @@ fun spillAllTemps toMap body =
                     raise TODO
             else if isRegister d0 then
                 (* s0 other temp, d0 register *)
-                raise TODO
+                [ A.MOVE {    assem = "\tmovl " ^ ofs s0 ^ "(%ebp), `d0"
+                            , src = s0
+                            , dst = EBX
+                            , doc = doc ^ " x86frame:304"},
+
+                 A.OPER {     assem = assem
+                            , src = [EBX]
+                            , dst = [d0]
+                            , jump = jump
+                            , doc = doc ^ " x86frame:310"}]
             else (* s0,d0 other temp *)
                 (* OLD_R_OPTIMIZATION *)
                 if s0=d0 then
@@ -354,13 +363,16 @@ fun spillAllTemps toMap body =
             if isRegister src then
                 if isRegister dst then [i]
                 else (* src register, dst other temp *)
-                    raise TODO
+                    [A.MOVE {  assem = "\tmovl `s0, " ^ ofs dst ^ "(%ebp)"
+                            ,  dst = dst
+                            ,  src = src
+                            ,  doc = doc ^ " x86frame:369" }]
             else if isRegister dst then
                 (* src other temp, dst register *)
                 [A.MOVE {  assem = "\tmovl " ^ ofs src ^ "(%ebp), `d0"
                             , dst = dst
                             , src = src
-                            , doc = doc ^ "x86frame:363"}]
+                            , doc = doc ^ "x86frame:368"}]
             else
                 (* src, dst other temp *)
                 raise TODO
