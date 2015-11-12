@@ -18,6 +18,12 @@ runtime.o: runtime.c Makefile
 showstack.o: showstack.c Makefile
 	gcc -c -o showstack.o showstack.c
 
+link_test:
+	gcc -c test.s
+	gcc -o testprog test.o runtime.o
+	./compilertest
+	rm testprog
+
 # create a standalone executable via tigerc.x86-linux, used by tigerc
 
 standalone:
@@ -48,6 +54,10 @@ ts: test
 ct: clean test
 
 # compile tests
+
+it: 
+	make clean
+	make ia
 
 test: tigerc.x86-linux
 	./compiletests

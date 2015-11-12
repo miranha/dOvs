@@ -280,7 +280,17 @@ fun spillAllTemps toMap body =
           | expand (i as A.OPER {assem, src=[], dst=(d0::ds), jump, doc}) =
             if isRegister d0 then [i]
             else (* d0 other temp *)
-                raise TODO
+                [ A.OPER {   assem = assem 
+                           , src = []
+                           , dst = [EAX]
+                           , jump = jump
+                           , doc = doc ^ " x86frame:287" }
+                    (* TODO: Can we use a move command? *)
+                , A.OPER {    assem = "\tmovl `s0, " ^ ofs d0 ^ "(%ebp)"
+                            , src = [EAX]
+                            , dst = [d0]
+                            , jump = NONE
+                            , doc = doc ^ " x86frame:293"}]
           | expand (i as A.OPER {assem, src=[s0], dst=(d0::ds), jump, doc}) =
             if isRegister s0 then
                 if isRegister d0 then [i]
@@ -347,7 +357,10 @@ fun spillAllTemps toMap body =
                     raise TODO
             else if isRegister dst then
                 (* src other temp, dst register *)
-                raise TODO
+                [A.MOVE {  assem = "\tmovl " ^ ofs src ^ "(%ebp), `d0"
+                            , dst = dst
+                            , src = src
+                            , doc = doc ^ "x86frame:363"}]
             else
                 (* src, dst other temp *)
                 raise TODO

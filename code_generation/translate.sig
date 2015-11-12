@@ -61,5 +61,6 @@ sig
   val printLevel: TextIO.outstream * level -> unit
   val printAccess: TextIO.outstream * access -> unit
   val printExp: TextIO.outstream * exp -> unit
+  val prIR: X86Frame.frag list -> unit
 
 end
