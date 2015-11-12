@@ -457,10 +457,8 @@ fun subscript2IR (arr, offset) =
               T.CJUMP(T.LT, offset',size, noOverflowL,overflowL),
               T.LABEL overflowL,
               T.EXP(F.externalCall("arrInxError", [offset'])),
-              T.LABEL noOverflowL,
-              T.MOVE(T.TEMP arrayT, T.MEM(T.BINOP(T.PLUS, arr', T.BINOP(T.MUL,offset',T.CONST F.wordSize))))]
-            ,
-        T.TEMP arrayT)
+              T.LABEL noOverflowL]
+              , T.MEM(T.BINOP(T.PLUS, arr', T.BINOP(T.MUL,offset',T.CONST F.wordSize))))
           )
     end
 
