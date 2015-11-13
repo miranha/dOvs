@@ -43,6 +43,15 @@ fun codegen frame stm =
               | T.GE => "jge"
               | _ => "bad branch operator!"
 
+        (* e1 oper e2 <=> e2 (flipoper oper) e1 *)
+        fun flipoper oper =
+          case oper of
+              T.LT => T.GT
+            | T.GT => T.LT
+            | T.GE => T.LE
+            | T.LE => T.GE
+            | _ => oper
+
         fun moveInstr s d doc = A.MOVE { assem = "\tmovl `s0, `d0"
                                        , src = s
                                        , dst = d
@@ -118,7 +127,17 @@ fun codegen frame stm =
             raise TODO
 
           | munchStm (T.CJUMP (oper, e1, T.CONST i, lab1, lab2)) =
-            raise TODO
+            (* In AT&T, we have syntex cmp arg2, arg1 *)
+            (emit (A.OPER { assem = "\tcmp $" ^ int i ^ ", `s0"
+                          , src = [munchExp e1]
+                          , dst = []
+                          , jump = NONE
+                          , doc = "x86gen:125"});
+            emit (A.OPER {  assem = "\t" ^ (operator2jump oper) ^ " " ^ S.name lab1
+                          , src = []
+                          , dst = []
+                          , jump = SOME([lab1, lab2])
+                          , doc = "x86gen:131"}))
 
           | munchStm (T.CJUMP (oper, e1, e2, lab1, lab2)) =
             raise TODO
@@ -182,7 +201,7 @@ fun codegen frame stm =
           | munchExp (T.BINOP (T.PLUS, e1, T.CONST i)) =
             (* We have to return the value in r, so we move value from munchExp e1 into r *)
             result ( fn r => (emit (moveInstr (munchExp e1) r "183");
-              emit (A.OPER {  assem = "\tadd $" ^ int i ^ ", `d0"
+              emit (A.OPER {  assem = "\taddl $" ^ int i ^ ", `d0"
                               , src = [r]
                               , dst = [r]
                               , jump = NONE
@@ -197,10 +216,16 @@ fun codegen frame stm =
             result (fn r => raise TODO)
 
           (* MINUS *)
-          | munchExp (T.BINOP (T.MINUS, e1, T.CONST i)) =
-            result (fn r => raise TODO)
-
+          (* TODO: The terminal doesn't show negative values, have to test this some other way *)
           | munchExp (T.BINOP (T.MINUS, T.CONST 0, e1)) =
+                      result (fn r => (emit (moveInstr (munchExp e1) r "x86gen:201");
+                        emit( A.OPER { assem = "\tnegl `d0"
+                                      , src = [r]
+                                      , dst = [r]
+                                      , jump = NONE
+                                      , doc = "x86gen:206"})))
+
+          | munchExp (T.BINOP (T.MINUS, e1, T.CONST i)) =
             result (fn r => raise TODO)
 
           | munchExp (T.BINOP (T.MINUS, T.CONST i, e1)) =
@@ -258,7 +283,6 @@ fun codegen frame stm =
           | munchExp (T.NAME label) =
             result (fn r => raise TODO)
 
-            (* TODO: Could we use a A.MOVE? *)
           | munchExp (T.CONST n) =
             result (fn r => emit (A.OPER { assem = "\tmovl $" ^ int n ^ ", `d0" 
                                           , src = []
