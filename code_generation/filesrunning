@@ -10,6 +10,7 @@
 own_test01,10
 own_test02,3
 own_test03,0
+own_test04,0
 ### Given test ###
 # In the following, only remove 1 # to end up in the original situation
 ##################

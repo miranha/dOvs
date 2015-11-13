@@ -123,8 +123,20 @@ fun codegen frame stm =
                           , doc = "x86gen:munchStm(T.LABEL lab)"})
 
           (* JUMP *)
+          (*  The general strategy is this:
+              Firstly, execute cmp on registers
+          *)
           | munchStm (T.CJUMP (oper, T.CONST i, e2, lab1, lab2)) =
-            raise TODO
+            (emit (A.OPER { assem = "\tcmp $" ^ int i ^ ", `s0"
+                          , src = [munchExp e2]
+                          , dst = []
+                          , jump = NONE
+                          , doc = "x86gen:133"});
+            emit (A.OPER { assem = "\t" ^ (operator2jump (flipoper oper)) ^ " " ^ S.name lab1
+                          , src = []
+                          , dst = []
+                          , jump = SOME([lab1,lab2])
+                          , doc = "x86gen:137"}))
 
           | munchStm (T.CJUMP (oper, e1, T.CONST i, lab1, lab2)) =
             (* In AT&T, we have syntex cmp arg2, arg1 *)
