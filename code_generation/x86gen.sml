@@ -106,7 +106,7 @@ fun codegen frame stm =
             let
               val s = munchExp e2
             in
-              emit (moveInstr s i "x86gen:muchStm(T.MOVE(T.TEMP i, e2))")
+              emit (moveInstr s i "109:muchStm(T.MOVE(T.TEMP i, e2))")
             end
           | munchStm (T.LABEL lab) =
             emit (A.LABEL { assem = S.name lab ^ ":" (* Labels aren't indented *)
@@ -180,21 +180,13 @@ fun codegen frame stm =
 
           (* PLUS *)
           | munchExp (T.BINOP (T.PLUS, e1, T.CONST i)) =
-            let 
-              val s0 = munchExp(e1)
-            in
-              emit (A.OPER {  assem = "\tmovl $" ^ int i ^ ", `d0"
-                            , src = []
-                            , dst = [F.EAX]
-                            , jump = NONE
-                            , doc = "x86gen:189"});
-              emit (A.OPER {  assem = "\tadd `s0, `d0"
-                            , src = [s0]
-                            , dst = [F.EAX]
-                            , jump = NONE
-                            , doc = "x86gen:195"});
-              result (fn r => emit (moveInstr F.EAX r "x86gen:196"))
-          end
+            (* We have to return the value in r, so we move value from munchExp e1 into r *)
+            result ( fn r => (emit (moveInstr (munchExp e1) r "183");
+              emit (A.OPER {  assem = "\tadd $" ^ int i ^ ", `d0"
+                              , src = [r]
+                              , dst = [r]
+                              , jump = NONE
+                              , doc = "x86gen:188"})))
 
           | munchExp (T.BINOP (T.PLUS, T.CONST i, e1)) =
             result (fn r => raise TODO)
