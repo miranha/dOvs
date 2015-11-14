@@ -1,0 +1,2 @@
+/*  Ensure that T.CJUMP (oper, e1, e2, lab1, lab2) is covered  */
+if (1+1) > (0+1) then 0 else 1

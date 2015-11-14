@@ -382,7 +382,23 @@ fun spillAllTemps toMap body =
                          * not used in assem; must preload d0 *)
                         raise TODO
                      else (* s0<>d0, and instruction does not use old-d0 *)
-                         raise TODO
+                         [  A.MOVE {    assem = "\tmovl " ^ ofs s0 ^ "(%ebp), `d0"
+                                    ,   src = s0
+                                    ,   dst = EBX
+                                    ,   doc = doc ^ " x86frame:388"},
+                            A.MOVE {    assem = "\tmovl " ^ ofs s1 ^ "(%ebp), `d0"
+                                    ,   src = s1
+                                    ,   dst = EDX
+                                    ,   doc = doc ^ " x86frame:392"},
+                            A.OPER {    assem = assem
+                                    ,   src = (EBX::EDX::ss)
+                                    ,   dst = (EAX::ds)
+                                    ,   jump = jump
+                                    ,   doc = doc ^ " x86frame:397"},
+                            A.MOVE {    assem = "\tmovl `s0, " ^ ofs d0 ^ "(%ebp)"
+                                    ,   src = EAX
+                                    ,   dst = d0
+                                    ,   doc = doc ^ " x86frame:401"}]
           | expand (i as (A.LABEL _)) =
             [i]
           | expand (i as A.MOVE {assem, src, dst, doc}) =

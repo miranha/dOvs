@@ -125,6 +125,7 @@ fun codegen frame stm =
           (* JUMP *)
           (*  The general strategy is this:
               Firstly, execute cmp on registers
+              Then the relevant jump conditonal
           *)
           | munchStm (T.CJUMP (oper, T.CONST i, e2, lab1, lab2)) =
             (emit (A.OPER { assem = "\tcmp $" ^ int i ^ ", `s0"
@@ -152,7 +153,21 @@ fun codegen frame stm =
                           , doc = "x86gen:131"}))
 
           | munchStm (T.CJUMP (oper, e1, e2, lab1, lab2)) =
-            raise TODO
+            let 
+              val s = munchExp e1
+              val d = munchExp e2
+            in
+              (emit (A.OPER { assem = "\tcmp `d0, `s0"
+                            , src = [s,d]
+                            , dst = [d]
+                            , jump = NONE
+                            , doc = "x86gen:164"}));
+              (emit (A.OPER { assem = "\t" ^ (operator2jump oper) ^ " " ^ S.name lab1
+                            , src = []
+                            , dst = []
+                            , jump = SOME([lab1,lab2])
+                            , doc = "x86gen:169"}))
+            end
 
           | munchStm (T.JUMP (T.NAME lab, llst)) =
             emit (A.OPER {  assem = "\tjmp " ^ S.name lab ^ "\n"
@@ -301,7 +316,7 @@ fun codegen frame stm =
                                           , dst = [r]
                                           , jump = NONE
                                           , doc = "x86gen:munchExp(T.CONST n)" }))
-            
+        
           (* If no match so far, complain *)
           | munchExp (tr as T.CALL (_, _)) =
             ( TextIO.output (TextIO.stdErr, "\nBUG: bad CALL in munchExp:\n")

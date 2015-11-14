@@ -53,6 +53,8 @@ ts: test
 
 ct: clean test
 
+ctr: clean test_run
+
 # compile tests
 
 it: 
@@ -62,6 +64,9 @@ it:
 test: tigerc.x86-linux
 	./compiletests
 	./test_cmp
+	./test_run
+
+test_run: tigerc.x86-linux
 	./test_run
 
 # prepare for emacs multi-file search based on a 'TAGS' file
