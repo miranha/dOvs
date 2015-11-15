@@ -89,6 +89,15 @@ val calleesaves = nil
 val callersaves = nil
 val calldefs = callersaves @ [RV]
 
+fun getEmptyRegister lst = let
+    fun aux lst (r::rs) = if (List.exists (fn reg => r=reg) lst)
+                            then aux lst rs 
+                            else r
+        | aux _ [] = raise Bug
+in
+    aux lst [EAX, EBX, ECX, EDX]
+end
+
 fun isRegister tmp =
     List.exists (fn reg => tmp=reg) allregs
 
@@ -295,7 +304,19 @@ fun spillAllTemps toMap body =
             if isRegister s0 then
                 if isRegister d0 then [i]
                 else (* s0 register, d0 other temp *)
-                    raise TODO
+                    let
+                        val d = getEmptyRegister [s0]
+                    in
+                    [A.OPER {assem = assem
+                            , src = [s0]
+                            , dst = (d::ds)
+                            , jump = jump
+                            , doc = doc ^ " x86frame:314"}, 
+                    A.MOVE { assem = "\tmovl `s0, " ^ ofs d0 ^ "(%ebp)"
+                            , src = d
+                            , dst = d0
+                            , doc = doc ^ " x86frame:318"}]
+                    end
             else if isRegister d0 then
                 (* s0 other temp, d0 register *)
                 [ A.MOVE {    assem = "\tmovl " ^ ofs s0 ^ "(%ebp), `d0"
@@ -363,7 +384,18 @@ fun spillAllTemps toMap body =
                 if isRegister s1 then
                     if isRegister d0 then
                         (* s0 other temp, s1,d0 register *)
-                        raise TODO
+                        let val s = getEmptyRegister [s1,d0]
+                        in
+                            [ A.MOVE { assem = "\tmovl " ^ ofs s0 ^ "(%ebp), `d0"
+                             , src = s0
+                             , dst = s
+                             , doc = doc ^ " x86frame:380" },
+                             A.OPER { assem = assem
+                             , src = (s::s1::ss)
+                             , dst = (d0::ds)
+                             , jump = jump
+                             , doc = doc ^ " x86frame:384"} ]
+                         end
                     else (* s0 other temp, s1 register, d0 other temp *)
                         (* OLD_R_OPTIMIZATION *)
                         if s0=d0 then

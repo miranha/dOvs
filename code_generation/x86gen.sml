@@ -202,8 +202,26 @@ fun codegen frame stm =
             (* in the simple approach used here, we pass all args in memory *)
             let val rargs = rev args (* push args right-to-left *)
                 fun munchArgs1 [] = []
-                  | munchArgs1 (ah::at) = raise TODO
-            in  munchArgs1 rargs
+                  | munchArgs1 (ah::at) = 
+                        let val eh = munchExp ah
+                          in
+                            eh::(munchArgs1 at)   
+                        end
+                
+                fun assembler src = emit(A.OPER{assem = "\tpushl `s0"
+                                        , src = [src]
+                                        , dst = []
+                                        , jump=NONE
+                                        , doc = "x86gen:215"});
+
+                fun pushArgs (e::es) = (assembler e; pushArgs es)
+                  | pushArgs [] = ()
+                  val rtmp = rev (munchArgs1 args)
+
+            in
+              emit (allocArgs(length args)); 
+              pushArgs rtmp; 
+              rtmp
             end
 
         (* Memory access *)
@@ -212,11 +230,15 @@ fun codegen frame stm =
                                          , src = [munchExp e]
                                          , dst = [r]
                                          , jump = NONE
-                                         , doc = "x86gen:151"}))
+                                         , doc = "x86gen:233"}))
 
 
           | munchExp (T.MEM (T.BINOP (T.PLUS, T.CONST n, e))) =
-            result (fn r => raise TODO)
+            result (fn r => emit (A.OPER { assem = "\tmovl " ^ int n ^ "(`s0), `d0"
+                                         , src = [munchExp e]
+                                         , dst = [r]
+                                         , jump = NONE
+                                         , doc = "x86gen:241"}))
 
           | munchExp (T.MEM (T.BINOP (T.MINUS, e, T.CONST n))) =
             result (fn r => raise TODO)
