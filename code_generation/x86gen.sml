@@ -92,12 +92,13 @@ fun codegen frame stm =
 
           | munchStm (T.MOVE (T.MEM (T.BINOP (T.PLUS, e1, T.CONST i)), e2)) =
               let
-                val s0 = munchExp e1
-                val d0 = munchExp e2
+                val d0 = munchExp e1
+                val s0 = munchExp e2
               in
-                emit( A.MOVE {    assem = "\tmovl " ^ int i ^ "(`s0), d0"
-                                , src = s0
-                                , dst = d0
+                emit( A.OPER {    assem = "\tmovl `s0, "  ^ int i ^ "(`d0)"
+                                , src = [s0]
+                                , dst = [d0]
+                                , jump = NONE
                                 , doc = "x86gen:92"
                   })
               end
@@ -262,7 +263,12 @@ fun codegen frame stm =
           | munchExp (T.BINOP (T.PLUS, e1, e2)) =
             (* Hint, p203: use src=[r,_] and do not use `s0,
              * which specifies that r is used *)
-            result (fn r => raise TODO)
+            result (fn r => (emit (moveInstr (munchExp e1) r "266");
+                            emit (  A.OPER  { assem = "\taddl `s0, `d0"
+                                            , src = [munchExp e2]
+                                            , dst = [r]
+                                            , jump = NONE
+                                            , doc = "x86frame:271"})))
 
           (* MINUS *)
           (* TODO: The terminal doesn't show negative values, have to test this some other way *)
