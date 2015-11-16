@@ -250,25 +250,30 @@ fun codegen frame stm =
           (* PLUS *)
           | munchExp (T.BINOP (T.PLUS, e1, T.CONST i)) =
             (* We have to return the value in r, so we move value from munchExp e1 into r *)
-            result ( fn r => (emit (moveInstr (munchExp e1) r "183");
+            result ( fn r => (emit (moveInstr (munchExp e1) r "253");
               emit (A.OPER {  assem = "\taddl $" ^ int i ^ ", `d0"
                               , src = [r]
                               , dst = [r]
                               , jump = NONE
-                              , doc = "x86gen:188"})))
+                              , doc = "x86gen:258"})))
 
           | munchExp (T.BINOP (T.PLUS, T.CONST i, e1)) =
-            result (fn r => raise TODO)
+            result ( fn r => (emit (moveInstr (munchExp e1) r "261");
+              emit (A.OPER {  assem = "\taddl $" ^ int i ^ ", `d0"
+                              , src = [r]
+                              , dst = [r]
+                              , jump = NONE
+                              , doc = "x86gen:266"})))
 
           | munchExp (T.BINOP (T.PLUS, e1, e2)) =
             (* Hint, p203: use src=[r,_] and do not use `s0,
              * which specifies that r is used *)
-            result (fn r => (emit (moveInstr (munchExp e1) r "266");
+            result (fn r => (emit (moveInstr (munchExp e1) r "271");
                             emit (  A.OPER  { assem = "\taddl `s0, `d0"
                                             , src = [munchExp e2]
                                             , dst = [r]
                                             , jump = NONE
-                                            , doc = "x86frame:271"})))
+                                            , doc = "x86frame:276"})))
 
           (* MINUS *)
           (* TODO: The terminal doesn't show negative values, have to test this some other way *)

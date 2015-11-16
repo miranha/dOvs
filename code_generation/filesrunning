@@ -14,6 +14,7 @@ own_test04,0
 j_test01,0
 j_test02,2
 j_test03,8
+j_test04,6
 m_test01,6
 ### Given test ###
 # In the following, only remove 1 # to end up in the original situation
