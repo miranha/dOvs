@@ -1,0 +1,5 @@
+let 
+  function f(i:int):int = let function g():int = i+3 in g() end
+in
+  f(3)
+end
