@@ -18,6 +18,7 @@ j_test04,6
 j_test05,3
 j_test06,2
 j_test07,3
+j_test08,"Hi"
 m_test01,6
 ### Given test ###
 # In the following, only remove 1 # to end up in the original situation
@@ -47,7 +48,7 @@ m_test01,6
 #test55,9
 #test56,9
 #test57,3
-#test58,"."
+test58,"."
 #test59,1
 #test60,1
 #test61,1

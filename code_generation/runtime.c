@@ -105,10 +105,12 @@ int stringGreaterEq(struct string *s, struct string *t)
 
 void print(void *static_link, struct string *s)
 {
-    int i; 
+    int i;
     unsigned char *p = s->chars;
+    
     for (i = 0; i < s->length; i++, p++)
         putchar(*p);
+    
 }
 
 void flush(void *static_link)

@@ -405,8 +405,25 @@ fun spillAllTemps toMap body =
                         else (* s0<>d0, and instruction does not use old-d0 *)
                             raise TODO
                 else if isRegister d0 then
-                    (* s0,s1 other temp, d0 register *)
-                    raise TODO
+                    (* s1, s2 are other temp *)
+                    let
+                        val s0' = getEmptyRegister [d0]
+                        val s1' = getEmptyRegister [d0,s0']
+                    in
+                        [   A.MOVE  {   assem = "\tmovl " ^ ofs s0 ^ "(%ebp), `d0"
+                                    ,   src = s0
+                                    ,   dst = s0'
+                                    ,   doc = doc ^ " x86frame:416"},
+                            A.MOVE  {   assem = "\tmovl " ^ ofs s1 ^ "(%ebp), `d0"
+                                    ,   src = s1
+                                    ,   dst = s1'
+                                    ,   doc = doc ^ " x86frame:420"},
+                            A.OPER  {   assem = assem
+                                    ,   src = s0'::s1'::ss
+                                    ,   dst = d0::ds
+                                    ,   jump = jump
+                                    ,   doc = doc ^ " x86frame:425"}]
+                    end
                 else (* s0,s1,d0 other temp *)
                     (* OLD_R_OPTIMIZATION *)
                     if s0=d0 then

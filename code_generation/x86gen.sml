@@ -180,7 +180,12 @@ fun codegen frame stm =
 
           (* EXP *)
           | munchStm (T.EXP (T.CALL (T.NAME lab, args))) =
-            raise TODO
+            ( emit (A.OPER { assem = "\tcall " ^ S.name lab
+                           , src = munchArgs args
+                           , dst = F.calldefs
+                           , jump = NONE
+                           , doc = "x86gen:187"})
+            ; emit (freeArgs (length args)))
             
           | munchStm (T.EXP exp) =
              (munchExp(exp);())
@@ -191,13 +196,13 @@ fun codegen frame stm =
                          , src = []
                          , dst = []
                          , jump = NONE
-                         , doc = "x86gen:127"})
+                         , doc = "x86gen:199"})
 
           | munchStm (T.MOVE a) =
             emit (A.MOVE { assem = "\t# MOVE: bad MOVE in munchStm!"
                          , src = Tm.newtemp ()
                          , dst = Tm.newtemp ()
-                         , doc = "x86gen:133"})
+                         , doc = "x86gen:205"})
 
         and munchArgs args =
             (* in the simple approach used here, we pass all args in memory *)
@@ -360,7 +365,11 @@ fun codegen frame stm =
           | munchExp (T.ESEQ (s, e)) = result (fn r => raise TODO)
 
           | munchExp (T.NAME label) =
-            result (fn r => raise TODO)
+            result (fn r => emit (A.OPER  { assem = "\tmovl $" ^ S.name label ^ ", `d0"
+                                          , src = []
+                                          , dst = [r]
+                                          , jump = NONE
+                                          , doc = "x86gen:372"}))
 
           | munchExp (T.CONST n) =
             result (fn r => emit (A.OPER { assem = "\tmovl $" ^ int n ^ ", `d0" 
