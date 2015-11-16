@@ -15,6 +15,9 @@ j_test01,0
 j_test02,2
 j_test03,8
 j_test04,6
+j_test05,3
+j_test06,2
+j_test07,3
 m_test01,6
 ### Given test ###
 # In the following, only remove 1 # to end up in the original situation
