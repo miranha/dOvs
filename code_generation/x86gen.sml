@@ -264,7 +264,7 @@ fun codegen frame stm =
                                          , src = [munchExp e]
                                          , dst = [r]
                                          , jump = NONE
-                                         , doc = "x86gen:248"}))
+                                         , doc = "x86gen:267"}))
 
 
           | munchExp (T.MEM (T.BINOP (T.PLUS, T.CONST n, e))) =
@@ -275,11 +275,11 @@ fun codegen frame stm =
                                          , doc = "x86gen:256"}))
 (*TODO: What about the opposite for negative?*)
           | munchExp (T.MEM (T.BINOP (T.MINUS, e, T.CONST n))) =
-            result (fn r => emit (A.OPER { assem = "\tmovl -" ^ int n ^ "(`s0), `d0"
+            result (fn r => emit (A.OPER { assem = "\tmovl " ^ int (~n) ^ "(`s0), `d0"
                                          , src = [munchExp e]
                                          , dst = [r]
                                          , jump = NONE
-                                         , doc = "x86gen:263"}))
+                                         , doc = "x86gen:282"}))
 
           | munchExp (T.MEM e) =
             result (fn r => emit (A.OPER  { assem = "\tmovl (`s0), `d0"
