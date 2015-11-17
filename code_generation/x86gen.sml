@@ -313,7 +313,7 @@ fun codegen frame stm =
                                             , src = [r]
                                             , dst = [r]
                                             , jump = NONE
-                                            , doc = "x86gen:299"})))
+                                            , doc = "x86gen:316"})))
 
           | munchExp (T.BINOP (T.MINUS, T.CONST i, e1)) =
             result (fn r => (emit (A.OPER { assem = "\tmovl $" ^ int i ^ ", `d0"
@@ -325,7 +325,7 @@ fun codegen frame stm =
                                           , src = [munchExp e1]
                                           , dst = [r]
                                           , jump = NONE
-                                          , doc = "x86gen:311"})))
+                                          , doc = "x86gen:328"})))
 
           | munchExp (T.BINOP (T.MINUS, e1, e2)) =
             result (fn r => (emit (moveInstr (munchExp e1) r "314");
@@ -333,7 +333,7 @@ fun codegen frame stm =
                                           , src = [munchExp e2]
                                           , dst = [r]
                                           , jump = NONE
-                                          , doc = "x86frame:319"})))
+                                          , doc = "x86frame:336"})))
 
           (* MULTIPLY *)
           | munchExp (T.BINOP (T.MUL, e1, e2)) =
@@ -342,7 +342,7 @@ fun codegen frame stm =
                                             , src = [r, munchExp e2]
                                             , dst = [r]
                                             , jump = NONE
-                                            , doc = "x86gen:328"})))
+                                            , doc = "x86gen:345"})))
           (* DIVIDE *)
 
           | munchExp (T.BINOP (T.DIV, e1, e2)) =
@@ -396,13 +396,37 @@ fun codegen frame stm =
 
           (* OR *)
           | munchExp (T.BINOP (T.OR, e1, T.CONST i)) =
-            result (fn r => raise TODO)
+            result (fn r => (emit(A.MOVE{assem="\tmovl `s0, d0`"
+                                        , src=munchExp e1
+                                        , dst=r
+                                        , doc = "x86gen: 368"});
+                                emit(A.OPER{assem="\torl $" ^ int i ^ ", `s0"
+                                        , src = [r]
+                                        , dst = [r]
+                                        , jump = NONE
+                                        , doc = "x86gen: 373"})))
 
           | munchExp (T.BINOP (T.OR, T.CONST i, e1)) =
-            result (fn r => raise TODO)
+            result (fn r => (emit(A.MOVE{assem="\tmovl `s0, d0`"
+                                        , src=munchExp e1
+                                        , dst=r
+                                        , doc = "x86gen: 413"});
+                                emit(A.OPER{assem="\torl $" ^ int i ^ ", `s0"
+                                        , src = [r]
+                                        , dst = [r]
+                                        , jump = NONE
+                                        , doc = "x86gen: 418"})))
 
           | munchExp (T.BINOP (T.OR, e1, e2)) =
-            result (fn r => raise TODO)
+            result (fn r => (emit(A.MOVE{assem="\tmovl `s0, d0`"
+                                        , src=munchExp e1
+                                        , dst=r
+                                        , doc = "x86gen: 424"});
+                                emit(A.OPER{assem="\torl `s1, `s0"
+                                        , src = [r, munchExp e2]
+                                        , dst = [r]
+                                        , jump = NONE
+                                        , doc = "x86gen: 429"})))
 
           (* Other constructs *)
           | munchExp (T.TEMP t) = t
