@@ -358,7 +358,24 @@ fun codegen frame stm =
              *
              * The quotient is in %eax, and the remainder is in %edx."
              *)
-            result (fn r => TODO)
+            result (fn r => (   emit(A.MOVE{assem="\tmovl `s0, d0`"
+                                        , src=munchExp e2
+                                        , dst=r
+                                        , doc = "x86gen: 364"});
+                                emit(A.MOVE{assem="\tmovl `s0, `d0"
+                                        , src=munchExp e1
+                                        , dst=F.EAX
+                                        , doc="x86gen:369"});
+                                emit(A.OPER{assem="\tcltd\n\tidivl `s0"
+                                        , src = [r]
+                                        , dst = [F.EAX]
+                                        , jump = NONE
+                                        , doc = "x86gen: 373"});
+                                emit(A.MOVE{assem="\tmovl `s0, `d0"
+                                        , src=F.EAX
+                                        , dst=r
+                                        , doc="x86gen:377"})
+                                ))
 
           (* AND *)
           | munchExp (T.BINOP (T.AND, e1, T.CONST i)) =
@@ -431,7 +448,12 @@ fun codegen frame stm =
           (* Other constructs *)
           | munchExp (T.TEMP t) = t
 
-          | munchExp (T.ESEQ (s, e)) = result (fn r => raise TODO)
+          | munchExp (T.ESEQ (s, e)) = (*TODO: WHy can we come inside here, removed by canon.sml, right?*)
+            (munchStm s;
+            result (fn r => emit(A.MOVE{assem="\tmovl `s0,`d0"
+                                        , src = munchExp e
+                                        , dst = r
+                                        , doc = "x86gen:439"})))
 
           | munchExp (T.NAME label) =
             result (fn r => emit (A.OPER  { assem = "\tmovl $" ^ S.name label ^ ", `d0"
