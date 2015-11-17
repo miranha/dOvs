@@ -254,7 +254,7 @@ fun codegen frame stm =
                                          , dst = [r]
                                          , jump = NONE
                                          , doc = "x86gen:256"}))
-
+(*TODO: What about the opposite for negative?*)
           | munchExp (T.MEM (T.BINOP (T.MINUS, e, T.CONST n))) =
             result (fn r => emit (A.OPER { assem = "\tmovl -" ^ int n ^ "(`s0), `d0"
                                          , src = [munchExp e]
@@ -358,17 +358,41 @@ fun codegen frame stm =
              *
              * The quotient is in %eax, and the remainder is in %edx."
              *)
-            result (fn r => raise TODO)
+            result (fn r => TODO)
 
           (* AND *)
           | munchExp (T.BINOP (T.AND, e1, T.CONST i)) =
-            result (fn r => raise TODO)
+            result (fn r => (emit(A.MOVE{assem="\tmovl `s0, d0`"
+                                        , src=munchExp e1
+                                        , dst=r
+                                        , doc = "x86gen: 368"});
+                                emit(A.OPER{assem="\tandl $" ^ int i ^ ", `s0"
+                                        , src = [r]
+                                        , dst = [r]
+                                        , jump = NONE
+                                        , doc = "x86gen: 373"})))
 
           | munchExp (T.BINOP (T.AND, T.CONST i, e1)) =
-            result (fn r => raise TODO)
+            result (fn r => (emit(A.MOVE{assem="\tmovl `s0, d0`"
+                                        , src=munchExp e1
+                                        , dst=r
+                                        , doc = "x86gen: 379"});
+                                emit(A.OPER{assem="\tandl $" ^ int i ^ ", `s0"
+                                        , src = [r]
+                                        , dst = [r]
+                                        , jump = NONE
+                                        , doc = "x86gen: 384"})))
 
           | munchExp (T.BINOP (T.AND, e1, e2)) =
-            result (fn r => raise TODO)
+            result (fn r => (emit(A.MOVE{assem="\tmovl `s0, d0`"
+                                        , src=munchExp e1
+                                        , dst=r
+                                        , doc = "x86gen: 390"});
+                                emit(A.OPER{assem="\tandl `s1, `s0"
+                                        , src = [r, munchExp e2]
+                                        , dst = [r]
+                                        , jump = NONE
+                                        , doc = "x86gen: 395"})))
 
           (* OR *)
           | munchExp (T.BINOP (T.OR, e1, T.CONST i)) =
