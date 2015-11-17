@@ -99,15 +99,34 @@ fun codegen frame stm =
                                 , src = [s0]
                                 , dst = [d0]
                                 , jump = NONE
-                                , doc = "x86gen:92"
+                                , doc = "x86gen:102"
                   })
               end
 
-          | munchStm (T.MOVE (T.MEM (T.BINOP (T.PLUS, T.CONST i, e1)), e2)) =
-            raise TODO
+          | munchStm (T.MOVE (T.MEM (T.BINOP (T.PLUS, T.CONST i, e1)), e2)) = (*TODO: Is this the same as above?*)
+              let
+                val d0 = munchExp e1
+                val s0 = munchExp e2
+              in
+                emit( A.OPER {    assem = "\tmovl `s0, "  ^ int i ^ "(`d0)"
+                                , src = [s0]
+                                , dst = [d0]
+                                , jump = NONE
+                                , doc = "x86gen:115"
+                  })
+              end
 
           | munchStm (T.MOVE (T.MEM (T.CONST i), e2)) =
-            raise TODO
+              let
+                val s0 = munchExp e2
+              in
+                emit( A.OPER {    assem = "\tmovl `s0, ($"  ^ int i ^ ")"
+                                , src = [s0]
+                                , dst = []
+                                , jump = NONE
+                                , doc = "x86gen:127"
+                  })
+              end            
 
           | munchStm (T.MOVE (T.MEM e1, e2)) =
             let
