@@ -288,40 +288,44 @@ fun codegen frame stm =
                                       , src = [r]
                                       , dst = [r]
                                       , jump = NONE
-                                      , doc = "x86gen:206"})))
+                                      , doc = "x86gen:291"})))
 
           | munchExp (T.BINOP (T.MINUS, e1, T.CONST i)) =
-            result (fn r => (emit (moveInstr (munchExp e1) r "289");
+            result (fn r => (emit (moveInstr (munchExp e1) r "294");
                             emit (  A.OPER  { assem = "\tsubl $" ^ int i ^ ", `d0"
                                             , src = [r]
                                             , dst = [r]
                                             , jump = NONE
-                                            , doc = "x86gen:294"})))
+                                            , doc = "x86gen:299"})))
 
           | munchExp (T.BINOP (T.MINUS, T.CONST i, e1)) =
             result (fn r => (emit (A.OPER { assem = "\tmovl $" ^ int i ^ ", `d0"
                                           , src = []
                                           , dst = [r]
                                           , jump = NONE
-                                          , doc = "x86gen:301"});
+                                          , doc = "x86gen:306"});
                             emit (A.OPER  { assem = "\tsubl `s0, `d0"
                                           , src = [munchExp e1]
                                           , dst = [r]
                                           , jump = NONE
-                                          , doc = "x86gen:306"})))
+                                          , doc = "x86gen:311"})))
 
           | munchExp (T.BINOP (T.MINUS, e1, e2)) =
-            result (fn r => (emit (moveInstr (munchExp e1) r "309");
+            result (fn r => (emit (moveInstr (munchExp e1) r "314");
                             emit (A.OPER  { assem = "\tsubl `s0, `d0"
                                           , src = [munchExp e2]
                                           , dst = [r]
                                           , jump = NONE
-                                          , doc = "x86frame:314"})))
+                                          , doc = "x86frame:319"})))
 
           (* MULTIPLY *)
           | munchExp (T.BINOP (T.MUL, e1, e2)) =
-            result (fn r => raise TODO)
-
+            result (fn r => (emit (moveInstr (munchExp e1) r "323");
+                              emit( A.OPER  { assem = "\timull `s1, `d0"
+                                            , src = [r, munchExp e2]
+                                            , dst = [r]
+                                            , jump = NONE
+                                            , doc = "x86gen:328"})))
           (* DIVIDE *)
 
           | munchExp (T.BINOP (T.DIV, e1, e2)) =
