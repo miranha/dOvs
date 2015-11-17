@@ -26,31 +26,31 @@ m_test01,6
 ### Given test ###
 # In the following, only remove 1 # to end up in the original situation
 ##################
-#test01,
-#test02,
-#test03,
-#test04,0
-#test05,
-## test06 -- compile only: infinite loop
-## test07 -- compile only: infinite loop
-#test08,40
-#test12,
-#test27,2
-#test30,0
-#test37,
-#test41,0
-#test42,
-#test44,
-#test46,0
-#test47,0
-#test48,0
-#test51,
-#test52,
-#test53,42
-#test54,4
-#test55,9
-#test56,9
-#test57,3
+test01,
+test02,
+test03,
+test04,0
+test05,
+# test06 -- compile only: infinite loop
+# test07 -- compile only: infinite loop
+test08,40
+test12,
+test27,2
+test30,0
+test37,
+test41,0
+test42,
+test44,
+test46,0
+test47,0
+test48,0
+test51,
+test52,
+test53,42
+test54,4
+test55,9
+test56,9
+test57,3
 test58,"."
 test59,1
 test60,1
