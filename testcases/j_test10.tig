@@ -1,0 +1,6 @@
+let
+	type rec = {b:int}
+	var c := rec{b=43}
+in
+	c.b
+end

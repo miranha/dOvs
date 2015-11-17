@@ -110,13 +110,22 @@ fun codegen frame stm =
             raise TODO
 
           | munchStm (T.MOVE (T.MEM e1, e2)) =
-            raise TODO
+            let
+              val d0 = munchExp e1
+              val s0 = munchExp e2
+            in
+              emit (A.OPER  { assem = "\tmovl `s0, (`d0)"
+                            , src = [s0]
+                            , dst = [d0]
+                            , jump = NONE
+                            , doc = "x86gen:121"})
+            end
 
           | munchStm (T.MOVE (T.TEMP i, e2)) =
             let
               val s = munchExp e2
             in
-              emit (moveInstr s i "109:muchStm(T.MOVE(T.TEMP i, e2))")
+              emit (moveInstr s i "128:muchStm(T.MOVE(T.TEMP i, e2))")
             end
           | munchStm (T.LABEL lab) =
             emit (A.LABEL { assem = S.name lab ^ ":" (* Labels aren't indented *)
@@ -236,7 +245,7 @@ fun codegen frame stm =
                                          , src = [munchExp e]
                                          , dst = [r]
                                          , jump = NONE
-                                         , doc = "x86gen:233"}))
+                                         , doc = "x86gen:248"}))
 
 
           | munchExp (T.MEM (T.BINOP (T.PLUS, T.CONST n, e))) =
@@ -244,13 +253,17 @@ fun codegen frame stm =
                                          , src = [munchExp e]
                                          , dst = [r]
                                          , jump = NONE
-                                         , doc = "x86gen:241"}))
+                                         , doc = "x86gen:256"}))
 
           | munchExp (T.MEM (T.BINOP (T.MINUS, e, T.CONST n))) =
             result (fn r => raise TODO)
 
           | munchExp (T.MEM e) =
-            result (fn r => raise TODO)
+            result (fn r => emit (A.OPER  { assem = "\tmovl (`s0), `d0"
+                                    , src = [munchExp e]
+                                    , dst = [r]
+                                    , jump = NONE
+                                    , doc = "x86gen:265"}))
 
           (* PLUS *)
           | munchExp (T.BINOP (T.PLUS, e1, T.CONST i)) =

@@ -20,6 +20,8 @@ j_test06,2
 j_test07,3
 j_test08,"Hi"
 j_test09,15
+j_test10,43
+j_test11,45
 m_test01,6
 ### Given test ###
 # In the following, only remove 1 # to end up in the original situation
@@ -50,17 +52,17 @@ m_test01,6
 #test56,9
 #test57,3
 test58,"."
-#test59,1
-#test60,1
-#test61,1
-#test62,1
-#test63,1
-#test64,1
+test59,1
+test60,1
+test61,1
+test62,1
+test63,1
+test64,1
 test65,1
 test66,1
 test67,1
 test68,
-#test69,48
+test69,48
 ## test70 -- compile only: requires input
 ## test71 -- compile only: requires input
 ## test72 -- skip: test manually
