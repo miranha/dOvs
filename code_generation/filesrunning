@@ -23,6 +23,9 @@ j_test09,15
 j_test10,43
 j_test11,45
 m_test01,6
+m_test02,3
+m_test03,7
+m_test04,19
 ### Given test ###
 # In the following, only remove 1 # to end up in the original situation
 ##################
@@ -66,10 +69,10 @@ test69,48
 ## test70 -- compile only: requires input
 ## test71 -- compile only: requires input
 ## test72 -- skip: test manually
-#test73,"OK."
-#test74,24
-#test75,1
-#test76,"abcdefghijklmnopqrstuvwxyz0123456789"
+test73,"OK."
+test74,24
+test75,1
+test76,"abcdefghijklmnopqrstuvwxyz0123456789"
 ## test77 -- skip: test manually
 ## merge -- skip: test manually
 ## queens -- skip: test manually
