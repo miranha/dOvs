@@ -527,6 +527,7 @@ fun spillAllTemps toMap body =
                                             ,   src = d0'
                                             ,   dst = d0
                                             ,   doc = doc ^ " x86frame:529"}]
+                            end
                 else if isRegister d0 then
                     (* s1, s2 are other temp *)
                     let
