@@ -13,17 +13,32 @@
 \begin{document}
 \maketitle
 
+\section{Introduction}
+This report describes the work carried out in order to develop the code generation phase, which is the last component in the compiler for this course. The code generation component takes the Intermediate Representation (IR), and creates assembly code. However, it shall be noted that the IR generated from the previous work, is used as input for the \texttt{canon.sml} module, in order to produce a simplified IR according the chapter 8 in the book.
+
+The rest of this report is structured the following way. The two following sections described the two main sml file which have been developed, separately. Afterwards the experience gain and different tests are presented. Finally, the implementation of the code generation component is concluded.
+
+
 \section{Instruction selection}
-How did you implement the missing elements in x86gen. Describe how the file works as a whole and explain a few interesting cases.
+%How did you implement the missing elements in x86gen. Describe how the file works as a whole and explain a few interesting cases.
+
+The goal of the code generation is to generated assembly code as specified in the assignment for this course. Hence the target assembly is x86. The \texttt{x86gen.sml} takes the output from the canon module, and creates the assembly code. Its main structure is similar to \texttt{semant.sml} and \texttt{irgen.sml}, in that recursive functions are used to transverse the tree. However, this module does not use ``real'' registers, but just assumes there are unlimited number of registers. It leave the usage of ``real'' registers, to the support module \texttt{x86frame.sml}, which the described below.
 
 \section{The support modules}
-Write how you implemented the missing elements in x86frame..
+%Write how you implemented the missing elements in x86frame..
+As mentioned above, the \texttt{x86frame.sml} is a support module for the \texttt{x86gen.sml} module. The main responsibility of this module is usage of real registers. This module is called when real registers need to be used. This module both has functions to check if it is a register, and if a specific register is unused currently. Additionally, it moves relevant values into register in order to perform a operation on these. 
 
 \section{Problems encountered \& experience gained}
-If you had any problems in the work process, write it here with what you gained.
+%If you had any problems in the work process, write it here with what you gained.
+
+\subsection{General Experience}
+It was hard to understand how to apply the canon module in the beginning, and also to generate the assembly code. However, the main module provided valuable help for both cases, using the compile method. Afterwards, the simple constructs were made, such a integer expression and binary operators, and tested. In general the approach was to create a tiger program, and then replace the relevant TODO inside both files, described above.
+Next the more challenging constructs could be implemented. Some of the more challenging are addressed below.  
+
+\subsection{TODO: Add more if needed}
 
 \section{5 tiger programs}
-5 interesting tiger programs that you find test your codegeneration in a good way.
+%5 interesting tiger programs that you find test your codegeneration in a good way.
 
 \subsection{test01.tig}
 
@@ -31,9 +46,7 @@ If you had any problems in the work process, write it here with what you gained.
 
 \subsection{test02.tig}
 
-
 \lstinputlisting[frame=single]{tests/test02.tig}
-
 
 \subsection{test03.tig}
 
@@ -47,5 +60,6 @@ If you had any problems in the work process, write it here with what you gained.
 
 \lstinputlisting[frame=single]{tests/test05.tig}
 
+\section{Conclusion}
 
 \end{document}
