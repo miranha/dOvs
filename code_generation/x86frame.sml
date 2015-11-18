@@ -280,7 +280,19 @@ fun spillAllTemps toMap body =
             if isRegister s0 then
                 if isRegister s1 then [i]
                 else (* s0 register, s1 other temp *)
-                    raise TODO
+                    let
+                        val s1' = getEmptyRegister [s0]
+                    in
+                        [   A.MOVE  {   assem = "\tmovl `" ^ ofs s1 ^ "(%ebp), `d0"
+                                    ,   src = s1
+                                    ,   dst = s1'
+                                    ,   doc = doc ^ " x86frame:289"},
+                            A.OPER  {   assem = assem
+                                    ,   src = s0::s1'::ss
+                                    ,   dst = []
+                                    ,   jump = jump
+                                    ,   doc = doc ^ " x86frame:294"}]
+                    end
             else if isRegister s1 then
                 (* s0 other temp, s1 register *)
                 raise TODO
@@ -455,6 +467,10 @@ fun spillAllTemps toMap body =
                                     ,   src = s1
                                     ,   dst = EDX
                                     ,   doc = doc ^ " x86frame:392"},
+                            A.MOVE {    assem = "\tmovl " ^ ofs d0 ^ "(%ebp), `d0"
+                                    ,   src = d0
+                                    ,   dst = EAX
+                                    ,   doc = doc ^ " x86frame:472"},
                             A.OPER {    assem = assem
                                     ,   src = (EBX::EDX::ss)
                                     ,   dst = (EAX::ds)
