@@ -81,13 +81,19 @@ fun codegen frame stm =
           | munchStm (T.MOVE (T.MEM e1, T.CALL (T.NAME l, args))) =
             let 
                 val t = Tm.newtemp ()
+                val d0 = munchExp e1
             in  
                 emit (A.OPER { assem = "\tcall " ^ S.name l
                              , src = munchArgs args
                              , dst = F.calldefs
                              , jump = NONE
                              , doc = "x86gen:80"});
-                raise TODO
+                emit (freeArgs (length args));
+                emit (moveInstr F.EAX t "91");
+                emit (A.MOVE  { assem = "\tmovl `s0, (`d0)"
+                              , src = t
+                              , dst = d0
+                              , doc = "x86gen:96"})
             end
 
           | munchStm (T.MOVE (T.MEM (T.BINOP (T.PLUS, e1, T.CONST i)), e2)) =
@@ -317,7 +323,6 @@ fun codegen frame stm =
                                             , doc = "x86gen:276"})))
 
           (* MINUS *)
-          (* TODO: The terminal doesn't show negative values, have to test this some other way *)
           | munchExp (T.BINOP (T.MINUS, T.CONST 0, e1)) =
                       result (fn r => (emit (moveInstr (munchExp e1) r "x86gen:201");
                         emit( A.OPER { assem = "\tnegl `d0"
@@ -377,24 +382,24 @@ fun codegen frame stm =
              *
              * The quotient is in %eax, and the remainder is in %edx."
              *)
-            result (fn r => (   emit(A.MOVE{assem="\tmovl `s0, d0`"
-                                        , src=munchExp e2
-                                        , dst=r
-                                        , doc = "x86gen: 364"});
-                                emit(A.MOVE{assem="\tmovl `s0, `d0"
-                                        , src=munchExp e1
-                                        , dst=F.EAX
-                                        , doc="x86gen:369"});
-                                emit(A.OPER{assem="\tcltd\n\tidivl `s0"
-                                        , src = [r]
-                                        , dst = [F.EAX]
-                                        , jump = NONE
-                                        , doc = "x86gen: 373"});
-                                emit(A.MOVE{assem="\tmovl `s0, `d0"
-                                        , src=F.EAX
-                                        , dst=r
-                                        , doc="x86gen:396"})
-                                ))
+            let 
+              val res1 = munchExp e1
+              val res2 = munchExp e2
+            in
+              result (fn r => (   emit (  moveInstr res2 r "385");
+                                  emit (  moveInstr res1 F.EAX "386");
+                                  emit (  A.OPER  { assem = "\tcltd"
+                                                  , src = [F.EAX]
+                                                  , dst = [F.EAX, F.EDX]
+                                                  , jump = NONE
+                                                  , doc = "x86gen:391"});
+                                  emit(   A.OPER  { assem="\tidivl `s0"
+                                                  , src = [r]
+                                                  , dst = [F.EAX]
+                                                  , jump = NONE
+                                                  , doc = "x86gen: 396"});
+                                  emit( moveInstr F.EAX r "397" )))
+            end
 
           (* AND *)
           | munchExp (T.BINOP (T.AND, e1, T.CONST i)) =
@@ -467,7 +472,7 @@ fun codegen frame stm =
           (* Other constructs *)
           | munchExp (T.TEMP t) = t
 
-          | munchExp (T.ESEQ (s, e)) = (*TODO: WHy can we come inside here, removed by canon.sml, right?*)
+          | munchExp (T.ESEQ (s, e)) = (*TODO: Why can we come inside here, removed by canon.sml, right?*)
             (munchStm s;
             result (fn r => emit(A.MOVE{assem="\tmovl `s0,`d0"
                                         , src = munchExp e
