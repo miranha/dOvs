@@ -295,23 +295,50 @@ fun spillAllTemps toMap body =
                     end
             else if isRegister s1 then
                 (* s0 other temp, s1 register *)
-                raise TODO
+                let
+                    val s0' = getEmptyRegister [s1]
+                in
+                    [   A.MOVE  {   assem = "\tmovl " ^ ofs s0 ^ "(%ebp), `d0"
+                                ,   src = s0
+                                ,   dst = s0'
+                                ,   doc = doc ^ " x86frame:304"},
+                        A.OPER  {   assem = assem
+                                ,   src = s0'::s1::ss
+                                ,   dst = []
+                                ,   jump = jump
+                                ,   doc = doc ^ " x86frame:309"}]
+                end
             else (* s0,s1 other temps *)
-                raise TODO
+                [   A.MOVE  {   assem = "\tmovl " ^ ofs s0 ^ "(%ebp), `d0"
+                            ,   src = s0
+                            ,   dst = EAX
+                            ,   doc = doc ^ " x86frame:315"},
+                    A.MOVE  {   assem = "\tmovl " ^ ofs s1 ^ "(%ebp), `d0"
+                            ,   src = s1
+                            ,   dst = EDX
+                            ,   doc = doc ^ " x86frame:315"},
+                    A.OPER  {   assem = assem
+                            ,   src = EAX::EDX::ss
+                            ,   dst = []
+                            ,   jump = jump
+                            ,   doc = doc ^ " x86frame:324"}]
           | expand (i as A.OPER {assem, src=[], dst=(d0::ds), jump, doc}) =
             if isRegister d0 then [i]
             else (* d0 other temp *)
-                [ A.OPER {   assem = assem 
-                           , src = []
-                           , dst = [EAX]
-                           , jump = jump
-                           , doc = doc ^ " x86frame:287" }
-                    (* TODO: Can we use a move command? *)
-                , A.OPER {    assem = "\tmovl `s0, " ^ ofs d0 ^ "(%ebp)"
-                            , src = [EAX]
-                            , dst = [d0]
-                            , jump = NONE
-                            , doc = doc ^ " x86frame:293"}]
+                [ 
+                    A.MOVE  {   assem = "\tmovl " ^ ofs d0 ^ "(%ebp), `d0"
+                            ,   src = d0
+                            ,   dst = EAX
+                            ,   doc = doc ^ " x86frame:320"},
+                    A.OPER  {   assem = assem 
+                            ,   src = []
+                            ,   dst = EAX::ds
+                            ,   jump = jump
+                            ,   doc = doc ^ " x86frame:325" },
+                    A.MOVE  {   assem = "\tmovl `s0, " ^ ofs d0 ^ "(%ebp)"
+                            ,   src = EAX
+                            ,   dst = d0
+                            ,   doc = doc ^ " x86frame:329"}]
           | expand (i as A.OPER {assem, src=[s0], dst=(d0::ds), jump, doc}) =
             if isRegister s0 then
                 if isRegister d0 then [i]
@@ -384,14 +411,62 @@ fun spillAllTemps toMap body =
                     if isRegister d0 then [i]
                     else (* s0,s1 register, d0 other temp *)
                         (* OLD_R_OPTIMIZATION: s0<>d0, no pre-load needed *)
-                        raise TODO
+                        let
+                            val d0' = getEmptyRegister[s0,s1]
+                        in
+                            [   A.MOVE  {   assem = "\tmovl " ^ ofs d0 ^ "(%ebp), `d0"
+                                        ,   src = d0
+                                        ,   dst = d0'
+                                        ,   doc = doc ^ " x86frame:409"},
+                                A.OPER  {   assem = assem
+                                        ,   src = s0::s1::ss
+                                        ,   dst = d0'::ds
+                                        ,   jump = jump
+                                        ,   doc = doc ^ " x86frame:414"},
+                                A.MOVE  {   assem = "\tmovl `s0, " ^ ofs d0 ^ "(%ebp)"
+                                        ,   src = d0'
+                                        ,   dst = d0
+                                        ,   doc = " x86frame:418"}]
+                        end
                 else (* s0 register, s1 other temp *)
                     if isRegister d0 then
                         (* s0 register, s1 other temp, d0 register *)
-                        raise TODO
+                        let
+                            val s1' = getEmptyRegister [s0, d0]
+                        in
+                            [   A.MOVE  {   assem = "\tmovl " ^ ofs s1 ^ "(%ebp), `d0"
+                                        ,   src = s1
+                                        ,   dst = s1'
+                                        ,   doc = doc ^ " x86frame:429"},
+                                A.OPER  {   assem = assem
+                                        ,   src = s0::s1'::ss
+                                        ,   dst = d0::ds
+                                        ,   jump = jump
+                                        ,   doc = doc ^ " x86frame:434"}]
+                        end
                     else (* s0 register, s1,d0 other temp *)
-                        (* OLD_R_OPTIMIZATION: s0<>d0, no pre-load needed *)
-                        raise TODO
+                        let
+                            val d0' = getEmptyRegister [s1]
+                            val s1' = getEmptyRegister [s1, d0']
+                        in
+                            [   A.MOVE  {   assem = "\tmovl " ^ ofs s1 ^ "(%ebp), `d0"
+                                        ,   src = s1
+                                        ,   dst = s1'
+                                        ,   doc = doc ^ " x86frame:444"},
+                                A.MOVE  {   assem = "\tmovl " ^ ofs d0 ^ "(%ebp), `d0"
+                                        ,   src = d0
+                                        ,   dst = d0'
+                                        ,   doc = doc ^ " x86frame:448"},
+                                A.OPER  {   assem = assem
+                                        ,   src = s0::s1'::ss
+                                        ,   dst = d0'::ds
+                                        ,   jump = jump
+                                        ,   doc = doc ^ " x86frame:453"},
+                                A.MOVE  {   assem = "\tmovl `s0, " ^ ofs d0 ^ "(%ebp)"
+                                        ,   src = d0'
+                                        ,   dst = d0
+                                        ,   doc = " x86frame:457"}]
+                        end
             else (* s0 other temp *)
                 if isRegister s1 then
                     if isRegister d0 then
@@ -413,9 +488,46 @@ fun spillAllTemps toMap body =
                         if s0=d0 then
                             (* instruction uses old-d0, and "`s0" is
                              * not used in assem; must preload d0 *)
-                            raise TODO
+                            let
+                                val s0' = getEmptyRegister [s1]
+                            in
+                                [   A.MOVE  {   assem = "\tmovl " ^ ofs s0 ^ "(%ebp), `d0"
+                                            ,   src = s0
+                                            ,   dst = s0'
+                                            ,   doc = doc ^ " x86frame:497"},
+                                    A.OPER  {   assem = assem
+                                            ,   src = s0'::s1::ss
+                                            ,   dst = s0'::ds
+                                            ,   jump = jump
+                                            ,   doc = doc ^ " x86frame:502"},
+                                    A.MOVE  {   assem = "\tmovl `s0, " ^ ofs d0 ^ "(%ebp)"
+                                            ,   src = s0'
+                                            ,   dst = d0
+                                            ,   doc = doc ^ " x86frame:506"}]
+                            end
                         else (* s0<>d0, and instruction does not use old-d0 *)
-                            raise TODO
+                            let
+                                val s0' = getEmptyRegister [s1]
+                                val d0' = getEmptyRegister [s0', s1]
+                            in
+                                [   A.MOVE  {   assem = "\tmovl " ^ ofs s0 ^ "(%ebp), `d0"
+                                            ,   src = s0
+                                            ,   dst = s0'
+                                            ,   doc = doc ^ " x86frame:516"},
+                                    A.MOVE  {   assem = "\tmovl " ^ ofs d0 ^ "(%ebp), `d0"
+                                            ,   src = d0
+                                            ,   dst = d0'
+                                            ,   doc = doc ^ " x86frame:520"},
+                                    A.OPER  {   assem = assem
+                                            ,   src = s0'::s1::ss
+                                            ,   dst = d0'::ds
+                                            ,   jump = jump
+                                            ,   doc = doc ^ " x86frame:525"},
+                                    A.MOVE  {   assem = "\tmovl `s0, " ^ ofs d0 ^ "(%ebp)"
+                                            ,   src = d0'
+                                            ,   dst = d0
+                                            ,   doc = doc ^ " x86frame:529"}]
+                            end
                 else if isRegister d0 then
                     (* s1, s2 are other temp *)
                     let
