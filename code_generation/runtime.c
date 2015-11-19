@@ -11,15 +11,20 @@ int arrLenError(int len)
 }
 
 int exponent (int base, int expn) {
+
+    if (expn < 0 && (base != 1 || base != -1)) {
+        return 0;
+    }
+    
     int res = 1;
 
     while (expn != 0) {
         /* Exploit binary nature of expn */
-        res = res * res;
+        res *= res;
         if (expn % 2 != 0) {
             res *= base;
         }
-        expn = expn / 2;
+        expn /= 2;
     }
     return res;
 }

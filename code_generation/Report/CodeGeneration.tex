@@ -22,12 +22,40 @@ The rest of this report is structured the following way. The two following secti
 \section{Instruction selection}
 %How did you implement the missing elements in x86gen. Describe how the file works as a whole and explain a few interesting cases.
 
-The goal of the code generation is to generated assembly code as specified in the assignment for this course. Hence the target assembly is x86. The \texttt{x86gen.sml} takes the output from the canon module, and creates the assembly code. Its main structure is similar to \texttt{semant.sml} and \texttt{irgen.sml}, in that recursive functions are used to transverse the tree. However, this module does not use ``real'' registers, but just assumes there are unlimited number of registers. It leave the usage of ``real'' registers, to the support module \texttt{x86frame.sml}, which the described below.
+The goal of the code generation is to generated assembly code as specified in the assignment for this course. Hence the target assembly is x86. The \texttt{x86gen.sml} takes the output from the canon module, and creates the assembly code. Its main structure is similar to \texttt{semant.sml} and \texttt{irgen.sml}, in that recursive functions are used to transverse the tree. However, this module does not use ``real'' registers, but just assumes there are unlimited amount of them. It relies on the support module \texttt{x86frame.sml} to create this illusion.
 
 \section{The support modules}
 %Write how you implemented the missing elements in x86frame..
-As mentioned above, the \texttt{x86frame.sml} is a support module for the \texttt{x86gen.sml} module. The main responsibility of this module is usage of real registers. This module is called when real registers need to be used. This module both has functions to check if it is a register, and if a specific register is unused currently. Additionally, it moves relevant values into register in order to perform a operation on these. 
+As mentioned above, the \texttt{x86frame.sml} is a support module for the \texttt{x86gen.sml} module. The main responsibility of this module is to create the illusion of an infinite amount of registers for \texttt{x86gen.sml}. Each time \texttt{x86gen.sml} uses a ``register'', \texttt{x86frame} checks if is a real one. Does who isn't real is called tempoaries. If a tempoary was selected, \texttt{x86frame} looks for an aviable real one, and substitutes it in. If the tempoary was needed because it held a value, \texttt{x86frame.sml} loads the value from memory into the selected register, then allows the code to run. If the tempoary instead was used to store a value, the selected code is allowed to run, then \texttt{x86frame.sml} stores the value back in memory from the selected register. 
 
+This module both has functions to check if it is a register, and if a specific register is unused currently, meaning that it selects a real register unused by the code.
+
+\section{Exponentiation}
+We were required to implement the runtime function of exponentiation. The only requirment was that if the exponent was positive, we actually calculated the correct amount, ignoring overflow problems.
+
+In short, our method is simple. Everything lifted to 0 gives 1. We accept a signed int as an exponent, but we use it's absolute value as the actual exponent. This means that
+\[
+b^{e} = b^{-e}.
+\]
+
+While bizzare, the reason for this choice is twofold. If $b = -1$, then the above gives that $(-1)^{e} \cdot (-1)^{-e} = 1$, so if $b^e$ has a multiplicative inverse in the integers, then $b^{-e}$ will give it, as long as the values don't overflow.
+
+The second is simply ease of implementation. Instead of dealing with special cases, our code is short and sweet, as seen here
+\begin{verbatim}
+int exponent (int base, int expn) {
+    int res = 1;
+
+    while (expn != 0) {
+        /* Exploit binary representation of expn */
+        res *= res;
+        if (expn % 2 != 0) {
+            res *= base;
+        }
+        expn /= 2;
+    }
+    return res;
+}
+\end{verbatim}
 \section{Problems encountered \& experience gained}
 %If you had any problems in the work process, write it here with what you gained.
 
