@@ -12,18 +12,24 @@ int arrLenError(int len)
 
 int exponent (int base, int expn) {
 
-    if (expn < 0 && (base != 1 || base != -1)) {
+    if (expn < 0 && (base != 1)  && (base != -1)) {
         return 0;
     }
     
     int res = 1;
-
+    if (expn < 0) {
+        /* return power */
+        expn = -expn;
+    }
     while (expn != 0) {
-        /* Exploit binary nature of expn */
-        res *= res;
+        /* x^n  = x * (x^2)^((n-1)/2)
+                or (x^2)^(n/2)
+        */
         if (expn % 2 != 0) {
             res *= base;
+            expn -= 1;
         }
+        base *= base;
         expn /= 2;
     }
     return res;
