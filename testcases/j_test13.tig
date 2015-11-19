@@ -1,2 +1,2 @@
 /* exponentiation considers only the exponents absolute value */
-3^10 = 3^-10
+3^-10

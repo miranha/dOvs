@@ -1,2 +1,2 @@
 /* exponentiation considers only the exponents absolute value */
-(-2^-3) = -8
+(-2^-3) = 0
