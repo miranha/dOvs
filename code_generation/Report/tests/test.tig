@@ -1,0 +1,6 @@
+/* Test that we are able to read user input */
+let 
+    var x := getchar()
+in
+    print(x)
+end
