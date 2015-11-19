@@ -1,11 +1,9 @@
-/*
-Test for loops,
-that we update control variable correctly,
-and that we do not loop to much,
-and that we do no enter loops where low > high
-*/
+/* checking that we are doing side effect correctly */
 let
-	var a := 0
+	var c := 0
+	function increment():int = (c := c+1;1)
+	function multiply():int = (c := 2*c;2)
+	function test(a:int, b:int):int = c
 in
-	for i := 1 to 0 do a := 99; for i := 1 to 3 do a := a + i; a
+	test(increment(),multiply())
 end

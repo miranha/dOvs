@@ -1,8 +1,13 @@
 /*
-Checks if we put the arguments in correct order
+Checks combination of arrays and record
 */
 let
-	function sub(a:int,b:int):int = a - b
+type rectype = {name: string, address: string, id: int, age: int}
+type arrtype = array of rectype
+var arr := arrtype [5] of 
+                  rectype{name="aname", address="somewhere", id=0, age=0}
 in
-	sub(3,2)
+    arr[3].name := "kati";
+    arr[1].age := 23;
+    arr[1].age
 end
