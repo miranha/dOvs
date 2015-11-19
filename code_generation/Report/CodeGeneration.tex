@@ -15,21 +15,21 @@
 \maketitle
 
 \section{Introduction}
-This report describes the work carried out in order to develop the code generation phase, which is the last component in the compiler for this course. The code generation component takes the Intermediate Representation (IR), and creates assembly code. However, it shall be noted that the IR generated from the previous work, is used as input for the \texttt{canon.sml} module, in order to produce a simplified IR according the chapter 8 in the book.
+This report describes the work carried out in order to develop the code generation phase, which is the last component in the compiler for this course. The code generation component takes the Intermediate Representation (IR), and creates assembly code. However, it should be noted that the IR generated from the previous module, is used as input for the \texttt{canon.sml} module, in order to produce a simplified IR, otherwise known as basic blocks, according the chapter 8 in the book.
 
-The rest of this report is structured the following way. The two following sections described the two main sml file which have been developed, separately. Afterwards the experience gain and different tests are presented. Finally, the implementation of the code generation component is concluded.
+The rest of this report is structured the following way. The two following sections describes the two main sml files which have been developed, separately. Afterwards the experience gain and different tests are presented. Finally, the implementation of the code generation component is concluded.
 
 
 \section{Instruction selection}
 %How did you implement the missing elements in x86gen. Describe how the file works as a whole and explain a few interesting cases.
 
-The goal of the code generation is to generated assembly code as specified in the assignment for this course. Hence the target assembly is x86. The \texttt{x86gen.sml} takes the output from the canon module, and creates the assembly code. Its main structure is similar to \texttt{semant.sml} and \texttt{irgen.sml}, in that recursive functions are used to transverse the tree. However, this module does not use ``real'' registers, but just assumes there are unlimited amount of them. It relies on the support module \texttt{x86frame.sml} to create this illusion.
+The goal of the code generation is to generated assembly code as specified in the assignment for this course. Hence the target assembly is x86. The \texttt{x86gen.sml} takes the output from the canon module, and creates the assembly code. Its main structure is similar to that of \texttt{semant.sml} and \texttt{irgen.sml}, in that recursive functions are used to transverse the tree. However, this module does not use ``real'' registers, but just assumes there are an unlimited amount of them. It relies on the support module \texttt{x86frame.sml} to create this illusion.
 
 \section{The support modules}
 %Write how you implemented the missing elements in x86frame..
-As mentioned above, the \texttt{x86frame.sml} is a support module for the \texttt{x86gen.sml} module. The main responsibility of this module is to create the illusion of an infinite amount of registers for \texttt{x86gen.sml}. Each time \texttt{x86gen.sml} uses a ``register'', \texttt{x86frame} checks if is a real one. Does who isn't real is called temporaries. If a temporary was selected, \texttt{x86frame} looks for an available real one, and substitutes it in. If the temporary was needed because it held a value, \texttt{x86frame.sml} loads the value from memory into the selected register, then allows the code to run. If the temporary instead was used to store a value, the selected code is allowed to run, then \texttt{x86frame.sml} stores the value back in memory from the selected register. 
+As mentioned above, the \texttt{x86frame.sml} is a support module for the \texttt{x86gen.sml} module. The main responsibility of this module is to create the illusion of an infinite amount of registers for \texttt{x86gen.sml}. Each time \texttt{x86gen.sml} uses a ``register'', \texttt{x86frame} checks if is a real one. Those who isn't real is called temporaries. If a temporary was selected, \texttt{x86frame} looks for an available real one, and substitutes that register in. If the temporary was needed because it held a value, \texttt{x86frame.sml} loads the value from memory into the selected register, then allows the code to run. If the temporary instead was used to store a value, the selected code is allowed to run, then \texttt{x86frame.sml} stores the value back in memory from the selected register. 
 
-This module both has functions to check if it is a register, and if a specific register is unused currently, meaning that it selects a real register unused by the code.
+This module both has implemented functions to check if it is a register, and if a specific register is unused currently, meaning that it selects a real register unused by the code.
 
 \section{Exponentiation}
 We were required to implement the runtime function of exponentiation. There are two cases to consider: Negative exponent and 0 as exponent with 0 as base.
@@ -95,6 +95,6 @@ Next the more challenging constructs could be implemented. Some of the more chal
 
 \section{Conclusion}
 
-This report presented the development of the code generator in \texttt{x86gen.sml}, which generates assembly instructions from the IR tree. The main functionality was described, and how some modules, like \texttt{x86frame.sml}, are used in order to use real registers when generating assembly code. Additionally the gained experience was described. Finally, additional tests provided confidence that this code generator is working correctly.
+This report presented the development of the code generator in \texttt{x86gen.sml}, which generates assembly instructions from the previous module. The main functionality was described, and how some modules, like \texttt{x86frame.sml}, are used in order to use real registers when generating assembly code. Additionally the gained experience was described. Finally, additional tests provided confidence that this code generator is working correctly.
 
 \end{document}
