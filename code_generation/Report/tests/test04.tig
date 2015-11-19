@@ -1,1 +1,4 @@
-TODO: A test about exponents, that shows it in a good way.
+/*	exponentiation considers only the exponents absolute value 
+ *	8 + 3 + 1 + 1 + 1 + 0 + 512 = 526
+*/
+2^3 + 3^4^0 + 0^0 + (-1)^(-2) + 1^(-234) + (-3)^(-43344) + 2^9 = 526
