@@ -1,0 +1,3 @@
+let var a := 0
+in
+for i:=1 to 1 do (break;a:=i);a end

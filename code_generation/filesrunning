@@ -31,6 +31,10 @@ m_test01,6
 m_test02,3
 m_test03,7
 m_test04,19
+m_test06,1
+m_test07,6
+m_test08,4
+m_test09,0
 ### Given test ###
 # In the following, only remove 1 # to end up in the original situation
 ##################
