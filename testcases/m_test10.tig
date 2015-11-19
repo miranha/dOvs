@@ -3,8 +3,8 @@
 */
 let
 	function even(i:int):int = if i = 0 then 1 
-		else if i = 1 then 0 
-		else odd(i-1)
+						else if i = 1 then 0 
+						else odd(i-1)
 	function odd(i:int):int = even(i-1)
 in
 	even(4) = odd(11)

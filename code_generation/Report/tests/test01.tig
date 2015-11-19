@@ -1,11 +1,10 @@
 /*
-Array test for equal of equal things and unequal for unequal things
+Test Array, reassignment
 */
 let
-	type A = array of int
-	var b := A[2] of 0
-	var c := b
-	var d := A[1] of 3
+	type intarray = array of int
+	var c := intarray[3] of 43
 in
-	b = c & c <> d
+	c[0] := 2;
+	c[0] + c[2]
 end

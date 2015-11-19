@@ -42,7 +42,7 @@ in
       
       (Sy.symbol "getchar", FunEntry { formals = []
                                      , result = Ty.STRING
-                                     , label = Tm.namedLabel "getchar"
+                                     , label = Tm.namedLabel "getChar"
                                      , level = initLevel}),
       
       (Sy.symbol "ord", FunEntry { formals = [Ty.STRING]

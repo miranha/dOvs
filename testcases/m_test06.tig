@@ -1,0 +1,12 @@
+/* test while loop breaks */
+let
+	var a := 0
+	var b := 0
+in
+	(while 1 do 
+			((while 1 do
+							(break; a := a + 1));
+						(b := b + 1;
+							break)));
+	a + b
+end
