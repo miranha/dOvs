@@ -15,11 +15,11 @@ int exponent (int base, int expn) {
 
     while (expn != 0) {
         /* Exploit binary nature of expn */
-        res = res * res;
+        res *= res;
         if (expn % 2 != 0) {
             res *= base;
         }
-        expn = expn / 2;
+        expn /= 2;
     }
     return res;
 }
