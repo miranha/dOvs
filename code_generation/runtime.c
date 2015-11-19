@@ -10,6 +10,20 @@ int arrLenError(int len)
     return 0; /* keeping gcc happy */
 }
 
+int exponent (int base, int expn) {
+    int res = 1;
+
+    while (expn != 0) {
+        /* Exploit binary nature of expn */
+        res = res * res;
+        if (expn % 2 != 0) {
+            res *= base;
+        }
+        expn = expn / 2;
+    }
+    return res;
+}
+
 /* p164 */
 int *initArray(int size, int init) 
 {
