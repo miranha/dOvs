@@ -36,15 +36,15 @@ We were required to implement the runtime function of exponentiation. There are 
 
 The latter case is simple: It is always the case that a 0 exponent gives 1, and we do adopt this convension for $0^0$ as well.
 
-The other case is a bit harder. However, since negative exponent means the inverse to some integer, in proper math this would be a value with absolute value $ < 1$. Reading around on wikipedia (and listening to our instructor), we get the \href{https://en.wikipedia.org/wiki/IEEE_floating_point}{recommendation} to the nearest even number. Hence, we return 0.
+The other case is a bit harder. However, since negative exponent means the inverse to some integer, in proper math this would be a value with absolute value $ < 1$. Reading around on wikipedia (and listening to our instructor), we get the recommendation\footnote{\url{https://en.wikipedia.org/wiki/IEEE_floating_point}} to the nearest even number. Hence, we return 0.
 
-Should our base be $1$ or $-1$, we just go ahead and treat the exponent as its absolute value. This will still give us the proper value from am mathematical point of view.
+Should our base be $1$ or $-1$, we just go ahead and treat the exponent as its absolute value. This will still give us the proper value from a mathematical point of view.
 
 The code is simply
 \begin{verbatim}
 int exponent (int base, int expn) {
 
-    if (expn < 0 && (base != 1 || base != -1) {
+    if (expn < 0 && (base != 1 || base != -1)) {
         return 0;
     }
 
