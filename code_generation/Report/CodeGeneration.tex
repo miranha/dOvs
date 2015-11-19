@@ -1,6 +1,7 @@
 \documentclass{article}
 \usepackage[margin=1in]{geometry}
 \usepackage{listings}
+\usepackage{hyperref}
 \title{dOvs - Codegeneration}
 
 \author{
@@ -31,18 +32,22 @@ As mentioned above, the \texttt{x86frame.sml} is a support module for the \textt
 This module both has functions to check if it is a register, and if a specific register is unused currently, meaning that it selects a real register unused by the code.
 
 \section{Exponentiation}
-We were required to implement the runtime function of exponentiation. The only requirment was that if the exponent was positive, we actually calculated the correct amount, ignoring overflow problems.
+We were required to implement the runtime function of exponentiation. There are two cases to consider: Negative exponent and 0 as exponent with 0 as base.
 
-In short, our method is simple. Everything lifted to 0 gives 1. We accept a signed int as an exponent, but we use it's absolute value as the actual exponent. This means that
-\[
-b^{e} = b^{-e}.
-\]
+The latter case is simple: It is always the case that a 0 exponent gives 1, and we do adopt this convension for $0^0$ as well.
 
-While bizzare, the reason for this choice is twofold. If $b = -1$, then the above gives that $(-1)^{e} \cdot (-1)^{-e} = 1$, so if $b^e$ has a multiplicative inverse in the integers, then $b^{-e}$ will give it, as long as the values don't overflow.
+The other case is a bit harder. However, since negative exponent means the inverse to some integer, in proper math this would be a value with absolute value $ < 1$. Reading around on wikipedia (and listening to our instructor), we get the \href{https://en.wikipedia.org/wiki/IEEE_floating_point}{recommendation} to the nearest even number. Hence, we return 0.
 
-The second is simply ease of implementation. Instead of dealing with special cases, our code is short and sweet, as seen here
+Should our base be $1$ or $-1$, we just go ahead and treat the exponent as its absolute value. This will still give us the proper value from am mathematical point of view.
+
+The code is simply
 \begin{verbatim}
 int exponent (int base, int expn) {
+
+    if (expn < 0 && (base != 1 || base != -1) {
+        return 0;
+    }
+
     int res = 1;
 
     while (expn != 0) {
