@@ -5,27 +5,27 @@ structure S = Symbol
  * for the creation of abstract syntax tree] *)
 
 datatype lvalueSpec = Field of S.symbol
-		| Subscript of A.exp
+    | Subscript of A.exp
 
 fun makeInt(e)=A.IntExp e
 
 fun makeCallExp( f , arglist, p) =
  A.CallExp { func = S.symbol f,
-	      args = arglist,
-	      pos = p}
+        args = arglist,
+        pos = p}
 
 (* Construct the lvalue one list element at the time*)
 fun makeLvalue (v, p, (value,pos)::l) = (case value of
-					   Field(s) => makeLvalue(A.FieldVar(v, s , pos), pos, l)
-						  | Subscript(exp) => makeLvalue(A.SubscriptVar(v,exp,pos), pos, l)
+             Field(s) => makeLvalue(A.FieldVar(v, s , pos), pos, l)
+              | Subscript(exp) => makeLvalue(A.SubscriptVar(v,exp,pos), pos, l)
 )
-				       |  makeLvalue (v,_,[]) = v
+               |  makeLvalue (v,_,[]) = v
 
 (* check if we have var expression, extract the
 underlying variable *)
 fun getLvalue ( var : A.exp) : A.var =
   (case var of A.VarExp(v) => v
-	    | _  => A.SimpleVar(S.symbol "bogusVar", 0))
+      | _  => A.SimpleVar(S.symbol "bogusVar", 0))
 
 fun makeBinop (e1, bop, e2, p) =
     A.OpExp  { left = e1
@@ -48,22 +48,22 @@ fun makeVarDec (idsym, ty, e, p) =
 
 fun makeAssign (v, e, p) =
   A.AssignExp { var = v
-	      , exp = e
-	      , pos = p }
+        , exp = e
+        , pos = p }
 
 fun makeWhile (t, e, p) =
   A.WhileExp { test = t
-	   , body = e
-	   , pos = p }
+     , body = e
+     , pos = p }
 
 fun makeFor (i, low, high, e, p) =
   let val s = (S.symbol i) in
   A.ForExp { var = s
-	   , escape = ref true
-	   , lo = low
-	   , hi = high
-	   , body = e
-	   , pos = p }
+     , escape = ref true
+     , lo = low
+     , hi = high
+     , body = e
+     , pos = p }
   end
 
 fun makeFundecl (idsym, ps, rty, e, p) =
@@ -73,7 +73,6 @@ fun makeFundecl (idsym, ps, rty, e, p) =
              , body = e
              , pos = p} : A.fundecldata
 
-<<<<<<< HEAD
 
 fun makeArrCreate (ty, s, i, p) =
   A.ArrayExp{typ = S.symbol ty
@@ -104,27 +103,6 @@ fun makeLetExp (decl, bod, p) =
                 , body = bod
                 , pos = p
                 }
-=======
-fun makeTydecl (idsym, typ, p) =
-			 { name = idsym
-			 , ty = typ
-			 , pos = p} : A.tydecldata
-
-fun makeFielddec (idsym, ty, p) =
-				{
-				  name = idsym
-				, escape = ref true
-				, typ = ty
-				, pos = p 
-				}
-
-fun makeLetExp (decl, bod, p) =
-			{ decls = decl
-			, body = bod
-			, pos = p
-			} : A.letdata
-
->>>>>>> origin/StevenDOvs
 %%
 %term
     EOF
@@ -147,37 +125,25 @@ fun makeLetExp (decl, bod, p) =
   | ty of A.ty | typeid of A.exp | tyfields of A.exp
   | arrty of A.ty | recty of A.ty
   (* Here we define certain non terminals to stand for expressions *)
-<<<<<<< HEAD
   | lvalue of A.exp
   | subscript of (lvalueSpec * int)
   | fieldexp of (lvalueSpec * int)
   | ltail of (lvalueSpec * int) list
   | callexp of A.exp | callexpcon of (A.exp * A.pos) list
-=======
-  | lvalue of A.exp | ltail of A.exp | subscript of A.exp
-  | fieldexp of A.exp
-  | callexp of A.exp | callexpcon of A.exp
->>>>>>> origin/StevenDOvs
   | arrcreate of A.exp
   | reccreate of A.exp | reccreatecon of (S.symbol * A.exp * pos) list
   | fieldcreate of (S.symbol * A.exp * pos)
   | assignment of A.exp
-  | seqexp of A.exp | seqsexps of (A.exp * pos) list
+  | seqexp of A.exp | seqsexps of (A.exp * pos) list | nEmptySeq of (A.exp * pos) list
   | letexp of A.exp
   | binop of A.exp | unaryop of A.exp
   | ifexp of A.exp | ifelseexp of A.exp
   | whileexp of A.exp
   | forexp of A.exp
-<<<<<<< HEAD
   | fundeclbegin of A.decl list | tydeclbegin of A.decl list
   | vardeclbegin of A.decl list
   | fundeclist of A.fundecldata list | tydeclist of A.tydecldata list
   | vardeclist of A.vardecldata
-=======
-  | id of A.exp 
-  | fundeclbegin of A.exp | tydeclbegin of A.exp | vardeclbegin of A.exp
-  | fundeclist of A.exp | tydeclist of A.exp | vardeclist of A.exp
->>>>>>> origin/StevenDOvs
 
 
 %pos int
@@ -226,7 +192,6 @@ exp: INT       ( A.IntExp INT)
   | seqexp ( seqexp )
   | unaryop  (unaryop)
   | binop  (binop)
-<<<<<<< HEAD
   | callexp (callexp)
   | assignment ( assignment )
   | lvalue (lvalue)
@@ -239,33 +204,20 @@ exp: INT       ( A.IntExp INT)
   | letexp ( letexp )
 
 (* Here we create the arithmetic operators *)
-=======
-  | callexp (A.IntExp (0))
-  | assignment ( A.IntExp (0) )
-  | forexp ( A.IntExp(0) )
-  | whileexp ( A.IntExp(0) )
-  | ifexp ( A.IntExp(0) )
-  | ifelseexp ( A.IntExp(0) )
-  | lvalue ( A.IntExp(0) )
-  | arrcreate ( A.IntExp(0) )
-  | reccreate ( A.IntExp(0) )
-  | letexp ( letexp )
-
->>>>>>> origin/StevenDOvs
-binop : exp PLUS exp 	%prec PLUS ( makeBinop (exp1,A.PlusOp,exp2, PLUSleft ))
-	| exp MINUS exp 	%prec MINUS (makeBinop (exp1,A.MinusOp,exp2, MINUSleft ))
-	| exp TIMES exp 	%prec TIMES ( makeBinop( exp1, A.TimesOp, exp2, TIMESleft ))
-	| exp DIVIDE exp 	%prec DIVIDE ( makeBinop(exp1, A.DivideOp, exp2, DIVIDEleft ))
-	| exp CARET exp 	%prec CARET ( makeBinop( exp1, A.ExponentOp, exp2, CARETleft ))
+binop : exp PLUS exp  %prec PLUS ( makeBinop (exp1,A.PlusOp,exp2, PLUSleft ))
+  | exp MINUS exp   %prec MINUS (makeBinop (exp1,A.MinusOp,exp2, MINUSleft ))
+  | exp TIMES exp   %prec TIMES ( makeBinop( exp1, A.TimesOp, exp2, TIMESleft ))
+  | exp DIVIDE exp  %prec DIVIDE ( makeBinop(exp1, A.DivideOp, exp2, DIVIDEleft ))
+  | exp CARET exp   %prec CARET ( makeBinop( exp1, A.ExponentOp, exp2, CARETleft ))
 (* logical operators here *)
-	| exp AND exp %prec AND ( makeIf(exp1,exp2,SOME (A.IntExp(0)), ANDleft))
-	| exp OR exp %prec OR ( makeIf (exp1, A.IntExp(1), SOME exp2, ORleft))
-	| exp EQ exp %prec EQ (makeBinop(exp1,A.EqOp,exp2,EQleft))
-	| exp NEQ exp %prec NEQ ( makeBinop(exp1,A.NeqOp,exp2,NEQleft) )
-	| exp LT exp %prec LT ( makeBinop(exp1,A.LtOp,exp2,LTleft) )
-	| exp LE exp %prec LE ( makeBinop(exp1,A.LeOp,exp2,LEleft) )
-	| exp GT exp %prec GT ( makeBinop(exp1,A.GtOp,exp2,GTleft) )
-	| exp GE exp %prec GE ( makeBinop(exp1,A.GeOp,exp2,GEleft) )
+  | exp AND exp %prec AND ( makeIf(exp1,exp2,SOME (A.IntExp(0)), ANDleft))
+  | exp OR exp %prec OR ( makeIf (exp1, A.IntExp(1), SOME exp2, ORleft))
+  | exp EQ exp %prec EQ (makeBinop(exp1,A.EqOp,exp2,EQleft))
+  | exp NEQ exp %prec NEQ ( makeBinop(exp1,A.NeqOp,exp2,NEQleft) )
+  | exp LT exp %prec LT ( makeBinop(exp1,A.LtOp,exp2,LTleft) )
+  | exp LE exp %prec LE ( makeBinop(exp1,A.LeOp,exp2,LEleft) )
+  | exp GT exp %prec GT ( makeBinop(exp1,A.GtOp,exp2,GTleft) )
+  | exp GE exp %prec GE ( makeBinop(exp1,A.GeOp,exp2,GEleft) )
 
 
 unaryop : MINUS exp (makeBinop(A.IntExp(0), A.MinusOp, exp, MINUSleft))
@@ -273,15 +225,18 @@ unaryop : MINUS exp (makeBinop(A.IntExp(0), A.MinusOp, exp, MINUSleft))
 seqexp : LPAREN seqsexps RPAREN ( A.SeqExp(seqsexps) )
 
 seqsexps : exp ( [(exp, expleft)] )
-        | exp SEMICOLON seqsexps ( (exp,expleft)::seqsexps )
+        | exp SEMICOLON nEmptySeq ( (exp,expleft)::nEmptySeq )
         | ([])
+
+nEmptySeq : exp SEMICOLON nEmptySeq ( (exp,expleft) ::nEmptySeq)
+        | exp ([(exp,expleft)])
 
 (* Split callexp up in order to construct a list *)
 callexp : ID LPAREN callexpcon RPAREN (makeCallExp(ID,callexpcon,IDleft))
 
 callexpcon : exp ([(exp,expleft)])
-			| exp COMMA callexpcon ((exp,expleft)::callexpcon)
-			| ([])
+      | exp COMMA callexpcon ((exp,expleft)::callexpcon)
+      | ([])
 
 assignment : lvalue ASSIGN exp ( makeAssign( getLvalue(lvalue) , exp, ASSIGNleft) )
 
@@ -293,39 +248,32 @@ ifexp : IF exp THEN exp ( makeIf(exp1, exp2, (NONE), IFleft) )
 
 ifelseexp : IF exp THEN exp ELSE exp ( makeIf(exp1, exp2, (SOME exp3), IFleft)  )
 
-tydec : TYPE ID	EQ ty (makeTyDec(ID,ty, TYPEleft))
+tydec : TYPE ID EQ ty (makeTyDec(ID,ty, TYPEleft))
 
 ty : ID (A.NameTy((S.symbol ID),IDleft))
-	| arrty (arrty)
-	| recty (recty)
+  | arrty (arrty)
+  | recty (recty)
 
 arrty : ARRAY OF ID (A.ArrayTy((S.symbol ID),ARRAYleft))
 
 recty : LBRACE fielddeccontent RBRACE (A.RecordTy fielddeccontent)
   | LBRACE RBRACE (A.RecordTy [])
 
-<<<<<<< HEAD
 fielddeccontent : fielddec ([fielddec])
-				| fielddec COMMA fielddeccontent (fielddec::fielddeccontent)
+        | fielddec COMMA fielddeccontent (fielddec::fielddeccontent)
 
-=======
-ty : ID (A.IntExp(0))
-	| arrty (A.IntExp(0))
-	| recty (A.IntExp(0))
->>>>>>> origin/StevenDOvs
 
 fielddec : ID COLON ID (makeFieldTy(ID1,ID2, ID2left,ID1left))
 
 (* an lValue can be rather complicated in apperance. We know we are starting with an ID, then expand if so required *)
 lvalue : ID ltail ( A.VarExp( makeLvalue(
-			A.SimpleVar(S.symbol ID, IDleft), IDleft, ltail))
-		  )
+      A.SimpleVar(S.symbol ID, IDleft), IDleft, ltail))
+      )
 (* ltail construct a list we can use to determiny the variable type of an lvalue *)
 ltail : subscript ltail (subscript::ltail)
       | fieldexp ltail (fieldexp::ltail)
       | ([])
 
-<<<<<<< HEAD
 subscript : LBRACK exp RBRACK ((Subscript(exp), LBRACKleft))
 
 fieldexp : DOT ID ((Field(S.symbol ID), DOTleft))
@@ -336,7 +284,7 @@ reccreate : ID LBRACE reccreatecon RBRACE (makeRecCreate(ID,reccreatecon,IDleft)
       | ID LBRACE RBRACE (makeRecCreate(ID,[],IDleft))
 
 reccreatecon : fieldcreate ([fieldcreate])
-			| fieldcreate COMMA reccreatecon (fieldcreate:: reccreatecon)
+      | fieldcreate COMMA reccreatecon (fieldcreate:: reccreatecon)
 
 fieldcreate : ID EQ exp ((S.symbol ID,exp,IDleft))
 
@@ -346,17 +294,6 @@ letexp : LET deccon IN seqsexps END ( makeLetExp(deccon, A.SeqExp seqsexps, decc
 deccon : fundeclbegin (fundeclbegin)
         | vardeclbegin (vardeclbegin)
         | tydeclbegin (tydeclbegin)
-=======
-lvalue : ID ltail (A.IntExp(0))
-
-ltail : subscript ltail (A.IntExp(0))
-       | fieldexp ltail (A.IntExp(0))
-       | (A.IntExp(0))
-
-subscript : LBRACK exp RBRACK (A.IntExp(0))
-
-fieldexp : DOT ID (A.IntExp(0))
->>>>>>> origin/StevenDOvs
 
 fundeclbegin : fundeclist ([A.FunctionDec fundeclist])
            | fundeclist tydeclbegin ((A.FunctionDec fundeclist)::tydeclbegin)
@@ -371,7 +308,6 @@ tydeclbegin : tydeclist ([A.TypeDec tydeclist])
           | tydeclist vardeclbegin ((A.TypeDec tydeclist)::vardeclbegin )
           | tydeclist fundeclbegin ((A.TypeDec tydeclist)::fundeclbegin )
 
-<<<<<<< HEAD
 fundeclist : fundec ([fundec])
            | fundec fundeclist (fundec :: fundeclist)
 
@@ -384,69 +320,13 @@ fundec : FUNCTION ID LPAREN fielddeccontent RPAREN EQ exp
           (makeFundecl(S.symbol ID1, fielddeccontent, SOME (S.symbol ID2,ID2left), exp, ID1left))
         | FUNCTION ID LPAREN RPAREN COLON ID EQ exp
           (makeFundecl(S.symbol ID1, nil, SOME (S.symbol ID2,ID2left), exp, ID1left))
-	| FUNCTION ID LPAREN RPAREN EQ exp
+  | FUNCTION ID LPAREN RPAREN EQ exp
             (makeFundecl(S.symbol ID, nil, NONE, exp, ID1left))
 
-=======
-
-
-fieldcreate : ID EQ exp (A.IntExp(0))
-
-
-
-letexp : LET deccon IN seqsexps END ( makeLetExp(deccon, seqsexps, decconleft) )
-
-deccon : fundeclbegin (fundeclbegin)
-		| vardeclbegin (vardeclbegin)
-		| tydeclbegin (tydeclbegin)
-
-fundeclbegin : fundeclist ([fundeclist])
-		   | fundeclist tydeclbegin (fundeclist::tydeclbegin)
-		   | fundeclist vardeclbegin (fundeclist::vardeclbegin)
-
-vardeclbegin : vardeclist ([vardeclist])
-		   | vardeclist fundeclbegin (vardeclist::fundeclbegin)
-		   | vardeclist tydeclbegin (vardeclist::tydeclbegin)
-
-tydeclbegin : tydeclist ([tydeclist])
-		  | tydeclist vardeclbegin ( tydeclist::vardeclbegin )
-		  | tydeclist fundeclbegin ( tydeclist::fundeclbegin )
-
-fundeclist : fundec (fundec :: nil)
-		   | fundec fundeclist (fundec :: fundeclist)
-
-vardeclist : vardec (vardec :: nil)
-		   | vardec vardeclist (vardec :: vardeclist)
-
-tydeclist : tydec (tydec :: nil)
-		  | tydec tydeclist (tydec :: tydeclist)
-
-fundec : ID LPAREN fielddeccontent RPAREN EQ exp (makeFundecl(ID, fielddeccontent, exp, ID1left))
-		| ID LPAREN fielddeccontent RPAREN COLON ID EQ exp (makeFundecl(ID1, fielddeccontent, ID2, exp, ID1left))
-
-vardec : ID ASSIGN exp (makeVarDec(ID1, ASSIGN, exp, ID1left))
-		| ID COLON ID ASSIGN exp (makeVarDec(ID1, ASSIGN, ID2, exp, ID1left))
-
-tydec : TYPE ID	EQ ty (makeTydec(ID, ty, IDleft))
-
-fielddec : ID COLON ID (makeFielddec(ID1,(ID2,ID2left), ID1left))
-
-fielddeccontent : fielddec ([fielddec])
-				| fielddec COMMA fielddeccontent (fielddec::fielddeccontent)
-				| ([])   
-
-
-
-
-
-
-
-
->>>>>>> origin/StevenDOvs
 
 vardec : VAR ID ASSIGN exp (makeVarDec(S.symbol ID1, NONE ,exp, ID1left))
         | VAR ID COLON ID ASSIGN exp (makeVarDec( S.symbol ID1, SOME (S.symbol ID2,ID2left), exp, ID1left))
 
-(* [..missing rules for exp..] *)
+    (* [..missing rules for exp..] *)
 
 (* [..missing rules for missing nonterminals..] *)
