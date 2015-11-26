@@ -129,7 +129,7 @@ fun makeLetExp (decl, bod, p) =
   | subscript of (lvalueSpec * int)
   | fieldexp of (lvalueSpec * int)
   | ltail of (lvalueSpec * int) list
-  | callexp of A.exp | callexpcon of (A.exp * A.pos) list
+  | callexp of A.exp | callexpcon of (A.exp * A.pos) list | nEmptyCallSeq of (A.exp * pos) list
   | arrcreate of A.exp
   | reccreate of A.exp | reccreatecon of (S.symbol * A.exp * pos) list
   | fieldcreate of (S.symbol * A.exp * pos)
@@ -235,8 +235,11 @@ nEmptySeq : exp SEMICOLON nEmptySeq ( (exp,expleft) ::nEmptySeq)
 callexp : ID LPAREN callexpcon RPAREN (makeCallExp(ID,callexpcon,IDleft))
 
 callexpcon : exp ([(exp,expleft)])
-      | exp COMMA callexpcon ((exp,expleft)::callexpcon)
+      | exp COMMA nEmptyCallSeq ((exp,expleft)::nEmptyCallSeq)
       | ([])
+
+nEmptyCallSeq : exp COMMA nEmptyCallSeq ((exp,expleft)::nEmptyCallSeq)
+      | exp ([(exp,expleft)])
 
 assignment : lvalue ASSIGN exp ( makeAssign( getLvalue(lvalue) , exp, ASSIGNleft) )
 
@@ -294,6 +297,7 @@ letexp : LET deccon IN seqsexps END ( makeLetExp(deccon, A.SeqExp seqsexps, decc
 deccon : fundeclbegin (fundeclbegin)
         | vardeclbegin (vardeclbegin)
         | tydeclbegin (tydeclbegin)
+        | ([])
 
 fundeclbegin : fundeclist ([A.FunctionDec fundeclist])
            | fundeclist tydeclbegin ((A.FunctionDec fundeclist)::tydeclbegin)
