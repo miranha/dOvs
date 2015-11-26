@@ -681,7 +681,7 @@ and transDec ( venv, tenv
       val f = {name = name, params = lst, resultTy = res, body = makePair(exp, ty)}
       val errf = {name = name, params = lst, resultTy = Ty.ERROR, body = makePair(exp, ty)} : TAbs.fundecldata
     in
-      if (actualTy res pos) = (actualTy ty pos) then
+      if equalTy (res, ty, pos) then
         checkFunctions(venv, tenv, fundecls, extra, functions  @ [ f ], name::names)
       else
       (out ("The result type " ^ PT.asString res ^ " is not compatible with body type " ^ PT.asString ty) pos;
