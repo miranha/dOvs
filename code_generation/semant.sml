@@ -595,9 +595,10 @@ and transDec ( venv, tenv
           let val {exp, ty} = transExp(venv, tenv, extra) init
             val decl' = TAbs.VarDec{  name = name, escape = escape, ty = ty, init = makePair(exp, ty)}
             val nildecl =  TAbs.VarDec{  name = name, escape = escape, ty = Ty.ERROR, init = makePair(exp, ty)}
-          in case (actualTy ty pos) of
-            Ty.NIL => (errorNilNoneVar (pos, name); {decl = nildecl, tenv = tenv, venv = S.enter(venv, name, E.VarEntry{ty = Ty.ERROR})})
-            | _ => {decl = decl', tenv = tenv, venv = S.enter(venv, name, E.VarEntry{ty = ty})}
+            val _ = if (isUnassignable (name, extra)) then (out ((S.name name) ^ " is unassignable") pos) else ()
+            in case (actualTy ty pos) of
+                      Ty.NIL => (errorNilNoneVar (pos, name); {decl = nildecl, tenv = tenv, venv = S.enter(venv, name, E.VarEntry{ty = Ty.ERROR})})
+                      | _ => {decl = decl', tenv = tenv, venv = S.enter(venv, name, E.VarEntry{ty = ty})}
           end
 
 
@@ -608,6 +609,7 @@ and transDec ( venv, tenv
                   val errDecl = TAbs.VarDec{  name = name, escape = escape, ty = Ty.ERROR, init = makePair(exp, ty)}
                   val errReturn = {decl = errDecl, tenv = tenv, venv = S.enter(venv, name, E.VarEntry{ty = Ty.ERROR})}
                   val decl' = TAbs.VarDec { name = name, escape = escape, ty = ty, init = makePair(exp, ty)}
+                  val _ = if (isUnassignable (name, extra)) then (out ((S.name name) ^ " is unassignable") pos) else ()
                 in
                   case ty' of
                     NONE => errReturn
