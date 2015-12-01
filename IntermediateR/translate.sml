@@ -135,9 +135,16 @@ fun simpleVar (acc, fromLevel) = (* must return Ex (TEMP _) or Ex (MEM _) *)
 
 fun fieldVar (var, offset) =
     (* must return Ex (TEMP _) or Ex (MEM _) *)
+      let
+      val var' = unEx var
+      val nilLabel = Temp.newLabel "if_nil"
+      val notNilLabel = Temp.newLabel "not_nil"
+      val resLabel = Temp.newLabel "return_field"
+    in
      Ex(
-        T.MEM(T.BINOP(T.PLUS, unEx(var), T.BINOP(T.MUL,T.CONST offset,T.CONST F.wordSize)))
+        T.MEM(T.BINOP(T.PLUS, unEx var, T.BINOP(T.MUL,T.CONST offset,T.CONST F.wordSize)))
         )
+    end
 
 fun assign2IR (var, exp) =
     let
@@ -444,6 +451,7 @@ fun subscript2IR (arr, offset) =
         val nonNegativeL = Temp.newLabel "subs_nneg"
         val overflowL = Temp.newLabel "subs_ovf"
         val noOverflowL = Temp.newLabel "subs_novf"
+        val resLabel = Temp.newLabel "return_sub"
         val arr' = unEx arr
         val offset' = unEx offset
         val size = T.MEM(T.BINOP(T.PLUS, arr', T.CONST (~F.wordSize))) (* if elemtents starts at i, the arrays size is at i-Wordsize *)
@@ -458,7 +466,8 @@ fun subscript2IR (arr, offset) =
               T.LABEL overflowL,
               T.EXP(F.externalCall("arrInxError", [offset'])),
               T.LABEL noOverflowL]
-              , T.MEM(T.BINOP(T.PLUS, arr', T.BINOP(T.MUL,offset',T.CONST F.wordSize))))
+              ,  T.MEM(T.BINOP(T.PLUS, arr', T.BINOP(T.MUL,offset',T.CONST F.wordSize)))
+              )
           )
     end
 

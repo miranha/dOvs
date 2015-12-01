@@ -135,9 +135,20 @@ fun simpleVar (acc, fromLevel) = (* must return Ex (TEMP _) or Ex (MEM _) *)
 
 fun fieldVar (var, offset) =
     (* must return Ex (TEMP _) or Ex (MEM _) *)
+    let
+      val var' = unEx var
+      val nilLabel = Temp.newLabel "if_nil"
+      val notNilLabel = Temp.newLabel "not_nil"
+    in
      Ex(
-        T.MEM(T.BINOP(T.PLUS, unEx(var), T.BINOP(T.MUL,T.CONST offset,T.CONST F.wordSize)))
+        T.ESEQ( seq [ (*T.CJUMP(T.EQ, var', T.CONST 0, nilLabel, notNilLabel)
+                    , T.LABEL nilLabel
+                    , T.EXP( F.externalCall("recFieldError",[]) )
+                    , T.LABEL notNilLabel*)],
+          T.MEM(T.BINOP(T.PLUS, unEx var, T.BINOP(T.MUL,T.CONST offset,T.CONST F.wordSize)))
+          )
         )
+    end
 
 fun assign2IR (var, exp) =
     let
