@@ -28,15 +28,22 @@ structure TAbs = TAbsyn
    It should become obvious when you actually need it, what to do.
    Alternatively, you have to add extra parameters to your functions *)
 
-type extra = {inloop : bool, unassignable: S.symbol list}
+type extra = {inloop : bool, unassignable: S.symbol list, aNil : bool} (* aNil is true iff we have a chance to infer nil *)
 
-fun addUnassignable(id:S.symbol,{inloop = b, unassignable = lst}: extra) = {inloop=b,unassignable=id::lst}
+val stdExtra = {inloop = false, unassignable=[], aNil = false} (* How extra should be before we start type checking *)
 
-fun isUnassignable(id:S.symbol,{inloop = b, unassignable = lst}: extra) = List.exists (fn x => x=id) lst
 
-fun inLoop({inloop = b, unassignable = lst}: extra) : bool = b
+fun addUnassignable(id:S.symbol,{inloop = b, unassignable = lst, aNil = aNil }: extra) = {inloop=b,unassignable=id::lst, aNil = aNil}
 
-fun setInLoop({inloop = b, unassignable = lst}: extra, inLoop: bool) = {inloop=inLoop, unassignable=lst} 
+fun isUnassignable(id:S.symbol,{inloop = b, unassignable = lst, aNil = aNil }: extra) = List.exists (fn x => x=id) lst
+
+fun inLoop({inloop = b, unassignable = lst, aNil = bN }: extra) : bool = b
+
+fun setInLoop({inloop = b, unassignable = lst, aNil = bN}: extra, inLoop: bool) = {inloop=inLoop, unassignable=lst, aNil = bN} 
+
+fun allowNil( { inloop = b, unassignable = lst, aNil = bN } : extra, allowNil : bool) = { inLoop = b, unassignable = lst, aNil = allowNil }
+
+fun nilAllowed( ext : extra) : bool = #aNil ext
 
 (* Error messages *)
 
@@ -677,7 +684,7 @@ and transDec ( venv, tenv
       fun enterInVenv (venv, (name, ventry)::xs) = enterInVenv(S.enter(venv, name, ventry), xs)
         | enterInVenv (venv, []) = venv
       val venv' = enterInVenv (venv, ventries)
-      val {exp, ty} = transExp (venv', tenv, extra) body
+      val {exp, ty} = transExp (venv', tenv, setInLoop(extra, false)) body
       val f = {name = name, params = lst, resultTy = res, body = makePair(exp, ty)}
       val errf = {name = name, params = lst, resultTy = Ty.ERROR, body = makePair(exp, ty)} : TAbs.fundecldata
     in
@@ -724,8 +731,7 @@ and transDecs (venv, tenv, decls, extra : extra) =
         visit venv tenv decls []
     end
 
-
 fun transProg absyn =
-    transExp (Env.baseVenv, Env.baseTenv, {inloop = false, unassignable=[]}) absyn
+    transExp (Env.baseVenv, Env.baseTenv, stdExtra) absyn
 
 end (* Semant *)
