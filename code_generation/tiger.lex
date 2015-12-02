@@ -167,12 +167,12 @@ printable2=["\<" "\=" "\>" "\?" @ "\[" "\\" "\]" "\^" _ ` "\{" "\|" "\}" ~];
  linePos := yypos :: !linePos;
 		  continue());
 
-<STRING> "\\"(" "|"\t") =>(inMultiline := true; YYBEGIN MULTILINE; continue());
+<STRING> "\\"(" "|"\t"|"\f") =>(inMultiline := true; YYBEGIN MULTILINE; continue());
 <STRING> "\\\n" => (handleNewline( yypos ); inMultiline := true; YYBEGIN MULTILINE; continue());
 
 <STRING>.=> (ErrorMsg.error yypos ("Illegal character in string: " ^ yytext); continue());
 
 <MULTILINE>"\n"	                   => (handleNewline(yypos);continue());
-<MULTILINE> " "|"\t" => (continue());
+<MULTILINE> " "|"\t"|"\f" => (continue());
 <MULTILINE> "\\" => (inMultiline := false; YYBEGIN STRING; continue());
 <MULTILINE> . => (ErrorMsg.error yypos "Please only use tab, newline and space inside the \\...\\ block of a multiline string."; continue());
