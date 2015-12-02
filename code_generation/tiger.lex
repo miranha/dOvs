@@ -78,7 +78,7 @@ letter=[a-zA-Z];
 digit=[0-9];
 digits=[0-9]+;
 idchars=[a-zA-Z0-9_]*;
-ctrlchar=[@GHIJKLM"[""?"];
+ctrlchar=[@ABCDEFGHIJKLMNOPQRSTUVWXYZ"[""?"]"^""_""\\";
 printable=[! "\"" # \$ % "'" "(" ")" "\*" "\+" , \- "\." "\/" ":" "\;"];
 printable2=["\<" "\=" "\>" "\?" @ "\[" "\\" "\]" "\^" _ ` "\{" "\|" "\}" ~];
 %%
