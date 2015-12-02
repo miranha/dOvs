@@ -15,6 +15,14 @@ val inString = ref false
 val stringStart = ref 0
 val inMultiline = ref false
 
+fun trim s = 
+	case s of
+		  "\\n"  => "\n"
+		| "\\\\" => "\\"
+		| "\\t"  => "\t"
+		| "\\\"" => "\""
+		| _ 	 => s
+
 fun err (p1,p2) = ErrorMsg.error p1
 
 fun eof () =
@@ -43,11 +51,18 @@ fun s2i t pos =
   in ()
   end
 
-  fun digitEsc pos s = let val sCode = (valOf (Int.fromString (String.substring (s, 1, 3)))) in 
-  if sCode <= maxAsciiCode then
-  if sCode = 0 then "\\0" else
-  Char.toString(Char.chr sCode)
-  else let val _ = ErrorMsg.error pos (s ^ " of the form \\ddd must have that ddd <= " ^ (Int.toString maxAsciiCode)) in "" end end
+  fun digitEsc pos s =
+ 	let 
+ 		val sCode = (valOf (Int.fromString (String.substring (s, 1, 3)))) 
+ 	in 
+  		if sCode <= maxAsciiCode then
+  				String.str(Char.chr sCode)
+  		else 
+  			let 
+  				val _ = ErrorMsg.error pos (s ^ " of the form \\ddd must have that ddd <= " ^ (Int.toString maxAsciiCode)) 
+  			in ""
+  			end 
+  	end
 
 fun handleCtrl s pos =
 	 case s of
@@ -80,7 +95,7 @@ digits=[0-9]+;
 idchars=[a-zA-Z0-9_]*;
 ctrlchar=[@ABCDEFGHIJKLMNOPQRSTUVWXYZ"[""?"]"^""_""\\";
 printable=[! "\"" # \$ % "'" "(" ")" "\*" "\+" , \- "\." "\/" ":" "\;"];
-printable2=["\<" "\=" "\>" "\?" @ "\[" "\\" "\]" "\^" _ ` "\{" "\|" "\}" ~];
+printable2=["\<" "\=" "\>" "\?" @ "\[" "\]" "\^" _ ` "\{" "\|" "\}" ~];
 %%
 
 <INITIAL>"\n"	                   => (handleNewline(yypos);continue());
@@ -152,7 +167,7 @@ printable2=["\<" "\=" "\>" "\?" @ "\[" "\\" "\]" "\^" _ ` "\{" "\|" "\}" ~];
 
 <STRING> "\"" => (YYBEGIN INITIAL; inString := false; dopos3 Tokens.STRING (!currentString) (!stringStart) (String.size (!currentString)));
 
-<STRING> "\\n"|"\\t"|"\\\\"|"\\\"" => (addToCurString yytext;continue());
+<STRING> "\\n"|"\\t"|"\\\\"|"\\\"" => (addToCurString (trim yytext);continue());
 
 <STRING> "\\^"(.?) => (addToCurString (handleCtrl yytext yypos);continue());
 			   
