@@ -53,7 +53,7 @@ fun s2i t pos =
 
   fun digitEsc pos s =
  	let 
- 		val sCode = (valOf (Int.fromString (String.substring (s, 1, 3)))) 
+ 		val sCode = (valOf (Int.fromString (String.substring (s, 1, 3))))
  	in 
   		if sCode <= maxAsciiCode then
   				String.str(Char.chr sCode)
@@ -65,18 +65,20 @@ fun s2i t pos =
   	end
 
 fun handleCtrl s pos =
-	 case s of
-	 "\\^G" => "\\a"
-	 | "\\^H" => "\\b"
-	 | "\\^I" => "\\t"
-	 | "\\^J" => "\\n"
-	 | "\\^K" => "\\v"
-	 | "\\^L" => "\\f"
-	 | "\\^M" => "\\r"
-	 | "\\^[" => "\\e"
-	 | "\\^@" => "\\0"
-	 | "\\^?" => "\\^?"
-	 | _ => (ErrorMsg.error pos "Error: CTRL char must be of the form:\n\\^@ \\^[ \\^? \\^G \\^H \\^I \\^J \\^K \\^L \\^M"; "")
+	let 
+		val char' = String.sub(s,2)
+		val i' = Char.ord(char')
+		fun checker i = 
+			if i >= 64 andalso i <= 95 then
+				String.str(Char.chr (i-64))
+			else
+				(ErrorMsg.error pos ("Error: CTRL char must be of the form:\n\\^{@ABCDEFGHIJKLMNOPQRSTUVWXYZ[?]^_} \nYou gave me: \\^" ^ String.str(char')); "")
+	in
+		if (s = "\\^?") then
+		"\127"
+		else checker i'
+	end 
+
 
 fun handleNewline ( pos ) = (lineNum := !lineNum+1;
     linePos := pos :: !linePos)
