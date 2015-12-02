@@ -137,17 +137,49 @@ fun fieldVar (var, offset) =
     (* must return Ex (TEMP _) or Ex (MEM _) *)
     let
       val var' = unEx var
+      val temp = Temp.newtemp()
       val nilLabel = Temp.newLabel "if_nil"
       val notNilLabel = Temp.newLabel "not_nil"
     in
      Ex(
-        T.ESEQ( seq [ (*T.CJUMP(T.EQ, var', T.CONST 0, nilLabel, notNilLabel)
+        T.ESEQ( seq [ T.MOVE( T.TEMP temp, var')
+                    , T.CJUMP(T.EQ, T.TEMP temp, T.CONST 0, nilLabel, notNilLabel)
                     , T.LABEL nilLabel
                     , T.EXP( F.externalCall("recFieldError",[]) )
-                    , T.LABEL notNilLabel*)],
-          T.MEM(T.BINOP(T.PLUS, unEx var, T.BINOP(T.MUL,T.CONST offset,T.CONST F.wordSize)))
+                    , T.LABEL notNilLabel],
+          T.MEM(T.BINOP(T.PLUS, T.TEMP temp, T.BINOP(T.MUL,T.CONST offset,T.CONST F.wordSize)))
           )
         )
+    end
+
+fun subscript2IR (arr, offset) =
+    (* must return Ex (TEMP _) or Ex (MEM _) *)
+    let
+        val offsetT = Temp.newtemp ()
+        val addressT = Temp.newtemp ()
+        val maxInxT = Temp.newtemp ()
+        val negativeL = Temp.newLabel "subs_neg"
+        val nonNegativeL = Temp.newLabel "subs_nneg"
+        val overflowL = Temp.newLabel "subs_ovf"
+        val noOverflowL = Temp.newLabel "subs_novf"
+        val arr' = unEx arr
+        val offset' = unEx offset
+        val size = T.MEM(T.BINOP(T.PLUS, T.TEMP addressT, T.CONST (~F.wordSize))) (* if elemtents starts at i, the arrays size is at i-Wordsize *)
+    in
+      (* First checks for negative index, then for overflow. If an error, call external error handling *)
+        Ex( T.ESEQ (seq [
+              T.MOVE (T.TEMP addressT, arr'),
+              T.MOVE (T.TEMP offsetT, offset'),
+              T.CJUMP(T.GT, T.TEMP offsetT, T.CONST ~1, nonNegativeL, negativeL),
+              T.LABEL negativeL,
+              T.EXP(F.externalCall("arrInxError", [T.TEMP offsetT])),
+              T.LABEL nonNegativeL,
+              T.CJUMP(T.LT, T.TEMP offsetT, size, noOverflowL, overflowL),
+              T.LABEL overflowL,
+              T.EXP(F.externalCall("arrInxError", [T.TEMP offsetT])),
+              T.LABEL noOverflowL],
+              T.MEM(T.BINOP(T.PLUS, T.TEMP addressT, T.BINOP(T.MUL, T.TEMP offsetT, T.CONST F.wordSize))))
+          )
     end
 
 fun assign2IR (var, exp) =
@@ -444,34 +476,7 @@ fun record2IR explist =
     end
 
 
-fun subscript2IR (arr, offset) =
-    (* must return Ex (TEMP _) or Ex (MEM _) *)
-    let
-        val offsetT = Temp.newtemp ()
-        val arrayT = Temp.newtemp ()
-        val addressT = Temp.newtemp ()
-        val maxInxT = Temp.newtemp ()
-        val negativeL = Temp.newLabel "subs_neg"
-        val nonNegativeL = Temp.newLabel "subs_nneg"
-        val overflowL = Temp.newLabel "subs_ovf"
-        val noOverflowL = Temp.newLabel "subs_novf"
-        val arr' = unEx arr
-        val offset' = unEx offset
-        val size = T.MEM(T.BINOP(T.PLUS, arr', T.CONST (~F.wordSize))) (* if elemtents starts at i, the arrays size is at i-Wordsize *)
-    in
-      (* First checks for negative index, then for overflow. If an error, call external error handling *)
-        Ex( T.ESEQ (seq [
-              T.CJUMP(T.GT, offset', T.CONST ~1, nonNegativeL, negativeL),
-              T.LABEL negativeL,
-              T.EXP(F.externalCall("arrInxError", [offset'])),
-              T.LABEL nonNegativeL,
-              T.CJUMP(T.LT, offset',size, noOverflowL,overflowL),
-              T.LABEL overflowL,
-              T.EXP(F.externalCall("arrInxError", [offset'])),
-              T.LABEL noOverflowL],
-              T.MEM(T.BINOP(T.PLUS, arr', T.BINOP(T.MUL,offset',T.CONST F.wordSize))))
-          )
-    end
+
 
 fun funEntryExit {level = Level ({frame, parent}, _), body = body} =
     let
