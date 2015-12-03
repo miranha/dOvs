@@ -1,0 +1,10 @@
+/*
+Test Array, reassignment
+*/
+let
+	type intarray = array of int
+	var c := intarray[3] of 43
+in
+	c[0] := 2;
+	c[0] + c[2]
+end

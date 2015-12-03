@@ -1,0 +1,9 @@
+/* checking that we are doing side effect correctly */
+let
+	var c := 0
+	function increment():int = (c := c+1;1)
+	function multiply():int = (c := 2*c;2)
+	function test(a:int, b:int):int = c
+in
+	test(increment(),multiply())
+end

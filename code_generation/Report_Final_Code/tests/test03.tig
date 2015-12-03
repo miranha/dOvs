@@ -1,0 +1,13 @@
+/*
+Checks combination of arrays and record
+*/
+let
+type rectype = {name: string, address: string, id: int, age: int}
+type arrtype = array of rectype
+var arr := arrtype [5] of 
+                  rectype{name="aname", address="somewhere", id=0, age=0}
+in
+    arr[3].name := "kati";
+    arr[1].age := 23;
+    arr[1].age
+end
