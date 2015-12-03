@@ -1,0 +1,69 @@
+\documentclass{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{listings}
+\usepackage{hyperref}
+\title{dOvs - Final Code}
+
+\author{
+  Group 9 \\
+  Miran Hasanagi\'{c} - 20084902 \\
+  Jakob Graugaard Laursen - 20093220\\
+  Steven Astrup S\o rensen - 201206081
+}
+
+\begin{document}
+\maketitle
+
+\section{Introduction}
+This report contains the final code for the implemented compiler. In this phase we looked at the feedback obtained for the different phases, or components, and fix them in order to have fully working compiler. 
+
+The rest of this report is structured the following way. The following sections addresses in general terms the different error that have been fixed according to the feedback from the instructor. Afterwards, five tiger programs are presented, which show tiger programs which work correctly after the respective errors have been fixed. Finally, the experience for the whole compiler course is summed up and concluding remarks of the final code are given.
+
+
+\section{Compiler components}
+In this section the respective components with their error fixes are given. 
+
+\subsection{Lexer}
+In this phase there where only minor errors, which where related to the escape chars. Additionally, a comma fix between the states has been inserted. Before the SML compiler automatically fixed this error by inserting the comma, so it also worked before this fix. However, now it is fixed inside the code.
+
+\subsection{Parser}
+Now the let-expression does not required to at least have one declaration. Additionally, it is not allowed to have a extra comma in function calls, and semicolon in sequences. Finally, having the same precedes twice was removed, since it was unnecessary. 
+
+\subsection{Semantic Analysis}
+Now it is not allowed to have a break inside a procedure, which are inside loops. Also it is allowed that a function can return a record with the value nil. Finally, it is not allowed to assign a variable, which has the same name as a for-variable, even though they are not the same variable. 
+
+\subsection{IR-generation}
+There was an error with assignments with respect to look up in arrays, e.g. reassigning a arrays element, which has been fixed. Also a runtime error is given, if a lookup/assignment of field for nil. 
+
+\subsection{Code Generation}
+A minor error has been fix with respect to function calls in a sequence, in which an assignment of a sequence to a variable. 
+
+\section{5 tiger programs}
+This section presents 5 tiger test programs, which illustrated some of the fixes that have been made in the final code.
+
+\subsection{test01.tig}
+
+\lstinputlisting[frame=single]{tests/test01.tig}
+
+\subsection{test02.tig}
+
+\lstinputlisting[frame=single]{tests/test02.tig}
+
+\subsection{test03.tig}
+
+\lstinputlisting[frame=single]{tests/test03.tig}
+
+\subsection{test04.tig}
+
+\lstinputlisting[frame=single]{tests/test04.tig}
+
+\subsection{test05.tig}
+
+\lstinputlisting[frame=single]{tests/test05.tig}
+
+\section{Experience Gain and Concluding Remarks}
+
+In general it has been a great experience to develop a full compiler. Furthermore the approach of having the different compiler phases separated into different module made the integration straightforward. Also using SML for programming seems like a natural choice, especially since it is functional and has pattern matching. Also it has been interesting to see how we affect the compiler by the choices we make during the different compiler phases. So it has been nice to see how we actually go from a program in text all the way to the machine code, which can be executed. 
+
+
+\end{document}
