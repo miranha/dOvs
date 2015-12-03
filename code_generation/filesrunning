@@ -38,6 +38,9 @@ m_test07,6
 m_test08,4
 m_test09,0
 m_test10,1
+s_test01,
+s_test02,
+s_test03,"Test of ControlChars \t Tap, \n NewLine"
 ### Given test ###
 # In the following, only remove 1 # to end up in the original situation
 ##################

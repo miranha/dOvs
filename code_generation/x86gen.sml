@@ -75,8 +75,8 @@ fun codegen frame stm =
                            , dst = F.calldefs
                            , jump = NONE
                            , doc = "x86gen:77"})
-            ; emit (freeArgs (length args))
-            ; emit (moveInstr F.EAX t "79"))
+            ; emit (moveInstr F.EAX t "78")
+            ; emit (freeArgs (length args)))
 
           | munchStm (T.MOVE (T.MEM e1, T.CALL (T.NAME l, args))) =
             let 
@@ -88,11 +88,12 @@ fun codegen frame stm =
                              , dst = F.calldefs
                              , jump = NONE
                              , doc = "x86gen:90"});
+                emit (moveInstr F.EAX t "91");
                 emit (freeArgs (length args));
-                emit (moveInstr F.EAX t "92");
-                emit (A.MOVE  { assem = "\tmovl `s0, (`d0)"
-                              , src = t
-                              , dst = d0
+                emit (A.OPER  { assem = "\tmovl `s0, (`d0)"
+                              , src = [t]
+                              , dst = [d0]
+                              , jump = NONE
                               , doc = "x86gen:96"})
             end
 

@@ -209,7 +209,9 @@ fun makeIfElse( {exp = te, ty = tety} : TAbs.exp,
   {exp = el, ty = elty} : TAbs.exp , pos) =
   if actualTy tety pos = Ty.INT 
   then
-    if equalTy(actualTy thty pos, actualTy elty pos, pos) 
+    (* if _ then nil else nil is allowed *)
+    if ((actualTy thty pos = Ty.NIL andalso actualTy elty pos = Ty.NIL) orelse 
+              equalTy(actualTy thty pos, actualTy elty pos, pos))
     then (* everything went well, make the things needed *)
       let 
         val test = makePair(te, tety)
@@ -485,11 +487,20 @@ fun transExp (venv, tenv, extra : extra) =
                                                             )
                                                         end
         
-        and trseqexp(explist) = trseqexpaux(explist, Ty.UNIT, []) (* The empty sequence has nothing, so its type is unit and the exp is nil *)
+        and trseqexp(explist) = trseqexpaux(explist, Ty.UNIT, []) (* The empty sequence has nothing, so its type is unit *)
         
-        and trseqexpaux ([], ty,acc) = makePair(TAbs.SeqExp(acc), ty)
+        and trseqexpaux ([], ty, acc) = makePair(TAbs.SeqExp(acc), ty)
+          | trseqexpaux ([(exp,pos)], ty, acc) =  let val res = trexp(exp)
+                                                  in trseqexpaux ([], #ty res, acc @ [res]) (* Type resolution must happen higher *)
+                                                  end
           | trseqexpaux ((exp, pos)::xs, ty, acc) = let val res = trexp(exp)
-                                                      in trseqexpaux (xs, #ty res, acc @ [res]) 
+                                                      in 
+                                                        if (#ty res = Ty.NIL) then
+                                                          ( out "nil in middle of seq expression is illegal" pos;
+                                                            trseqexpaux (xs, #ty res, acc @ [res]) 
+                                                          )
+                                                        else
+                                                          trseqexpaux (xs, #ty res, acc @ [res])
                                                     end
 
     (* Determine type of each part first, then offload work to helper function *)
@@ -734,6 +745,13 @@ and transDecs (venv, tenv, decls, extra : extra) =
     end
 
 fun transProg absyn =
-    transExp (Env.baseVenv, Env.baseTenv, stdExtra) absyn
+    let
+      val {exp = exp, ty = ty } = transExp (Env.baseVenv, Env.baseTenv, stdExtra) absyn
+    in
+      if (ty = Ty.NIL) then
+        (out ("There is a nil which type can't be resolved") 0; { exp = exp, ty = Ty.ERROR } )
+      else
+        { exp = exp, ty = ty }
+    end
 
 end (* Semant *)

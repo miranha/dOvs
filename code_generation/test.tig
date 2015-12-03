@@ -1,7 +1,11 @@
 let
-	type intarray = array of int
-	var c := intarray[3] of 43
+	type rec = {i:int}
+	var c := rec{i = 2}
 in
-	c[0] := 2;
-	c[0] + c[2]
+	c := if 1 then
+			nil
+		else
+			nil; 
+
+	2
 end
