@@ -24,7 +24,7 @@ The rest of this report is structured the following way. The following sections 
 In this section the respective components with their error fixes are given. 
 
 \subsection{Lexer}
-In this phase there where only minor errors, Mainly 4 errors were observed. 1. A missing comma between states, 2. An escape character could be used at any place, 3. Form Feed wasn't available for use inside the \textbackslash f__f\textbackslash sequence. And 4. We didn't have support for all Control Characters.
+In this phase there where only minor errors, Mainly 4 errors were observed. 1. A missing comma between states, 2. An escape character could be used at any place, 3. Form Feed wasn't available for use inside the \textbackslash f\_\_f \textbackslash sequence. And 4. We didn't have support for all Control Characters.
 
 The Fixes were as following: 1. Insert the comma. 2. Remove the \textbackslash Character from the list {Printable}, and make sure to trim one \textbackslash character away when inserting them into the code again. 3. insert the correct escape sequence into the multi-line states. 4. A function was created that takes as input the Letter of the control character, and takes the ASCII code of that -64 (Which corresponds to the control character for that letter), and convert the into into the character. A special note however is the DEL control character which this doesn't apply to, so that was made a special case.
 
